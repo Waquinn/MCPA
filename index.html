@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Masterlist - Fieldmark</title>
+
+    <!-- MAIN CSS -->
+    <link rel="stylesheet" href="equipment.css">
+
+    <!-- GOOGLE FONT -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- QR CODE LIBRARY -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-logo">FM</div>
+
+            <div class="brand-text">
+                <h1>Fieldmark</h1>
+                <span>BUILDRIGHT CORP.</span>
+            </div>
+        </div>
+
+
+        <nav class="navigation">
+
+            <div class="nav-label">OVERVIEW</div>
+
+            <a href="#" class="nav-item">
+                Dashboard
+            </a>
+
+
+            <div class="nav-label">ASSETS</div>
+
+            <a href="#" class="nav-item active">
+                Masterlist
+            </a>
+
+            <a href="#" class="nav-item">
+                Sites
+            </a>
+
+            <a href="#" class="nav-item">
+                Consumables
+            </a>
+
+
+            <div class="nav-label">MOVEMENT</div>
+
+            <a href="#" class="nav-item">
+                Requests
+            </a>
+
+            <a href="#" class="nav-item">
+                Transfers
+            </a>
+
+            <a href="#" class="nav-item">
+                Returns
+            </a>
+
+            <a href="#" class="nav-item">
+                Repairs
+            </a>
+
+            <a href="#" class="nav-item">
+                Missing
+            </a>
+
+
+            <div class="nav-label">RECORDS</div>
+
+            <a href="#" class="nav-item">
+                Purchases
+            </a>
+
+            <a href="#" class="nav-item">
+                Reports
+            </a>
+
+            <a href="#" class="nav-item">
+                Activity Logs
+            </a>
+
+        </nav>
+
+
+        <!-- CURRENT USER -->
+
+        <div class="sidebar-user">
+
+            <div class="user-avatar">
+                RS
+            </div>
+
+            <div class="user-info">
+                <strong>Rowena Santos</strong>
+                <span>Admin</span>
+            </div>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =====================================================
+         MAIN WORKSPACE
+    ====================================================== -->
+
+    <main class="main">
+
+
+        <!-- =================================================
+             TOP BAR
+        ================================================== -->
+
+        <header class="topbar">
+
+            <div class="global-search">
+
+                <input
+                    type="text"
+                    placeholder="Search asset ID, item, serial, site, holder..."
+                >
+
+            </div>
+
+
+            <div class="topbar-actions">
+
+                <button class="btn-icon">
+                    Night mode
+                </button>
+
+                <button class="btn-icon">
+                    🔔
+                </button>
+
+                <div class="avatar-small">
+                    RS
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- =================================================
+             PAGE CONTENT
+        ================================================== -->
+
+        <section class="content">
+
+
+            <!-- PAGE HEADER -->
+
+            <div class="page-header">
+
+                <div>
+
+                    <h2>
+                        Masterlist
+                    </h2>
+
+                    <p>
+                        Manage registered tools, equipment, and their identifying information
+                    </p>
+
+                </div>
+
+
+                <div class="header-actions">
+
+                    <button class="btn btn-outline">
+                        Export
+                    </button>
+
+                    <button
+                        class="btn btn-gold"
+                        id="openAddEquipment"
+                    >
+                        + Add Item
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 FILTERS
+            ================================================== -->
+
+            <div class="filters">
+
+                <!-- SEARCH -->
+
+                <input
+                    type="text"
+                    id="searchEquipment"
+                    placeholder="Search asset ID, item, brand, serial..."
+                    class="search-input"
+                >
+
+
+                <!-- SITE -->
+
+                <select id="siteFilter">
+
+                    <option value="">
+                        Site
+                    </option>
+
+                </select>
+
+
+                <!-- CATEGORY -->
+
+                <select id="typeFilter">
+
+                    <option value="">
+                        Category
+                    </option>
+
+                </select>
+
+
+                <!-- STATUS -->
+
+                <select id="statusFilter">
+
+                    <option value="">
+                        Status
+                    </option>
+
+                    <option value="Available">
+                        Available
+                    </option>
+
+                    <option value="In Use">
+                        In Use
+                    </option>
+
+                    <option value="For Repair">
+                        For Repair
+                    </option>
+
+                    <option value="Missing">
+                        Missing
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 MASTERLIST TABLE
+            ================================================== -->
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                ASSET ID
+                            </th>
+
+                            <th>
+                                ITEM
+                            </th>
+
+                            <th>
+                                CATEGORY
+                            </th>
+
+                            <th>
+                                BRAND
+                            </th>
+
+                            <th>
+                                LOCATION
+                            </th>
+
+                            <th>
+                                HOLDER
+                            </th>
+
+                            <th>
+                                STATUS
+                            </th>
+
+                            <th>
+                                CONDITION
+                            </th>
+
+                            <th>
+                                ACQUIRED
+                            </th>
+
+                            <th></th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="equipmentTableBody">
+
+                        <!--
+                            Populated dynamically by equipment.js
+                        -->
+
+                    </tbody>
+
+                </table>
+
+
+                <div
+                    class="empty-state"
+                    id="emptyState"
+                >
+                    No items found.
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+
+<!-- =========================================================
+     PROFILE MODAL
+========================================================== -->
+
+<div
+    class="modal-overlay"
+    id="profileModal"
+>
+
+    <div class="modal modal-large">
+
+
+        <!-- PROFILE BACK BUTTON -->
+
+        <div class="modal-header-minimal">
+
+            <button
+                class="back-link"
+                id="closeProfileModal"
+            >
+                ← MASTERLIST
+            </button>
+
+        </div>
+
+
+        <!-- PROFILE CONTENT -->
+
+        <div
+            class="profile-layout"
+            id="profileContent"
+        >
+
+            <!--
+                Populated dynamically by equipment.js
+            -->
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     ADD / EDIT ITEM MODAL
+========================================================== -->
+
+<div
+    class="modal-overlay"
+    id="equipmentModal"
+>
+
+    <div class="modal">
+
+
+        <!-- MODAL HEADER -->
+
+        <div class="modal-header">
+
+            <h2>
+                Add New Item
+            </h2>
+
+            <button
+                class="close-button"
+                id="closeEquipmentModal"
+                type="button"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+
+        <!-- =================================================
+             ITEM FORM
+        ================================================== -->
+
+        <form
+            id="equipmentForm"
+            class="form-grid"
+        >
+
+
+            <!-- =================================================
+                 ITEM NAME / CLASSIFICATION
+            ================================================== -->
+
+            <div class="form-group form-group-full">
+
+                <label for="equipmentType">
+
+                    Item Name / Classification
+
+                    <span class="required">
+                        *
+                    </span>
+
+                </label>
+
+
+                <input
+                    type="text"
+                    id="equipmentType"
+                    placeholder="e.g. Shovel (Pala, Lapad)"
+                    required
+                >
+
+            </div>
+
+
+
+            <!-- =================================================
+                 CATEGORY
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="equipmentCategory">
+
+                    Category
+
+                    <span class="required">
+                        *
+                    </span>
+
+                </label>
+
+
+                <select
+                    id="equipmentCategory"
+                    required
+                >
+
+                    <option value="">
+                        Select category
+                    </option>
+
+                    <option value="Hand Tools">
+                        Hand Tools
+                    </option>
+
+                    <option value="Power Tools">
+                        Power Tools
+                    </option>
+
+                    <option value="Equipment">
+                        Equipment
+                    </option>
+
+                    <option value="Scaffolding">
+                        Scaffolding
+                    </option>
+
+                    <option value="Construction Materials">
+                        Construction Materials
+                    </option>
+
+                    <option value="Water & Plumbing">
+                        Water & Plumbing
+                    </option>
+
+                    <option value="Electrical">
+                        Electrical
+                    </option>
+
+                    <option value="Appliances">
+                        Appliances
+                    </option>
+
+                    <option value="Storage Containers">
+                        Storage Containers
+                    </option>
+
+                    <option value="Other">
+                        Other
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 BRAND
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="brand">
+
+                    Brand
+
+                    <span class="optional">
+                        (Optional)
+                    </span>
+
+                </label>
+
+
+                <input
+                    type="text"
+                    id="brand"
+                    placeholder="e.g. Bosch, Makita"
+                >
+
+            </div>
+
+
+
+            <!-- =================================================
+                 MODEL
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="equipmentModel">
+
+                    Model
+
+                    <span class="optional">
+                        (Optional)
+                    </span>
+
+                </label>
+
+
+                <input
+                    type="text"
+                    id="equipmentModel"
+                    placeholder="Enter model number"
+                >
+
+            </div>
+
+
+
+            <!-- =================================================
+                 SERIAL NUMBER
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="serialNumber">
+
+                    Serial Number
+
+                    <span class="optional">
+                        (Optional)
+                    </span>
+
+                </label>
+
+
+                <input
+                    type="text"
+                    id="serialNumber"
+                    placeholder="Enter serial number if available"
+                >
+
+            </div>
+
+
+
+            <!-- =================================================
+                 INITIAL CONDITION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="equipmentCondition">
+
+                    Initial Condition
+
+                    <span class="required">
+                        *
+                    </span>
+
+                </label>
+
+
+                <select
+                    id="equipmentCondition"
+                    required
+                >
+
+                    <option value="Good">
+                        Good
+                    </option>
+
+                    <option value="Fair">
+                        Fair
+                    </option>
+
+                    <option value="Damaged">
+                        Damaged
+                    </option>
+
+                    <option value="Needs Inspection">
+                        Needs Inspection
+                    </option>
+
+                    <option value="Not Assessed">
+                        Not Assessed
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 TRACKING TYPE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="trackingType">
+
+                    Tracking Type
+
+                    <span class="required">
+                        *
+                    </span>
+
+                </label>
+
+
+                <select
+                    id="trackingType"
+                    required
+                >
+
+                    <option value="">
+                        Select tracking type
+                    </option>
+
+                    <option value="Individual">
+                        Individual
+                    </option>
+
+                    <option value="Bulk">
+                        Bulk
+                    </option>
+
+                </select>
+
+
+                <small class="form-help">
+
+                    Individual items receive their own
+                    Asset ID and QR code.
+
+                </small>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 QUANTITY
+            ================================================== -->
+
+            <div
+                class="form-group"
+                id="quantityGroup"
+                style="display: none;"
+            >
+
+                <label for="equipmentQuantity">
+
+                    Quantity
+
+                    <span class="required">
+                        *
+                    </span>
+
+                </label>
+
+
+                <input
+                    type="number"
+                    id="equipmentQuantity"
+                    min="1"
+                    value="1"
+                    placeholder="Enter quantity"
+                >
+
+
+                <small class="form-help">
+
+                    Used for items tracked as bulk inventory.
+
+                </small>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 UNIT
+            ================================================== -->
+
+            <div
+                class="form-group"
+                id="unitGroup"
+                style="display: none;"
+            >
+
+                <label for="equipmentUnit">
+
+                    Unit
+
+                    <span class="required">
+                        *
+                    </span>
+
+                </label>
+
+
+                <select id="equipmentUnit">
+
+                    <option value="">
+                        Select unit
+                    </option>
+
+                    <option value="Pieces">
+                        Pieces
+                    </option>
+
+                    <option value="Sets">
+                        Sets
+                    </option>
+
+                    <option value="Meters">
+                        Meters
+                    </option>
+
+                    <option value="Kilograms">
+                        Kilograms
+                    </option>
+
+                    <option value="Liters">
+                        Liters
+                    </option>
+
+                    <option value="Boxes">
+                        Boxes
+                    </option>
+
+                    <option value="Rolls">
+                        Rolls
+                    </option>
+
+                    <option value="Other">
+                        Other
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 IDENTIFYING DETAILS
+            ================================================== -->
+
+            <div class="form-group form-group-full">
+
+                <label for="identifyingDetails">
+
+                    Identifying Details
+
+                    <span class="optional">
+                        (Optional)
+                    </span>
+
+                </label>
+
+
+                <textarea
+                    id="identifyingDetails"
+                    rows="3"
+                    placeholder="e.g. Red handle, large blade, 2-inch diameter, 10 ft length..."
+                ></textarea>
+
+
+                <small class="form-help">
+
+                    Add simple details that help identify
+                    the physical item.
+
+                </small>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 ITEM PHOTO
+            ================================================== -->
+
+            <div class="form-group form-group-full">
+
+                <label for="equipmentPhoto">
+
+                    Item Photo
+
+                    <span class="optional">
+                        (Optional)
+                    </span>
+
+                </label>
+
+
+                <input
+                    type="file"
+                    id="equipmentPhoto"
+                    accept="image/*"
+                >
+
+
+                <small class="form-help">
+
+                    A photo can help identify
+                    similar-looking items.
+
+                </small>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 AUTO-GENERATED ASSET ID / QR NOTICE
+            ================================================== -->
+
+            <div class="asset-id-notice form-group-full">
+
+                <div class="asset-id-icon">
+                    QR
+                </div>
+
+
+                <div>
+
+                    <strong>
+                        Asset ID & QR Code
+                    </strong>
+
+
+                    <p>
+
+                        Automatically generated after
+                        the item is saved. You don't need
+                        to enter an Asset ID manually.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 FORM ACTIONS
+            ================================================== -->
+
+            <div class="form-actions">
+
+                <button
+                    type="button"
+                    class="btn btn-outline"
+                    id="cancelEquipmentModal"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="btn btn-gold"
+                >
+                    Save Item
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     SUPABASE
+========================================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+
+<!-- =========================================================
+     APPLICATION JAVASCRIPT
+========================================================== -->
+
+<script src="equipment.js"></script>
+
+
+</body>
+</html>
