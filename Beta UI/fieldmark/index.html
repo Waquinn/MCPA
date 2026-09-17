@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fieldmark — Construction Asset &amp; Accountability System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,480;9..144,560&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/global.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN SCREEN
+     ============================================================ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-mark">FM</div>
+    <h1 class="display">Construction Asset Management</h1>
+    <p class="sub">Tools, Materials &amp; Accountability System</p>
+    <div class="field">
+      <label>Email / Username</label>
+      <input type="text" value="admin@buildright.co" />
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" value="••••••••••" />
+    </div>
+    <div class="field-row">
+      <label class="checkbox-row"><input type="checkbox" checked /> Remember me</label>
+      <a class="link-btn" href="#">Forgot password?</a>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="enterApp()">Sign In</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div id="app-shell" class="hidden">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">FM</div>
+      <div>
+        <div class="brand-name">Fieldmark</div>
+        <div class="brand-sub">BuildRight Corp.</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav-list"></nav>
+    <div class="sidebar-foot">
+      <div class="avatar">RS</div>
+      <div class="who">
+        <div class="name">Rowena Santos</div>
+        <div class="role">Admin</div>
+      </div>
+      <button class="icon-btn" title="Log out" onclick="location.reload()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div id="main-col">
+    <header id="topbar">
+      <div class="search-wrap">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search tool ID, name, serial, site, holder…" oninput="globalSearch(this.value)"/>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-actions">
+        <button class="theme-toggle" onclick="toggleTheme()">
+          <svg id="theme-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <span id="theme-label">Night mode</span>
+        </button>
+        <button class="icon-btn bell-wrap" style="color:var(--black); border:1px solid var(--line); width:36px; height:36px; border-radius:8px;" onclick="showScreen('activity')">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <span class="bell-dot"></span>
+        </button>
+        <div class="avatar" style="width:36px;height:36px;">RS</div>
+      </div>
+    </header>
+
+    <!-- Module container: showScreen()/loadModule() (js/navigation.js,
+         js/app.js) fetch each screen's HTML/CSS/JS into here on demand. -->
+    <main id="content"></main>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
