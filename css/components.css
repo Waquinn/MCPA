@@ -180,3 +180,14 @@ tbody tr.clickable{cursor:pointer;}
 }
 .chart-bar{flex:1; background:linear-gradient(var(--gold), var(--gold-dim)); border-radius:3px 3px 0 0;}
 .chart-bar.mut{background:var(--gray-light);}
+
+@media (max-width: 600px) {
+  /* Stack all data grids into a single column */
+  .grid-5, .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  
+  /* Stack section titles if they have buttons next to them */
+  .section-title { flex-direction: column; align-items: flex-start; gap: 8px; }
+  
+  /* Allow site stat numbers to wrap naturally */
+  .site-stat-row { flex-wrap: wrap; gap: 12px; }
+}

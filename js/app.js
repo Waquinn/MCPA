@@ -102,3 +102,23 @@ function globalSearch(q){
     if(input){ input.value = q; filterMasterlist(); }
   });
 }
+
+// Close sidebar on mobile when clicking outside of it
+document.addEventListener('click', function(e) {
+  const sidebar = document.getElementById('sidebar');
+  const menuBtn = document.querySelector('.mobile-menu-btn');
+  
+  // If the sidebar is open and the click target is NOT the sidebar or the menu button
+  if (sidebar && sidebar.classList.contains('open')) {
+    if (!sidebar.contains(e.target) && (!menuBtn || !menuBtn.contains(e.target))) {
+      sidebar.classList.remove('open');
+    }
+  }
+});
+
+// Close sidebar on mobile when a navigation item is clicked
+document.getElementById('sidebar').addEventListener('click', function(e) {
+  if (e.target.closest('.nav-item')) {
+    this.classList.remove('open');
+  }
+});
