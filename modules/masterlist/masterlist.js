@@ -138,15 +138,15 @@ function renderTable() {
   });
 }
 
-// SCREEN SWITCHING HELPER FUNCTION MATCHING YOUR HTML
-function showScreen(screenName) {
+// Renamed to avoid conflicting with the global sidebar navigation
+function showMasterlistView(viewName) {
   const masterlistScreen = document.getElementById('screen-masterlist');
   const profileScreen = document.getElementById('screen-tool-profile');
 
-  if (screenName === 'masterlist') {
+  if (viewName === 'masterlist') {
     if (masterlistScreen) masterlistScreen.style.display = 'block';
     if (profileScreen) profileScreen.style.display = 'none';
-  } else if (screenName === 'tool-profile') {
+  } else if (viewName === 'tool-profile') {
     if (masterlistScreen) masterlistScreen.style.display = 'none';
     if (profileScreen) profileScreen.style.display = 'block';
   }
@@ -222,7 +222,7 @@ function showToolProfile(assetId) {
   `;
 
   // Switch to the profile screen view defined in your HTML
-  showScreen('tool-profile');
+  showMasterlistView('tool-profile');
 
   setTimeout(() => {
     const qrEl = document.getElementById("qrContainerProfile");
