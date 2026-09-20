@@ -1,0 +1,30 @@
+<section class="screen" id="screen-consumables">
+  <div class="page-head">
+    <div>
+      <h1 class="display">Consumables</h1>
+      <p class="sub">Stock monitoring and purchase alerts for frequently used materials</p>
+    </div>
+    <div class="page-head-actions"><button class="btn btn-accent btn-sm" onclick="showScreen('purchase')">+ Purchase Request</button></div>
+  </div>
+
+  <div class="notice" style="border-color:var(--danger); background:var(--danger-bg); margin-bottom:22px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+    <div><div class="t" style="color:var(--danger);">7 consumables below minimum stock</div><div class="d">Purchase requests are recommended for the items marked LOW STOCK below.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Item</th><th>Current Stock</th><th>Minimum Level</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="cell-name">Pipes (¾")</td><td class="mono">12</td><td class="mono">20</td><td><span class="badge badge-low">Low Stock</span></td><td><button class="btn btn-secondary btn-sm" onclick="showScreen('purchase')">Purchase Required</button></td></tr>
+          <tr><td class="cell-name">Cutting Discs</td><td class="mono">8</td><td class="mono">15</td><td><span class="badge badge-low">Low Stock</span></td><td><button class="btn btn-secondary btn-sm" onclick="showScreen('purchase')">Purchase Required</button></td></tr>
+          <tr><td class="cell-name">Drill Bits (Set)</td><td class="mono">30</td><td class="mono">10</td><td><span class="badge badge-ok">OK</span></td><td>—</td></tr>
+          <tr><td class="cell-name">Electrical Wire (10m)</td><td class="mono">6</td><td class="mono">12</td><td><span class="badge badge-low">Low Stock</span></td><td><button class="btn btn-secondary btn-sm" onclick="showScreen('purchase')">Purchase Required</button></td></tr>
+          <tr><td class="cell-name">Switches</td><td class="mono">45</td><td class="mono">20</td><td><span class="badge badge-ok">OK</span></td><td>—</td></tr>
+          <tr><td class="cell-name">Welding Rods (kg)</td><td class="mono">4</td><td class="mono">10</td><td><span class="badge badge-low">Low Stock</span></td><td><button class="btn btn-secondary btn-sm" onclick="showScreen('purchase')">Purchase Required</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
