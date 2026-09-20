@@ -1,0 +1,9 @@
+/* ============================================================
+   THEME
+   Light theme is the default token set defined in :root
+   (css/global.css). body.dark in global.css overrides the
+   color tokens for night mode; this file holds theme-triggered
+   styling that isn't a simple variable swap.
+   ============================================================ */
+body.dark .notice{background:#221c0c;}
+body.dark .qa-btn:hover{background:#221c0c;}
