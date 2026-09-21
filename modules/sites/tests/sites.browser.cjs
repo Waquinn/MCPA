@@ -19,6 +19,7 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'mcpa-sites-test-'));
 const calls = [];
 let failure = null;
 let delay = 0;
+let apiPageLimit = 500;
 let serial = 0;
 const site = (id, name) => ({ id, name, location: 'Batangas', assigned_engineer: 'Eng. Mark Reyes', phase: 'Structural Phase', status: 'active', progress: 62, last_inventory_check: '2026-08-25', updated_at: '2026-09-01T00:00:00Z' });
 const db = {
@@ -35,7 +36,7 @@ const db = {
 const sdk = `window.supabase = { createClient() { return { from(table) {
   const query = { table, method: 'read', filters: [] };
   const builder = {
-    select(columns) { query.columns = columns; return this; },
+    select(columns, options) { query.columns = columns; query.count = options?.count; return this; },
     order(column) { query.order = column; return this; },
     range(from, to) { query.range = [from, to]; return this; },
     limit(value) { query.limit = value; return this; },
@@ -55,12 +56,14 @@ const server = http.createServer(async (request, response) => {
     calls.push(query);
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     let data = null;
+    let count = null;
     let error = failure;
     if (!error) {
       let rows = (db[query.table] || []).filter(row => query.filters.every(([key, value]) => row[key] === value));
       if (query.method === 'read') {
         rows = [...rows].sort((a, b) => String(a[query.order]).localeCompare(String(b[query.order])));
-        if (query.range) rows = rows.slice(query.range[0], query.range[1] + 1);
+        if (query.count === 'exact') count = rows.length;
+        if (query.range) rows = rows.slice(query.range[0], Math.min(query.range[1] + 1, query.range[0] + apiPageLimit));
         if (query.limit) rows = rows.slice(0, query.limit);
         data = rows;
       } else if (query.method === 'insert') {
@@ -74,7 +77,7 @@ const server = http.createServer(async (request, response) => {
       }
     }
     response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.end(JSON.stringify({ data, error }));
+    response.end(JSON.stringify({ data, count, error }));
     return;
   }
   if (request.url === '/__sdk.js') {
@@ -152,8 +155,12 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   await waitFor("typeof enterApp === 'function'");
   await evaluate('enterApp()');
   await waitFor("document.querySelector('#screen-dashboard.active')");
+  delay = 250;
   await evaluate("showScreen('sites')");
+  await waitFor("document.querySelector('#sites-list[aria-busy=true]')");
+  await check('Add Site waits for initial data to prevent refresh overwriting a new site', "document.querySelector('[data-action=add-site]').disabled");
   await waitFor("document.querySelectorAll('#sites-list .site-card').length === 2");
+  delay = 0;
   await check('Counts use assigned quantity, including bulk and repair statuses', "document.querySelector('[data-id=casa] .site-stat-row').innerText.replace(/\\s+/g,' ').trim() === '8 TOTAL 1 AVAIL. 5 IN USE 2 REPAIR'");
   await screenshot('sites-desktop');
   await click('[data-id=casa]');
@@ -167,10 +174,16 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   await waitFor("document.querySelector('#sites-dialog-title').textContent === 'Scaffolding Set'");
   await check('Equipment detail shows correct record and read-only movement', "document.querySelector('#sites-dialog-content').textContent.includes('SCF-010') && !document.querySelector('#sites-dialog input') && document.querySelector('#sites-dialog-content').textContent.includes('No movement records available')");
   await click('#sites-dialog [data-action=review-tools]');
+  await check('Returning from equipment details retains the search', "document.querySelector('#sites-tool-search').value === 'SCF-010' && document.querySelectorAll('#sites-review-results [data-action=view-tool]').length === 1");
+  await fill('#sites-tool-search', '');
   await fill('#sites-tool-status', 'underrepair');
   await check('Status filtering handles UNDER_REPAIR', "document.querySelector('#sites-review-results').textContent.includes('CMP-001') && document.querySelectorAll('#sites-review-results [data-action=view-tool]').length === 1");
   await fill('#sites-tool-search', 'no match');
   await check('Filtered empty state', "document.querySelector('#sites-review-results').textContent.includes('No equipment matches')");
+  await click('#sites-dialog [data-action=close-dialog]');
+  await click('#site-detail-content [data-action=view-tool]');
+  await waitFor("document.querySelector('#sites-dialog').open");
+  await check('Direct equipment view does not inherit a closed review dialog', "!document.querySelector('#sites-dialog [data-action=review-tools]')");
   await click('#sites-dialog [data-action=close-dialog]');
   await click('[data-action=delete-site]');
   await check('Linked equipment blocks site deletion', "!document.querySelector('[data-action=confirm-delete]') && document.querySelector('#sites-dialog-content').textContent.includes('4 linked equipment')");
@@ -185,9 +198,17 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   await click('#sites-form [type=submit]');
   await check('Whitespace-only names are rejected', "document.querySelector('#sites-form-error').textContent.includes('Blank spaces')");
   await fill('#site-name', 'Casa Renamed');
+  await fill('#site-progress', '101');
+  await click('#sites-form [type=submit]');
+  await check('Out-of-range completion is rejected', "document.querySelector('#site-progress').validity.rangeOverflow && document.querySelector('#sites-dialog').open");
+  await fill('#site-progress', '62');
+  await fill('#site-check', '2999-01-01');
+  await click('#sites-form [type=submit]');
+  await check('Future inventory date is rejected', "document.querySelector('#site-check').validity.rangeOverflow && document.querySelector('#sites-dialog').open");
+  await fill('#site-check', '2026-08-25');
   failure = { code: '42501' };
   await click('#sites-form [type=submit]');
-  await waitFor("document.querySelector('#sites-form-error').textContent.includes('does not allow')");
+  await waitFor("document.querySelector('#sites-form-error').textContent.includes('Sites access update')");
   await check('Failed save keeps form and values', "document.querySelector('#sites-dialog').open && document.querySelector('#site-name').value === 'Casa Renamed'");
   failure = null;
   delay = 200;
@@ -224,6 +245,14 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   console.log('PASS Create, reload, cancel, and delete');
   await click('[data-id=empty]');
   await check('Empty site inventory', "document.querySelector('#site-detail-content').textContent.includes('No equipment is currently assigned')");
+  await click('[data-action=delete-site]');
+  db.equipment.push({ id: 'late-assignment', site_id: 'empty', quantity: 0, status: 'AVAILABLE' });
+  await click('[data-action=confirm-delete]');
+  await waitFor("document.querySelector('#sites-form-error').textContent.includes('linked equipment')");
+  assert.ok(db.sites.some(record => record.id === 'empty'));
+  console.log('PASS Delete rechecks equipment assigned after the dialog was opened');
+  db.equipment = db.equipment.filter(record => record.id !== 'late-assignment');
+  await click('#sites-dialog [data-action=close-dialog]');
   await click('[data-action=view-movements]');
   await check('Movement has no mutation controls', "document.querySelector('#sites-dialog-content').textContent.includes('read-only') && !document.querySelector('#sites-dialog-content input, #sites-dialog-content select')");
   await click('#sites-dialog [data-action=close-dialog]');
@@ -242,9 +271,10 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   await check('Mobile page has no horizontal overflow', 'document.documentElement.scrollWidth <= innerWidth');
   // Verify pagination beyond the API page size and zero quantity retained in deletion checks.
   for (let i = 0; i < 505; i++) db.equipment.push({ id: 'page-' + i, site_id: 'empty', name: 'Paged equipment', quantity: 1, status: 'AVAILABLE' });
+  apiPageLimit = 200;
   await click('[data-action=refresh]');
   await waitFor("document.querySelector('[data-id=empty] .site-stat .n').textContent === '505'");
-  console.log('PASS Inventory pagination');
+  console.log('PASS Inventory pagination also handles a server limit smaller than the requested page');
   failure = { code: 'PGRST205' };
   await evaluate("showScreen('dashboard')"); await waitFor("document.querySelector('#screen-dashboard.active')");
   await evaluate("showScreen('sites')"); await waitFor("document.querySelector('#sites-list')?.textContent.includes('Unable to load')");
@@ -253,6 +283,21 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   await click('#sites-list [data-action=refresh]');
   await waitFor("document.querySelectorAll('#sites-list .site-card').length === 2");
   console.log('PASS Retry recovers after a database error');
+  await click('[data-id=empty]');
+  db.sites = db.sites.filter(record => record.id !== 'empty');
+  await click('#site-detail-content [data-action=refresh]');
+  await waitFor("document.querySelector('#screen-sites.active') && document.querySelectorAll('#sites-list .site-card').length === 1");
+  await check('Refreshing a deleted site returns to the list instead of showing another site', "document.querySelector('#sites-feedback').textContent.includes('no longer available')");
+  db.sites = [];
+  await click('#screen-sites [data-action=refresh]');
+  await waitFor("document.querySelector('#sites-list').textContent.includes('No sites yet')");
+  await click('#sites-list [data-action=add-site]');
+  await fill('#site-name', 'Fresh Site');
+  await fill('#site-location', 'Batangas');
+  await fill('#site-engineer', 'Eng. Test');
+  await click('#sites-form [type=submit]');
+  await waitFor("!document.querySelector('#sites-dialog').open");
+  await check('Add Site works from an empty database', "document.querySelectorAll('#sites-list .site-card').length === 1 && document.querySelector('#sites-list').textContent.includes('Fresh Site')");
   assert.equal(calls.filter(call => call.table !== 'sites' && call.method !== 'read').length, 0, 'Equipment and movement must never be mutated');
   assert.deepEqual(errors, [], 'No uncaught browser errors');
   console.log('PASS All Sites regression checks; no live database writes.');

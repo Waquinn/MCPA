@@ -6,18 +6,32 @@ movement modules are unchanged.
 
 ## Database setup
 
-1. Run `setup.sql` once in this project's Supabase SQL Editor. It creates `sites`,
+1. Run the current `setup.sql` in this project's Supabase SQL Editor. It creates `sites`,
    adds the nullable `equipment.site_id` foreign key and index, enables row-level
    security, and adds validation and an update timestamp trigger. It does not
    insert sample records, assign existing equipment, or change equipment policies.
-2. The default policies allow reads for `anon` and `authenticated`, and site writes
-   for `authenticated`. The current app's Sign In button only reveals the UI; it
-   does not establish a Supabase session. If this project is intended to remain a
-   public-access prototype, run `prototype-access.sql` too. That explicitly grants
-   public create/update/delete access to the Sites table. Otherwise, connect real
-   authentication before using site writes. See [Supabase's RLS documentation](https://supabase.com/docs/guides/database/postgres/row-level-security).
+2. The setup grants Sites select/insert/update/delete to `anon` and `authenticated`,
+   with matching row-level policies. The current app's Sign In button only reveals
+   the UI and does not establish a Supabase session, so it uses `anon`. This means
+   site CRUD is public to callers of this project's API, matching the current
+   prototype. RLS remains enabled, and equipment policies remain unchanged.
+   When the app adopts real authentication, replace these public policies with
+   the intended user/role restrictions. See [Supabase's RLS documentation](https://supabase.com/docs/guides/database/postgres/row-level-security).
 3. Open Sites and click Refresh. Use Add Site to create actual project records.
    The old static projects and counts are not database records.
+
+### If Add Site reports a permission error after the original setup
+
+Rerun the **updated `setup.sql`**. The original script granted writes only to
+`authenticated`, while the app sends `anon` requests. Changing a browser API key
+or reloading cannot fix that database permission mismatch.
+
+The updated setup is repeatable: it preserves existing records and assignments,
+replaces only this module's trigger/policies/date constraint, and repairs the
+grants for create, edit and delete. It also aligns inventory dates with Manila
+time so a valid date is not rejected around midnight. `prototype-access.sql`
+remains a repeatable permissions-only repair for older installations; it is not
+a second required step after the updated setup.
 
 The configured public key can access application data, but cannot execute the
 schema setup. Run the SQL through the project's SQL Editor with administrative
@@ -54,5 +68,19 @@ blocked; they never write to the live project.
 Checks cover CRUD, persistence across reloads, duplicate/blank validation,
 concurrent edits, failed saves, deletion protection, pagination, equipment search
 and details, module reloads, escaped content, read-only movement, and mobile/dark
-mode. Temporary screenshot paths are printed by the runner. Database setup and
-live permissions must be verified separately after the SQL is applied.
+mode, interrupted loads, server pagination limits, and retaining review filters.
+Temporary screenshot paths are printed by the runner.
+
+Database regression tests execute the actual SQL using local PostgreSQL (PGlite):
+
+```sh
+npm ci --prefix modules/sites/tests
+node modules/sites/tests/sites.database.cjs
+```
+
+They reproduce the original permission failure, rerun the setup on existing
+records, and test CRUD as both `anon` and `authenticated`, row-level security,
+duplicate/invalid data, Manila dates, stale writes, and restrictive deletion.
+The test dependency is confined to the test folder, not loaded by the application.
+Run both suites with `npm test --prefix modules/sites/tests`. Neither suite writes
+to the live Supabase project. The SQL must still be applied in its SQL Editor.

@@ -15,7 +15,7 @@
     repair: ['For Repair', 'repair'], underrepair: ['Under Repair', 'underrepair'],
     missing: ['Missing', 'missing'], disposed: ['Disposed', 'disposed']
   };
-  const state = { sites: [], equipment: [], selectedId: null, loading: false, saving: false, ready: false };
+  const state = { sites: [], equipment: [], selectedId: null, loading: false, saving: false, ready: false, review: { search: '', status: '' } };
   let dialogReturnFocus = null;
 
   function escape(value) {
@@ -26,8 +26,9 @@
 
   function normalizeName(value) { return value.trim().replace(/\s+/g, ' '); }
   function today() {
-    const date = new Date();
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+    const part = type => parts.find(value => value.type === type).value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
   }
   function formatDate(value) {
     if (!value) return 'Not recorded';
@@ -58,8 +59,9 @@
   function databaseError(error) {
     if (['PGRST205', '42703'].includes(error.code)) return 'Sites is not set up in the database yet. Contact your administrator to complete setup, then refresh.';
     if (error.code === '23505') return 'A site with this name already exists. Please use a different name.';
-    if (error.code === '23503') return 'This site still has linked records and cannot be deleted. Its equipment and history must be retained.';
-    if (['42501', 'PGRST301', 'PGRST303'].includes(error.code)) return 'Your database access does not allow this action. Please check your session or contact your administrator.';
+    if (['23503', '23001'].includes(error.code)) return 'This site still has linked records and cannot be deleted. Its equipment and history must be retained.';
+    if (error.code === '42501') return 'Site changes are blocked by database permissions. Ask your administrator to apply the Sites access update, then try again. Your entries have been kept.';
+    if (['PGRST301', 'PGRST303'].includes(error.code)) return 'Your database session has expired or is invalid. Sign in again, then retry.';
     if (error.code === '23514') return 'Some site details are invalid. Please check the form and try again.';
     return error.message || 'The database could not be reached. Please try again.';
   }
@@ -67,11 +69,12 @@
   async function readAll(table, columns, order) {
     const records = [];
     // Supabase caps responses; fetch every page so counts do not silently truncate.
-    for (let offset = 0; ; offset += 500) {
-      const { data, error } = await client().from(table).select(columns).order(order).range(offset, offset + 499);
+    for (let offset = 0; ;) {
+      const { data, count, error } = await client().from(table).select(columns, { count: 'exact' }).order(order).range(offset, offset + 499);
       if (error) throw error;
       records.push(...(data || []));
-      if (!data || data.length < 500) return records;
+      if (!data?.length || (count != null ? records.length >= count : data.length < 500)) return records;
+      offset += data.length;
     }
   }
 
@@ -133,19 +136,32 @@
     if (message) element.focus();
   }
 
+  function syncControls() {
+    root.querySelectorAll('[data-action="refresh"]').forEach(button => { button.disabled = state.loading || state.saving; });
+    root.querySelectorAll('[data-action="add-site"], [data-action="edit-site"], [data-action="delete-site"]').forEach(button => {
+      button.disabled = !state.ready || state.loading || state.saving;
+    });
+  }
+
   async function refresh() {
     if (state.loading || state.saving) return;
     state.loading = true;
     feedback('');
     root.querySelector('#sites-list').setAttribute('aria-busy', 'true');
-    root.querySelectorAll('[data-action="refresh"]').forEach(button => { button.disabled = true; });
+    syncControls();
     try {
       const result = await repository.load();
       if (!root.isConnected) return;
+      const firstLoad = !state.ready;
       state.sites = result.sites;
       state.equipment = result.equipment;
       state.ready = true;
-      if (!currentSite()) state.selectedId = (state.sites.find(site => site.name === 'Casa Buena') || state.sites[0])?.id || null;
+      if (firstLoad) state.selectedId = (state.sites.find(site => site.name === 'Casa Buena') || state.sites[0])?.id || null;
+      else if (state.selectedId && !currentSite()) {
+        state.selectedId = null;
+        if (root.querySelector('#screen-site-detail.active')) showScreen('sites');
+        feedback('This site is no longer available. The site list has been refreshed.');
+      }
       render();
     } catch (error) {
       if (!root.isConnected) return;
@@ -157,7 +173,7 @@
     } finally {
       state.loading = false;
       root.querySelector('#sites-list').setAttribute('aria-busy', 'false');
-      root.querySelectorAll('[data-action="refresh"]').forEach(button => { button.disabled = false; });
+      syncControls();
     }
   }
 
@@ -189,7 +205,7 @@
     const container = root.querySelector('#site-detail-content');
     const site = currentSite();
     if (!site) {
-      container.innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Sites</button><div class="card empty-state"><p class="t">No site selected</p><p class="d">Add a site or select one from All Sites.</p></div>';
+      container.innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Sites</button><div class="card empty-state"><h1 class="t" id="site-heading">No site selected</h1><p class="d">Add a site or select one from All Sites.</p></div>';
       return;
     }
     const items = visibleEquipment(site);
@@ -201,6 +217,7 @@
         <p class="sub">${escape(site.location)} · ${escape(site.phase)} — ${site.progress}% complete</p>
       </div><div class="page-head-actions">
         ${badge(site.status, siteStatuses)}
+        <button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Refresh</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="edit-site">Edit Site</button>
         <button type="button" class="btn btn-danger btn-sm" data-action="delete-site">Delete Site</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="review-tools">Review Assigned Tools</button>
@@ -224,11 +241,13 @@
     showScreen('site-detail', () => setActiveNav('sites'));
   }
 
-  function openDialog(title, content, wide = false) {
+  function openDialog(title, content, wide = false, view = '') {
+    if (!root.isConnected) return;
     if (!dialog.open) dialogReturnFocus = document.activeElement;
     root.querySelector('#sites-dialog-title').textContent = title;
     root.querySelector('#sites-dialog-content').innerHTML = content;
     dialog.classList.toggle('is-wide', wide);
+    dialog.dataset.view = view;
     if (!dialog.open) dialog.showModal();
     dialog.scrollTop = 0;
     (dialog.querySelector('[autofocus]') || dialog.querySelector('.sites-close')).focus();
@@ -242,6 +261,7 @@
   }
 
   function editSite(site = null) {
+    if (!state.ready || state.loading) return;
     const value = (field, fallback = '') => escape(site?.[field] ?? fallback);
     openDialog(site ? 'Edit Site' : 'Add Site', `
       <form id="sites-form" data-id="${value('id')}">
@@ -261,7 +281,7 @@
   }
 
   async function saveSite(form) {
-    if (state.saving || !form.reportValidity()) return;
+    if (state.saving || state.loading || !form.reportValidity()) return;
     const original = state.sites.find(site => site.id === form.dataset.id);
     const values = Object.fromEntries(new FormData(form));
     for (const field of ['name', 'location', 'assigned_engineer', 'phase']) {
@@ -295,11 +315,12 @@
 
   function setSaving(saving) {
     state.saving = saving;
+    syncControls();
     dialog.setAttribute('aria-busy', String(saving));
     dialog.querySelectorAll('button, input, select').forEach(element => { element.disabled = saving; });
     const submit = dialog.querySelector('[type="submit"], [data-action="confirm-delete"]');
     if (submit) {
-      if (saving) { submit.dataset.label = submit.textContent; submit.textContent = 'Saving…'; }
+      if (saving) { submit.dataset.label = submit.textContent; submit.textContent = submit.dataset.action === 'confirm-delete' ? 'Deleting…' : 'Saving…'; }
       else if (submit.dataset.label) submit.textContent = submit.dataset.label;
     }
   }
@@ -337,14 +358,15 @@
   function reviewTools() {
     const site = currentSite();
     if (!site) return;
+    if (!dialog.open) state.review = { search: '', status: '' };
     openDialog(`Assigned Tools — ${site.name}`, `
       <p class="sites-dialog-description">Review the equipment assigned to this site, including zero-quantity records. Assignments and holders are read-only.</p>
       <div class="table-toolbar">
-        <div class="field sites-review-search"><label for="sites-tool-search">Search equipment</label><input type="search" id="sites-tool-search" placeholder="Tool name, asset ID, brand or holder" autofocus></div>
-        <div class="field"><label for="sites-tool-status">Status</label><select id="sites-tool-status" class="chip-filter"><option value="">All statuses</option>${Object.entries(toolStatuses).map(([key, [label]]) => `<option value="${key}">${label}</option>`).join('')}</select></div>
+        <div class="field sites-review-search"><label for="sites-tool-search">Search equipment</label><input type="search" id="sites-tool-search" value="${escape(state.review.search)}" placeholder="Tool name, asset ID, brand or holder" autofocus></div>
+        <div class="field"><label for="sites-tool-status">Status</label><select id="sites-tool-status" class="chip-filter"><option value="">All statuses</option>${Object.entries(toolStatuses).map(([key, [label]]) => `<option value="${key}"${state.review.status === key ? ' selected' : ''}>${label}</option>`).join('')}</select></div>
       </div>
       <div id="sites-review-results" class="card" aria-live="polite"></div>
-      <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true);
+      <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true, 'review');
     filterTools();
   }
 
@@ -353,6 +375,7 @@
     if (!target || !currentSite()) return;
     const search = root.querySelector('#sites-tool-search').value.trim().toLowerCase();
     const status = root.querySelector('#sites-tool-status').value;
+    state.review = { search: root.querySelector('#sites-tool-search').value, status };
     const items = siteEquipment(currentSite()).filter(item => (!status || item.status === status) && (!search || [item.name, item.asset_id, item.brand, item.holder, item.current_holder_id].some(value => String(value || '').toLowerCase().includes(search))));
     target.innerHTML = inventoryTable(items, search || status ? 'No equipment matches your filters.' : 'No equipment is currently assigned to this site.');
   }
@@ -373,7 +396,7 @@
     const site = currentSite();
     const item = site && siteEquipment(site).find(record => record.id === id);
     if (!item) return;
-    const fromReview = Boolean(root.querySelector('#sites-review-results'));
+    const fromReview = dialog.open && dialog.dataset.view === 'review';
     const records = await repository.movements(site.id, item.id);
     const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Site', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
     openDialog(item.name, `

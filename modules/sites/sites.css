@@ -31,6 +31,7 @@
 #sites-module .sites-dialog .form-grid{grid-template-columns:1fr 1fr;}
 #sites-module .sites-dialog-actions{display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:24px;}
 #sites-module .sites-form-error{font-size:13px; line-height:1.5; padding:12px; border-radius:var(--radius-sm); margin-bottom:16px;}
+#sites-module .sites-form-error:focus{outline:2px solid var(--danger); outline-offset:2px;}
 #sites-module .sites-dialog-description{font-size:13px; line-height:1.6; color:var(--gray); margin-bottom:18px; overflow-wrap:anywhere;}
 #sites-module .sites-review-search{flex:1; min-width:180px;}
 #sites-module .sites-review-search input{padding:8px 13px; font-size:12.5px;}
