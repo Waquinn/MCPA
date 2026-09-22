@@ -7,6 +7,14 @@ const supabaseKey = 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58';
 var equipmentList = [];
 var currentEditId = null; 
 
+let currentPage = 1;
+const itemsPerPage = 10;
+
+function filterAndResetPage() {
+  currentPage = 1;
+  renderTable();
+}
+
 async function initMasterlist() {
   const tbody = document.getElementById("equipmentTableBody");
   if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--gray);">Loading data...</td></tr>`;
@@ -83,6 +91,16 @@ function getBadgeClass(status) {
   }
 }
 
+// Add this helper function at the top of your JS for the new condition colors
+function getConditionColor(condition) {
+  switch(condition.toLowerCase()) {
+    case 'good': return 'color: #059669; background: #d1fae5;'; // Green
+    case 'fair': return 'color: #d97706; background: #fef3c7;'; // Yellow/Amber
+    case 'damaged': return 'color: #dc2626; background: #fee2e2;'; // Red
+    default: return 'color: #6b7280; background: #f3f4f6;'; // Gray
+  }
+}
+
 function renderTable() {
   const searchInput = document.getElementById("searchEquipment");
   const typeFilter = document.getElementById("typeFilter");
@@ -94,6 +112,7 @@ function renderTable() {
   const statusVal = statusFilter ? statusFilter.value : "";
   const siteVal = siteFilter ? siteFilter.value : "";
 
+  // 1. Filter the data based on inputs
   const filtered = equipmentList.filter(item => {
     return (!search || item.assetId.toLowerCase().includes(search) || item.brand.toLowerCase().includes(search) || item.equipmentType.toLowerCase().includes(search)) &&
            (!typeVal || item.category === typeVal) &&
@@ -109,33 +128,92 @@ function renderTable() {
 
   if (filtered.length === 0) {
     if (emptyState) emptyState.classList.remove('hidden');
+    renderPagination(0, 0, 0, 0);
     return;
   }
   if (emptyState) emptyState.classList.add('hidden');
 
-  filtered.forEach(item => {
+  // 2. Pagination Math
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  
+  // Slice array to only show items for current page
+  const paginatedItems = filtered.slice(startIndex, endIndex);
+
+  // 3. Render Table Rows (Icons Removed, Text Buttons Restored)
+  paginatedItems.forEach(item => {
     const row = document.createElement("tr");
     row.className = "clickable";
-    row.style.cursor = "pointer";
-    row.onclick = () => showToolProfile(item.assetId);
     
     row.innerHTML = `
-      <td style="padding:12px;"><span class="tool-id-chip">${escapeHTML(item.assetId)}</span></td>
-      <td style="padding:12px;">
-        <div class="cell-name" style="font-weight:600;">${escapeHTML(item.equipmentType)}</div>
-        <div class="cell-sub" style="font-size:11px; color:var(--gray);">${escapeHTML(item.model !== '—' ? item.model : '')}</div>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">
+        <input type="checkbox" class="row-checkbox" value="${escapeHTML(item.assetId)}">
       </td>
-      <td style="padding:12px;">${escapeHTML(item.category)}</td>
-      <td style="padding:12px;">${escapeHTML(item.brand)}</td>
-      <td style="padding:12px;">${escapeHTML(item.site)}</td>
-      <td style="padding:12px;">${escapeHTML(item.holder)}</td>
-      <td style="padding:12px;"><span class="badge ${getBadgeClass(item.status)}">${item.status.toUpperCase()}</span></td>
-      <td style="padding:12px;">${escapeHTML(item.condition)}</td>
-      <td style="padding:12px;">${formatDate(item.createdAt)}</td>
-      <td style="padding:12px;"><span class="link-btn" style="color:var(--gold); font-weight:600;">View →</span></td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">
+        <span class="tool-id-chip">${escapeHTML(item.assetId)}</span>
+      </td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">
+        <div class="cell-name" style="font-weight:600;">${escapeHTML(item.equipmentType)}</div>
+        <div class="cell-sub" style="font-size:11px; color:var(--gray);">${escapeHTML(item.model !== '—' ? item.model : 'Standard')}</div>
+      </td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.category)}</td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.brand)}</td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.site)}</td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);"><span class="badge ${getBadgeClass(item.status)}">${item.status.toUpperCase()}</span></td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.condition)}</td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">${formatDate(item.createdAt)}</td>
+      <td style="padding:12px; border-bottom:1px solid var(--line); text-align:right;">
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="showToolProfile('${item.assetId}')" style="padding:4px 8px; border:none; background:none; color:var(--gold); font-weight:600; cursor:pointer;">View</button>
+          <button class="btn btn-secondary btn-sm" onclick="editTool('${item.assetId}')" style="padding:4px 8px; border:none; background:none; color:var(--gray); cursor:pointer;">Edit</button>
+        </div>
+      </td>
     `;
     tbody.appendChild(row);
   });
+
+  // 4. Render Pagination UI
+  renderPagination(totalItems, startIndex, endIndex, totalPages);
+}
+
+function renderPagination(total, start, end, totalPages) {
+  const container = document.getElementById('paginationContainer');
+  const infoEl = document.getElementById('paginationInfo');
+  const controlsEl = document.getElementById('paginationControls');
+  
+  if (!container || !infoEl || !controlsEl) return;
+
+  if (total === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'flex';
+  infoEl.innerHTML = `Showing <strong>${start + 1}-${end}</strong> of <strong>${total}</strong> entries`;
+
+  let buttonsHtml = `<button class="btn btn-secondary btn-sm" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">Prev</button>`;
+  
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === currentPage) {
+      buttonsHtml += `<button class="btn btn-accent btn-sm">${i}</button>`;
+    } else {
+      buttonsHtml += `<button class="btn btn-secondary btn-sm" onclick="changePage(${i})">${i}</button>`;
+    }
+  }
+
+  buttonsHtml += `<button class="btn btn-secondary btn-sm" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">Next</button>`;
+  controlsEl.innerHTML = buttonsHtml;
+}
+
+function changePage(page) {
+  currentPage = page;
+  renderTable();
 }
 
 // Renamed to avoid conflicting with the global sidebar navigation
