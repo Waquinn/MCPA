@@ -1,6 +1,6 @@
 if (typeof supabaseClient === 'undefined') {
-const supabaseUrl = 'https://zpqxlmiqwevhlstjirei.supabase.co';
-const supabaseKey = 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58';
+  const supabaseUrl = 'https://zpqxlmiqwevhlstjirei.supabase.co';
+  const supabaseKey = 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58';
   window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 }
 
@@ -8,6 +8,8 @@ var equipmentList = [];
 var currentEditId = null; 
 
 let currentPage = 1;
+let selectedAssets = []; 
+let bulkActionMode = ''; // Tracks if we are updating 'status' or 'location'
 const itemsPerPage = 10;
 
 function filterAndResetPage() {
@@ -91,15 +93,85 @@ function getBadgeClass(status) {
   }
 }
 
-// Add this helper function at the top of your JS for the new condition colors
 function getConditionColor(condition) {
   switch(condition.toLowerCase()) {
-    case 'good': return 'color: #059669; background: #d1fae5;'; // Green
-    case 'fair': return 'color: #d97706; background: #fef3c7;'; // Yellow/Amber
-    case 'damaged': return 'color: #dc2626; background: #fee2e2;'; // Red
-    default: return 'color: #6b7280; background: #f3f4f6;'; // Gray
+    case 'good': return 'color: #059669; background: #d1fae5;'; 
+    case 'fair': return 'color: #d97706; background: #fef3c7;'; 
+    case 'damaged': return 'color: #dc2626; background: #fee2e2;'; 
+    default: return 'color: #6b7280; background: #f3f4f6;'; 
   }
 }
+
+function updateBulkActionBar() {
+  const bar = document.getElementById('bulkActionBar');
+  const countSpan = document.getElementById('selectedCount');
+  if (!bar || !countSpan) return;
+
+  if (selectedAssets.length > 0) {
+    bar.style.display = 'flex';
+    countSpan.innerText = selectedAssets.length;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function updateSelectAllState() {
+  const checkboxes = Array.from(document.querySelectorAll('.row-checkbox'));
+  const selectAllCb = document.getElementById('selectAll');
+  if (!selectAllCb) return;
+
+  if (checkboxes.length > 0 && checkboxes.every(cb => cb.checked)) {
+    selectAllCb.checked = true;
+  } else {
+    selectAllCb.checked = false;
+  }
+}
+
+function handleCheckboxChange(assetId, isChecked) {
+  if (isChecked && !selectedAssets.includes(assetId)) {
+    selectedAssets.push(assetId);
+  } else if (!isChecked) {
+    selectedAssets = selectedAssets.filter(id => id !== assetId);
+  }
+}
+
+// --- NEW MODAL BULK FUNCTIONS ---
+function clearBulkSelection() {
+  selectedAssets = []; 
+  document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false); 
+  updateSelectAllState();
+  updateBulkActionBar();
+}
+
+function bulkUpdateStatus() {
+  if (selectedAssets.length === 0) return;
+  bulkActionMode = 'status';
+  document.getElementById('bulkModalTitle').innerText = `Update Status (${selectedAssets.length} items)`;
+  document.getElementById('bulkStatusField').style.display = 'block';
+  document.getElementById('bulkLocationField').style.display = 'none';
+  document.getElementById('bulkStatusSelect').required = true;
+  document.getElementById('bulkLocationInput').required = false;
+  document.getElementById('bulkActionForm').reset();
+  document.getElementById('bulkActionModal').style.display = 'flex';
+}
+
+function bulkAssignLocation() {
+  if (selectedAssets.length === 0) return;
+  bulkActionMode = 'location';
+  document.getElementById('bulkModalTitle').innerText = `Assign Location (${selectedAssets.length} items)`;
+  document.getElementById('bulkStatusField').style.display = 'none';
+  document.getElementById('bulkLocationField').style.display = 'block';
+  document.getElementById('bulkStatusSelect').required = false;
+  document.getElementById('bulkLocationInput').required = true;
+  document.getElementById('bulkActionForm').reset();
+  document.getElementById('bulkActionModal').style.display = 'flex';
+}
+
+function closeBulkModal() {
+  document.getElementById('bulkActionModal').style.display = 'none';
+  document.getElementById('bulkActionForm').reset();
+}
+// ---------------------------------
 
 function renderTable() {
   const searchInput = document.getElementById("searchEquipment");
@@ -112,7 +184,6 @@ function renderTable() {
   const statusVal = statusFilter ? statusFilter.value : "";
   const siteVal = siteFilter ? siteFilter.value : "";
 
-  // 1. Filter the data based on inputs
   const filtered = equipmentList.filter(item => {
     return (!search || item.assetId.toLowerCase().includes(search) || item.brand.toLowerCase().includes(search) || item.equipmentType.toLowerCase().includes(search)) &&
            (!typeVal || item.category === typeVal) &&
@@ -133,7 +204,6 @@ function renderTable() {
   }
   if (emptyState) emptyState.classList.add('hidden');
 
-  // 2. Pagination Math
   const totalItems = filtered.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   
@@ -142,18 +212,15 @@ function renderTable() {
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  
-  // Slice array to only show items for current page
   const paginatedItems = filtered.slice(startIndex, endIndex);
 
-  // 3. Render Table Rows (Icons Removed, Text Buttons Restored)
   paginatedItems.forEach(item => {
     const row = document.createElement("tr");
     row.className = "clickable";
     
     row.innerHTML = `
       <td style="padding:12px; border-bottom:1px solid var(--line);">
-        <input type="checkbox" class="row-checkbox" value="${escapeHTML(item.assetId)}">
+        <input type="checkbox" class="row-checkbox" value="${escapeHTML(item.assetId)}" ${selectedAssets.includes(item.assetId) ? 'checked' : ''}>
       </td>
       <td style="padding:12px; border-bottom:1px solid var(--line);">
         <span class="tool-id-chip">${escapeHTML(item.assetId)}</span>
@@ -178,8 +245,8 @@ function renderTable() {
     tbody.appendChild(row);
   });
 
-  // 4. Render Pagination UI
   renderPagination(totalItems, startIndex, endIndex, totalPages);
+  updateSelectAllState();
 }
 
 function renderPagination(total, start, end, totalPages) {
@@ -216,7 +283,6 @@ function changePage(page) {
   renderTable();
 }
 
-// Renamed to avoid conflicting with the global sidebar navigation
 function showMasterlistView(viewName) {
   const masterlistScreen = document.getElementById('screen-masterlist');
   const profileScreen = document.getElementById('screen-tool-profile');
@@ -230,7 +296,6 @@ function showMasterlistView(viewName) {
   }
 }
 
-// FIXED: Populates and switches to the tool-profile screen container
 function showToolProfile(assetId) {
   const item = equipmentList.find(eq => eq.assetId === assetId);
   if (!item) return;
@@ -299,7 +364,6 @@ function showToolProfile(assetId) {
     </div>
   `;
 
-  // Switch to the profile screen view defined in your HTML
   showMasterlistView('tool-profile');
 
   setTimeout(() => {
@@ -312,8 +376,6 @@ function showToolProfile(assetId) {
 }
 
 function editTool(assetId) {
-  // Removed showScreen('masterlist') so it doesn't force you out of the view
-
   const item = equipmentList.find(eq => eq.assetId === assetId);
   if (!item) return;
   
@@ -353,6 +415,85 @@ function setupMasterlistListeners() {
   const modal = document.getElementById('equipmentModal');
   const form = document.getElementById('equipmentForm');
   const trackingType = document.getElementById('trackingType');
+
+  // --- CONNECTING THE NEW BULK BUTTONS ---
+  const btnBulkStatus = document.getElementById('btnBulkStatus');
+  const btnBulkLocation = document.getElementById('btnBulkLocation');
+  const btnBulkCancel = document.getElementById('btnBulkCancel');
+  
+  if (btnBulkStatus) btnBulkStatus.onclick = bulkUpdateStatus;
+  if (btnBulkLocation) btnBulkLocation.onclick = bulkAssignLocation;
+  if (btnBulkCancel) btnBulkCancel.onclick = clearBulkSelection;
+
+  // --- CONNECTING THE BULK MODAL CLOSE BUTTONS ---
+  const closeBulkBtn = document.getElementById('closeBulkModal');
+  const cancelBulkBtn = document.getElementById('cancelBulkModal');
+  
+  if (closeBulkBtn) closeBulkBtn.onclick = closeBulkModal;
+  if (cancelBulkBtn) cancelBulkBtn.onclick = closeBulkModal;
+
+  // --- HANDLING THE BULK FORM SUBMIT ---
+  const bulkForm = document.getElementById('bulkActionForm');
+  if (bulkForm) {
+    bulkForm.onsubmit = async (e) => {
+      e.preventDefault();
+      
+      let updatePayload = {};
+      
+      if (bulkActionMode === 'status') {
+        const newStatus = document.getElementById('bulkStatusSelect').value;
+        if (!newStatus) return;
+        updatePayload = { status: newStatus };
+      } else if (bulkActionMode === 'location') {
+        const newLocation = document.getElementById('bulkLocationInput').value;
+        if (!newLocation.trim()) return;
+        updatePayload = { site: newLocation.trim() };
+      }
+
+      // Send to Supabase
+      const { error } = await supabaseClient
+        .from('equipment')
+        .update(updatePayload)
+        .in('asset_id', selectedAssets);
+
+      if (error) {
+        alert("Error updating items: " + error.message);
+      } else {
+        closeBulkModal();
+        clearBulkSelection(); 
+        initMasterlist(); 
+      }
+    };
+  }
+  // ----------------------------------------
+
+  // Listen for clicks on the "Select All" header checkbox
+  const selectAllBtn = document.getElementById('selectAll');
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+      
+      rowCheckboxes.forEach(cb => {
+        cb.checked = isChecked;
+        handleCheckboxChange(cb.value, isChecked);
+      });
+      
+      updateBulkActionBar();
+    });
+  }
+
+  // Listen for clicks on individual row checkboxes (using event delegation)
+  const tbody = document.getElementById('equipmentTableBody');
+  if (tbody) {
+    tbody.addEventListener('change', (e) => {
+      if (e.target.classList.contains('row-checkbox')) {
+        handleCheckboxChange(e.target.value, e.target.checked);
+        updateSelectAllState();
+        updateBulkActionBar();
+      }
+    });
+  }
 
   if (openBtn && modal) {
     openBtn.onclick = () => {
