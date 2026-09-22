@@ -1,30 +1,46 @@
-<section class="screen" id="screen-consumables">
+<section class="screen" id="screen-consumables" aria-labelledby="consumables-heading">
   <div class="page-head">
     <div>
-      <h1 class="display">Consumables</h1>
+      <h1 class="display" id="consumables-heading">Consumables</h1>
       <p class="sub">Stock monitoring and purchase alerts for frequently used materials</p>
     </div>
-    <div class="page-head-actions"><button class="btn btn-accent btn-sm" onclick="showScreen('purchase')">+ Purchase Request</button></div>
+    <div class="page-head-actions">
+      <button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Refresh</button>
+      <button type="button" class="btn btn-secondary btn-sm" data-action="add" disabled>+ Add Consumable</button>
+      <button type="button" class="btn btn-accent btn-sm" data-action="request" disabled>+ Purchase Request</button>
+    </div>
   </div>
 
-  <div class="notice" style="border-color:var(--danger); background:var(--danger-bg); margin-bottom:22px;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
-    <div><div class="t" style="color:var(--danger);">7 consumables below minimum stock</div><div class="d">Purchase requests are recommended for the items marked LOW STOCK below.</div></div>
+  <div id="consumables-feedback" class="cons-feedback hidden" role="status"></div>
+  <div id="consumables-alert" class="notice cons-alert" role="status" aria-live="polite">
+    <div><div class="t">Checking stock levels…</div><div class="d">Loading your consumables and purchase requests.</div></div>
   </div>
-
-  <div class="card">
+  <div class="table-toolbar cons-toolbar">
+    <div class="field cons-search"><label for="consumables-search">Search consumables</label><input id="consumables-search" type="search" placeholder="Item name or unit"></div>
+    <div class="field"><label for="consumables-filter">Stock status</label><select id="consumables-filter"><option value="">All stock</option><option value="attention">Needs restocking</option><option value="out">Out of stock</option><option value="low">Low stock</option><option value="ok">OK</option></select></div>
+    <span id="consumables-count" class="cons-muted" aria-live="polite"></span>
+  </div>
+  <div class="card" id="consumables-inventory" aria-busy="true">
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Item</th><th>Current Stock</th><th>Minimum Level</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-          <tr><td class="cell-name">Pipes (¾")</td><td class="mono">12</td><td class="mono">20</td><td><span class="badge badge-low">Low Stock</span></td><td><button class="btn btn-secondary btn-sm" onclick="showScreen('purchase')">Purchase Required</button></td></tr>
-          <tr><td class="cell-name">Cutting Discs</td><td class="mono">8</td><td class="mono">15</td><td><span class="badge badge-low">Low Stock</span></td><td><button class="btn btn-secondary btn-sm" onclick="showScreen('purchase')">Purchase Required</button></td></tr>
-          <tr><td class="cell-name">Drill Bits (Set)</td><td class="mono">30</td><td class="mono">10</td><td><span class="badge badge-ok">OK</span></td><td>—</td></tr>
-          <tr><td class="cell-name">Electrical Wire (10m)</td><td class="mono">6</td><td class="mono">12</td><td><span class="badge badge-low">Low Stock</span></td><td><button class="btn btn-secondary btn-sm" onclick="showScreen('purchase')">Purchase Required</button></td></tr>
-          <tr><td class="cell-name">Switches</td><td class="mono">45</td><td class="mono">20</td><td><span class="badge badge-ok">OK</span></td><td>—</td></tr>
-          <tr><td class="cell-name">Welding Rods (kg)</td><td class="mono">4</td><td class="mono">10</td><td><span class="badge badge-low">Low Stock</span></td><td><button class="btn btn-secondary btn-sm" onclick="showScreen('purchase')">Purchase Required</button></td></tr>
-        </tbody>
+        <caption class="cons-sr-only">Consumable stock levels and actions</caption>
+        <thead><tr><th scope="col">Item</th><th scope="col">Current Stock</th><th scope="col">Minimum Level</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+        <tbody id="consumables-rows"><tr><td colspan="5" class="empty-state">Loading consumables…</td></tr></tbody>
       </table>
     </div>
   </div>
+  <p class="cons-muted cons-note" id="consumables-updated">Stock alerts update after each change and every 30 seconds while this module is open.</p>
+  <div class="section-title"><h2>Purchase Requests</h2><span id="consumables-request-count" class="cons-muted"></span></div>
+  <div class="table-toolbar cons-toolbar">
+    <div class="field"><label for="consumables-request-filter">Request status</label><select id="consumables-request-filter"><option value="open">Open requests</option><option value="">All requests</option><option value="pending">Pending</option><option value="partial">Partially received</option><option value="received">Received</option><option value="cancelled">Cancelled</option></select></div>
+  </div>
+  <div class="card table-wrap"><table>
+    <caption class="cons-sr-only">Consumable purchase requests</caption>
+    <thead><tr><th scope="col">Request / Item</th><th scope="col">Requested</th><th scope="col">Received</th><th scope="col">Requester / Needed By</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+    <tbody id="consumables-request-rows"><tr><td colspan="6" class="empty-state">Loading requests…</td></tr></tbody>
+  </table></div>
+  <dialog id="consumables-dialog" aria-labelledby="consumables-dialog-title">
+    <div class="cons-dialog-head"><h2 class="display" id="consumables-dialog-title"></h2><button type="button" class="icon-btn cons-close" data-action="close" aria-label="Close dialog">×</button></div>
+    <div id="consumables-dialog-content"></div>
+  </dialog>
 </section>
