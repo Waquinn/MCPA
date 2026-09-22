@@ -233,7 +233,13 @@ function renderTable() {
       <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.brand)}</td>
       <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.site)}</td>
       <td style="padding:12px; border-bottom:1px solid var(--line);"><span class="badge ${getBadgeClass(item.status)}">${item.status.toUpperCase()}</span></td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.condition)}</td>
+      
+      <td style="padding:12px; border-bottom:1px solid var(--line);">
+        <span style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; ${getConditionColor(item.condition)}">
+          ${escapeHTML(item.condition)}
+        </span>
+      </td>
+      
       <td style="padding:12px; border-bottom:1px solid var(--line);">${formatDate(item.createdAt)}</td>
       <td style="padding:12px; border-bottom:1px solid var(--line); text-align:right;">
         <div style="display:flex; justify-content:flex-end; gap:8px;">
