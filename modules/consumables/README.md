@@ -82,8 +82,8 @@ snapshots, so renaming a material preserves the original request details.
 
 ### Access model
 
-The existing **Sign In button only reveals the UI**; it does not authenticate with
-Supabase. Following the established Sites setup, `anon` and `authenticated` can
+Existing-account sign-in establishes a Supabase session; public workspace access
+uses `anon`. Following the established Sites setup, `anon` and `authenticated` can
 read all Consumables records and invoke its five validated functions. Anyone who
 has the public API configuration has these capabilities. Requester names are user
 entered, not verified identities; this module does not introduce role approval.
@@ -91,8 +91,8 @@ entered, not verified identities; this module does not introduce role approval.
 RLS is enabled. Direct table inserts/updates/deletes are denied to browser roles;
 writes go through limited `SECURITY DEFINER` functions with an empty `search_path`,
 qualified table names and explicit execute grants. This protects stock/history
-consistency but does **not** provide user-level authorization. When real login is
-implemented, replace anonymous read/function grants and add the intended role
+consistency but does **not** provide user-level authorization. Before deploying
+account roles, replace anonymous read/function grants and add the intended role
 checks inside these functions as well as the read policies. See Supabase's
 [function security](https://supabase.com/docs/guides/database/functions) and
 [row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security).

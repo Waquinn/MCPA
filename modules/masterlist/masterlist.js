@@ -1,727 +1,292 @@
-if (typeof supabaseClient === 'undefined') {
-  const supabaseUrl = 'https://zpqxlmiqwevhlstjirei.supabase.co';
-  const supabaseKey = 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58';
-  window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-}
-
-var equipmentList = [];
-var currentEditId = null; 
-
-let currentPage = 1;
-let selectedAssets = []; 
-let bulkActionMode = ''; // Tracks if we are updating 'status' or 'location'
-const itemsPerPage = 10;
-
-function filterAndResetPage() {
-  currentPage = 1;
-  renderTable();
-}
-
-async function initMasterlist() {
-  const tbody = document.getElementById("equipmentTableBody");
-  if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--gray);">Loading data...</td></tr>`;
-
-  const { data, error } = await supabaseClient
-    .from('equipment')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error("Error fetching equipment:", error.message);
-    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:red;">Failed to load data.</td></tr>`;
-    return;
+/* The router loads this script once. Each mount owns its state and listeners. */
+(function () {
+  'use strict';
+  let active;
+  const labels = { AVAILABLE: 'Available', IN_USE: 'In Use', REPAIR: 'For Repair', MISSING: 'Missing' };
+  const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const status = value => { const key = String(value || 'AVAILABLE').toUpperCase().replace(/[ -]+/g, '_'); return ['FOR_REPAIR', 'UNDER_REPAIR'].includes(key) ? 'REPAIR' : key; };
+  const date = value => value && !Number.isNaN(Date.parse(value)) ? new Date(value).toLocaleDateString() : '—';
+  const node = (s, id) => s.root.querySelector('#' + id);
+  const current = s => active === s && !s.controller.signal.aborted && (!s.context.isCurrent || s.context.isCurrent());
+  function notice(s, message = '', error = false, target = 'masterlistFeedback') {
+    if (!current(s)) return;
+    const targetNode = node(s, target);
+    targetNode.textContent = message; targetNode.hidden = !message; targetNode.classList.toggle('is-error', error);
   }
-
-  equipmentList = (data || []).map(item => ({
-    assetId: item.asset_id,
-    equipmentType: item.name,
-    category: item.category || 'Uncategorized',
-    brand: item.brand || 'Unknown',
-    model: item.model || '—',
-    serialNumber: item.serial_number || '—',
-    site: item.site || 'Casa Buena',
-    holder: item.current_holder_id || '—',
-    status: formatDbStatus(item.status),
-    condition: item.condition || 'Good',
-    trackingType: item.tracking_type || 'Individual',
-    quantity: item.quantity || 1,
-    unit: item.unit || '',
-    details: item.details || '—',
-    createdAt: item.created_at
-  }));
-
-  populateFilters();
-  renderTable();
-  setupMasterlistListeners();
-}
-
-function populateFilters() {
-  const typeFilter = document.getElementById("typeFilter");
-  const siteFilter = document.getElementById("siteFilter");
-  
-  if (typeFilter) {
-    const currentType = typeFilter.value;
-    const categories = [...new Set(equipmentList.map(item => item.category).filter(Boolean))].sort();
-    typeFilter.innerHTML = '<option value="">Category</option>' + categories.map(c => `<option value="${c}">${escapeHTML(c)}</option>`).join('');
-    typeFilter.value = currentType;
+  function failure(error, action) {
+    console.error('Masterlist ' + action, error);
+    if (error?.code === '23503') return 'This item is linked to other records and must be kept to preserve its history.';
+    if (error?.code === '23505') return 'That identifier is already in use. Please try again.';
+    if (error?.code === '40001') return 'An active movement or another change prevents this update. Resolve the movement and refresh before retrying.';
+    if (['42501', 'PGRST301'].includes(error?.code)) return 'Your account cannot make this change. Check your session and access.';
+    if (error?.code === 'STALE') return 'The item changed or is no longer available. Refresh and try again.';
+    return 'Could not ' + action + '. Check your connection and try again.';
   }
-  
-  if (siteFilter) {
-    const currentSite = siteFilter.value;
-    const sites = [...new Set(equipmentList.map(item => item.site).filter(Boolean))].sort();
-    siteFilter.innerHTML = '<option value="">Site</option>' + sites.map(s => `<option value="${s}">${escapeHTML(s)}</option>`).join('');
-    siteFilter.value = currentSite;
-  }
-}
-
-function formatDbStatus(status) {
-  if (!status) return 'available';
-  const s = status.toString().toUpperCase();
-  if (s === 'IN_USE') return 'inuse';
-  if (s === 'REPAIR') return 'repair';
-  if (s === 'MISSING') return 'missing';
-  return 'available';
-}
-
-function getBadgeClass(status) {
-  switch (status) {
-    case "available": return "badge-available";
-    case "inuse": return "badge-inuse";
-    case "repair": return "badge-repair";
-    case "missing": return "badge-missing";
-    default: return "";
-  }
-}
-
-function getConditionColor(condition) {
-  switch(condition.toLowerCase()) {
-    case 'good': return 'color: #059669; background: #d1fae5;'; 
-    case 'fair': return 'color: #d97706; background: #fef3c7;'; 
-    case 'damaged': return 'color: #dc2626; background: #fee2e2;'; 
-    default: return 'color: #6b7280; background: #f3f4f6;'; 
-  }
-}
-
-function updateBulkActionBar() {
-  const bar = document.getElementById('bulkActionBar');
-  const countSpan = document.getElementById('selectedCount');
-  if (!bar || !countSpan) return;
-
-  if (selectedAssets.length > 0) {
-    bar.style.display = 'flex';
-    countSpan.innerText = selectedAssets.length;
-  } else {
-    bar.style.display = 'none';
-  }
-}
-
-function updateSelectAllState() {
-  const checkboxes = Array.from(document.querySelectorAll('.row-checkbox'));
-  const selectAllCb = document.getElementById('selectAll');
-  if (!selectAllCb) return;
-
-  if (checkboxes.length > 0 && checkboxes.every(cb => cb.checked)) {
-    selectAllCb.checked = true;
-  } else {
-    selectAllCb.checked = false;
-  }
-}
-
-function handleCheckboxChange(assetId, isChecked) {
-  if (isChecked && !selectedAssets.includes(assetId)) {
-    selectedAssets.push(assetId);
-  } else if (!isChecked) {
-    selectedAssets = selectedAssets.filter(id => id !== assetId);
-  }
-}
-
-// --- NEW MODAL BULK FUNCTIONS ---
-function clearBulkSelection() {
-  selectedAssets = []; 
-  document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false); 
-  updateSelectAllState();
-  updateBulkActionBar();
-}
-
-function bulkUpdateStatus() {
-  if (selectedAssets.length === 0) return;
-  bulkActionMode = 'status';
-  document.getElementById('bulkModalTitle').innerText = `Update Status (${selectedAssets.length} items)`;
-  document.getElementById('bulkStatusField').style.display = 'block';
-  document.getElementById('bulkLocationField').style.display = 'none';
-  document.getElementById('bulkStatusSelect').required = true;
-  document.getElementById('bulkLocationInput').required = false;
-  document.getElementById('bulkActionForm').reset();
-  document.getElementById('bulkActionModal').style.display = 'flex';
-}
-
-function bulkAssignLocation() {
-  if (selectedAssets.length === 0) return;
-  bulkActionMode = 'location';
-  document.getElementById('bulkModalTitle').innerText = `Assign Location (${selectedAssets.length} items)`;
-  document.getElementById('bulkStatusField').style.display = 'none';
-  document.getElementById('bulkLocationField').style.display = 'block';
-  document.getElementById('bulkStatusSelect').required = false;
-  document.getElementById('bulkLocationInput').required = true;
-  document.getElementById('bulkActionForm').reset();
-  document.getElementById('bulkActionModal').style.display = 'flex';
-}
-
-function closeBulkModal() {
-  document.getElementById('bulkActionModal').style.display = 'none';
-  document.getElementById('bulkActionForm').reset();
-}
-// ---------------------------------
-
-function renderTable() {
-  const searchInput = document.getElementById("searchEquipment");
-  const typeFilter = document.getElementById("typeFilter");
-  const statusFilter = document.getElementById("statusFilter");
-  const siteFilter = document.getElementById("siteFilter");
-
-  const search = searchInput ? searchInput.value.toLowerCase().trim() : "";
-  const typeVal = typeFilter ? typeFilter.value : "";
-  const statusVal = statusFilter ? statusFilter.value : "";
-  const siteVal = siteFilter ? siteFilter.value : "";
-
-  const filtered = equipmentList.filter(item => {
-    return (!search || item.assetId.toLowerCase().includes(search) || item.brand.toLowerCase().includes(search) || item.equipmentType.toLowerCase().includes(search)) &&
-           (!typeVal || item.category === typeVal) &&
-           (!statusVal || item.status === statusVal.toLowerCase().replace(/\s+/g, '')) &&
-           (!siteVal || item.site === siteVal);
-  });
-
-  const tbody = document.getElementById("equipmentTableBody");
-  const emptyState = document.getElementById("emptyState");
-  if (!tbody) return;
-
-  tbody.innerHTML = "";
-
-  if (filtered.length === 0) {
-    if (emptyState) emptyState.classList.remove('hidden');
-    renderPagination(0, 0, 0, 0);
-    return;
-  }
-  if (emptyState) emptyState.classList.add('hidden');
-
-  const totalItems = filtered.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
-  
-  if (currentPage > totalPages) currentPage = totalPages;
-  if (currentPage < 1) currentPage = 1;
-
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const paginatedItems = filtered.slice(startIndex, endIndex);
-
-  paginatedItems.forEach(item => {
-    const row = document.createElement("tr");
-    row.className = "clickable";
-    
-    row.innerHTML = `
-      <td style="padding:12px; border-bottom:1px solid var(--line);">
-        <input type="checkbox" class="row-checkbox" value="${escapeHTML(item.assetId)}" ${selectedAssets.includes(item.assetId) ? 'checked' : ''}>
-      </td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);">
-        <span class="tool-id-chip">${escapeHTML(item.assetId)}</span>
-      </td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);">
-        <div class="cell-name" style="font-weight:600;">${escapeHTML(item.equipmentType)}</div>
-        <div class="cell-sub" style="font-size:11px; color:var(--gray);">${escapeHTML(item.model !== '—' ? item.model : 'Standard')}</div>
-      </td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.category)}</td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.brand)}</td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.site)}</td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);"><span class="badge ${getBadgeClass(item.status)}">${item.status.toUpperCase()}</span></td>
-      
-      <td style="padding:12px; border-bottom:1px solid var(--line);">
-        <span style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; ${getConditionColor(item.condition)}">
-          ${escapeHTML(item.condition)}
-        </span>
-      </td>
-      
-      <td style="padding:12px; border-bottom:1px solid var(--line);">${formatDate(item.createdAt)}</td>
-      <td style="padding:12px; border-bottom:1px solid var(--line); text-align:right;">
-        <div style="display:flex; justify-content:flex-end; gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="showToolProfile('${item.assetId}')" style="padding:4px 8px; border:none; background:none; color:var(--gold); font-weight:600; cursor:pointer;">View</button>
-          <button class="btn btn-secondary btn-sm" onclick="editTool('${item.assetId}')" style="padding:4px 8px; border:none; background:none; color:var(--gray); cursor:pointer;">Edit</button>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  renderPagination(totalItems, startIndex, endIndex, totalPages);
-  updateSelectAllState();
-}
-
-function renderPagination(total, start, end, totalPages) {
-  const container = document.getElementById('paginationContainer');
-  const infoEl = document.getElementById('paginationInfo');
-  const controlsEl = document.getElementById('paginationControls');
-  
-  if (!container || !infoEl || !controlsEl) return;
-
-  if (total === 0) {
-    container.style.display = 'none';
-    return;
-  }
-  
-  container.style.display = 'flex';
-  infoEl.innerHTML = `Showing <strong>${start + 1}-${end}</strong> of <strong>${total}</strong> entries`;
-
-  let buttonsHtml = `<button class="btn btn-secondary btn-sm" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})">Prev</button>`;
-  
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === currentPage) {
-      buttonsHtml += `<button class="btn btn-accent btn-sm">${i}</button>`;
-    } else {
-      buttonsHtml += `<button class="btn btn-secondary btn-sm" onclick="changePage(${i})">${i}</button>`;
+  async function read(s, table, columns = '*') {
+    const rows = [];
+    // Continue until empty, including when the API caps pages below 500 rows.
+    for (let offset = 0; current(s); ) {
+      let query = s.client.from(table).select(columns).order('id', { ascending: true }).range(offset, offset + 499);
+      if (query.abortSignal) query = query.abortSignal(s.controller.signal);
+      const result = await query;
+      if (result.error) throw result.error;
+      const page = result.data || [];
+      rows.push(...page);
+      if (!page.length) break;
+      offset += page.length;
     }
+    return rows;
   }
-
-  buttonsHtml += `<button class="btn btn-secondary btn-sm" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})">Next</button>`;
-  controlsEl.innerHTML = buttonsHtml;
-}
-
-function changePage(page) {
-  currentPage = page;
-  renderTable();
-}
-
-function showMasterlistView(viewName) {
-  const masterlistScreen = document.getElementById('screen-masterlist');
-  const profileScreen = document.getElementById('screen-tool-profile');
-
-  if (viewName === 'masterlist') {
-    if (masterlistScreen) masterlistScreen.style.display = 'block';
-    if (profileScreen) profileScreen.style.display = 'none';
-  } else if (viewName === 'tool-profile') {
-    if (masterlistScreen) masterlistScreen.style.display = 'none';
-    if (profileScreen) profileScreen.style.display = 'block';
+  function options(select, entries, placeholder, selected = select.value) {
+    select.replaceChildren(new Option(placeholder, ''));
+    entries.forEach(([value, label]) => select.add(new Option(label, value)));
+    select.value = selected;
   }
-}
-
-function showToolProfile(assetId) {
-  const item = equipmentList.find(eq => eq.assetId === assetId);
-  if (!item) return;
-
-  const content = document.getElementById("profileContent");
-  if (!content) return;
-
-  content.innerHTML = `
-    <div class="two-col" style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:16px;">
-      <div>
-        <div class="page-head" style="margin-bottom:16px;">
-          <div>
-            <h1 class="display" style="font-size:20px; font-weight:700; margin:0 0 4px 0;">${escapeHTML(item.equipmentType)} — ${escapeHTML(item.assetId)}</h1>
-            <p class="sub" style="color:var(--gray); font-size:13px; margin:0;">${escapeHTML(item.brand)} · ${escapeHTML(item.model !== '—' ? item.model : 'Standard Model')}</p>
-          </div>
-          <span class="badge ${getBadgeClass(item.status)}" style="padding:8px 14px; text-transform:uppercase;">${item.status}</span>
-        </div>
-
-        <div class="card" style="aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; background:#f4f4f4; color:#666; margin-bottom:22px; border-radius:8px; border:1px solid var(--line);">
-          <div style="text-align:center;">
-            <div style="font-size:13px; font-weight:600;">Tool Photo Placeholder</div>
-          </div>
-        </div>
-
-        <div class="section-title"><h2 style="font-size:15px; font-weight:600; margin-bottom:8px;">Movement History</h2></div>
-        <div class="card card-pad" style="background:#fff; padding:16px; border-radius:8px; border:1px solid var(--line);">
-          <div class="timeline">
-            <div class="tl-item">
-              <div class="tl-date" style="font-size:11px; color:var(--gray);">${formatDate(item.createdAt)}</div>
-              <div class="tl-title" style="font-weight:600; font-size:13px;">Registered into Masterlist</div>
-              <div class="tl-detail" style="font-size:12px; color:#555; margin-top:2px;">Item added to inventory database with initial condition: ${escapeHTML(item.condition)}.</div>
-              <div class="tl-meta" style="font-size:11px; margin-top:4px;"><span>Status <b>${item.status.toUpperCase()}</b></span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="section-title"><h2 style="font-size:15px; font-weight:600; margin-bottom:8px;">Tool Information</h2></div>
-        <div class="card card-pad" style="background:#fff; padding:16px; border-radius:8px; border:1px solid var(--line); margin-bottom:22px;">
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Tool ID</span><span class="v" style="font-weight:600;"><span class="tool-id-chip">${escapeHTML(item.assetId)}</span></span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Category</span><span class="v" style="font-weight:600;">${escapeHTML(item.category)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Brand</span><span class="v" style="font-weight:600;">${escapeHTML(item.brand)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Model</span><span class="v" style="font-weight:600;">${escapeHTML(item.model)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Serial Number</span><span class="v mono" style="font-weight:600;">${escapeHTML(item.serialNumber)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Condition</span><span class="v" style="font-weight:600;">${escapeHTML(item.condition)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Tracking Type</span><span class="v" style="font-weight:600;">${escapeHTML(item.trackingType)}</span></div>
-          ${item.trackingType === 'Bulk' ? `<div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Quantity & Unit</span><span class="v" style="font-weight:600;">${escapeHTML(item.quantity)}${escapeHTML(item.unit)}</span></div>` : ''}
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Identifying Details</span><span class="v" style="font-weight:600;">${escapeHTML(item.details)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Current Location</span><span class="v" style="font-weight:600;">${escapeHTML(item.site)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Current Holder</span><span class="v" style="font-weight:600;">${escapeHTML(item.holder)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0;"><span class="k" style="color:var(--gray); font-size:13px;">Status</span><span class="v" style="font-weight:600;"><span class="badge ${getBadgeClass(item.status)}">${item.status.toUpperCase()}</span></span></div>
-        </div>
-
-        <div class="section-title"><h2 style="font-size:15px; font-weight:600; margin-bottom:8px;">Actions & QR Tag</h2></div>
-        <div class="card card-pad" style="background:#fff; padding:16px; border-radius:8px; border:1px solid var(--line); text-align:center;">
-          <div id="qrContainerProfile" style="margin:0 auto 12px; display:inline-block; min-width:96px; min-height:96px;"></div>
-          <div style="font-weight:700; font-size:13px; margin-bottom:14px;">${escapeHTML(item.assetId)}</div>
-          
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <button class="btn btn-secondary btn-block btn-sm" onclick="editTool('${item.assetId}')" style="padding:8px; cursor:pointer;">Edit Tool</button>
-            <button class="btn btn-secondary btn-block btn-sm" onclick="printQRTag('${item.assetId}')" style="padding:8px; cursor:pointer;">Print Tag</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  showMasterlistView('tool-profile');
-
-  setTimeout(() => {
-    const qrEl = document.getElementById("qrContainerProfile");
-    if (qrEl) {
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(item.assetId)}`;
-      qrEl.innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width:96px; height:96px; border-radius:4px; display:block; margin:0 auto;">`;
-    }
-  }, 50);
-}
-
-function editTool(assetId) {
-  const item = equipmentList.find(eq => eq.assetId === assetId);
-  if (!item) return;
-  
-  currentEditId = assetId;
-
-  document.getElementById('equipmentType').value = item.equipmentType || '';
-  document.getElementById('equipmentCategory').value = item.category || '';
-  document.getElementById('brand').value = item.brand !== 'Unknown' ? item.brand : '';
-  document.getElementById('equipmentModel').value = item.model !== '—' ? item.model : '';
-  document.getElementById('serialNumber').value = item.serialNumber !== '—' ? item.serialNumber : '';
-  document.getElementById('equipmentCondition').value = item.condition || 'Good';
-  document.getElementById('trackingType').value = item.trackingType || 'Individual';
-  document.getElementById('equipmentQuantity').value = item.quantity || 1;
-  document.getElementById('equipmentUnit').value = item.unit || '';
-  document.getElementById('identifyingDetails').value = item.details !== '—' ? item.details : '';
-
-  const trackingSelect = document.getElementById('trackingType');
-  if (trackingSelect) trackingSelect.dispatchEvent(new Event('change'));
-
-  const modal = document.getElementById('equipmentModal');
-  if (modal) {
-    const modalTitle = modal.querySelector('h2');
-    const modalSubmitBtn = modal.querySelector('button[type="submit"]');
-    
-    if (modalTitle) modalTitle.innerText = `Edit Tool: ${assetId}`;
-    if (modalSubmitBtn) modalSubmitBtn.innerText = 'Update Item';
-    
-    modal.style.display = 'flex';
+  const categories = rows => [...new Set(rows.map(row => row.category).filter(value => typeof value === 'string' && value.trim()))].sort((a, b) => a.localeCompare(b));
+  const siteName = (s, row) => row.site_id ? s.sites.find(site => site.id === row.site_id)?.name || 'Site unavailable' : 'Unassigned';
+  function references(s) {
+    const sites = s.sites.map(site => [site.id, site.name]);
+    options(node(s, 'siteFilter'), [['__unassigned__', 'Unassigned'], ...sites], 'All sites');
+    options(node(s, 'typeFilter'), [['__uncategorized__', 'Uncategorized'], ...categories(s.rows).map(name => [name, name])], 'All categories');
+    options(node(s, 'equipmentSite'), sites, s.sites.length ? 'Unassigned' : 'No sites yet — unassigned');
+    options(node(s, 'bulkLocationInput'), sites, 'Unassigned');
+    options(node(s, 'equipmentCategory'), categories(s.rows).map(name => [name, name]), 'Select category');
+    node(s, 'equipmentCategory').add(new Option('+ Add a category…', '__new__'));
   }
-}
-
-function setupMasterlistListeners() {
-  const openBtn = document.getElementById('openAddEquipment');
-  const closeBtn = document.getElementById('closeEquipmentModal');
-  const cancelBtn = document.getElementById('cancelEquipmentModal');
-  const exportBtn = document.getElementById('exportBtn'); 
-  const modal = document.getElementById('equipmentModal');
-  const form = document.getElementById('equipmentForm');
-  const trackingType = document.getElementById('trackingType');
-
-  // --- CONNECTING THE NEW BULK BUTTONS ---
-  const btnBulkStatus = document.getElementById('btnBulkStatus');
-  const btnBulkLocation = document.getElementById('btnBulkLocation');
-  const btnBulkCancel = document.getElementById('btnBulkCancel');
-  
-  if (btnBulkStatus) btnBulkStatus.onclick = bulkUpdateStatus;
-  if (btnBulkLocation) btnBulkLocation.onclick = bulkAssignLocation;
-  if (btnBulkCancel) btnBulkCancel.onclick = clearBulkSelection;
-
-  // --- CONNECTING THE BULK MODAL CLOSE BUTTONS ---
-  const closeBulkBtn = document.getElementById('closeBulkModal');
-  const cancelBulkBtn = document.getElementById('cancelBulkModal');
-  
-  if (closeBulkBtn) closeBulkBtn.onclick = closeBulkModal;
-  if (cancelBulkBtn) cancelBulkBtn.onclick = closeBulkModal;
-
-  // --- HANDLING THE BULK FORM SUBMIT ---
-  const bulkForm = document.getElementById('bulkActionForm');
-  if (bulkForm) {
-    bulkForm.onsubmit = async (e) => {
-      e.preventDefault();
-      
-      let updatePayload = {};
-      
-      if (bulkActionMode === 'status') {
-        const newStatus = document.getElementById('bulkStatusSelect').value;
-        if (!newStatus) return;
-        updatePayload = { status: newStatus };
-      } else if (bulkActionMode === 'location') {
-        const newLocation = document.getElementById('bulkLocationInput').value;
-        if (!newLocation.trim()) return;
-        updatePayload = { site: newLocation.trim() };
+  async function refresh(s = active) {
+    if (!s || !current(s) || s.loading) return;
+    s.loading = true;
+    notice(s);
+    node(s, 'equipmentTableBody').innerHTML = '<tr><td colspan="10" class="masterlist-state">Loading equipment…</td></tr>';
+    node(s, 'emptyState').classList.add('hidden');
+    node(s, 'paginationContainer').style.display = 'none';
+    node(s, 'openAddEquipment').disabled = true;
+    try {
+      const [rows, sites] = await Promise.all([read(s, 'equipment'), read(s, 'sites', 'id,name')]);
+      if (!current(s)) return;
+      s.rows = rows.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')) || String(a.id).localeCompare(String(b.id)));
+      s.sites = sites.sort((a, b) => a.name.localeCompare(b.name));
+      s.selected = new Set([...s.selected].filter(id => rows.some(row => row.id === id)));
+      references(s); render(s);
+      if (s.profileId) profile(s, s.profileId);
+    } catch (error) {
+      if (!current(s)) return;
+      node(s, 'equipmentTableBody').innerHTML = '<tr><td colspan="10" class="masterlist-state">Equipment could not be loaded. Use Refresh to retry.</td></tr>';
+      notice(s, failure(error, 'load equipment and sites'), true);
+    } finally { if (current(s)) { s.loading = false; node(s, 'openAddEquipment').disabled = false; } }
+  }
+  function filtered(s) {
+    const search = node(s, 'searchEquipment').value.trim().toLocaleLowerCase();
+    const category = node(s, 'typeFilter').value, statusValue = node(s, 'statusFilter').value, site = node(s, 'siteFilter').value;
+    return s.rows.filter(row => (!search || [row.asset_id, row.name, row.brand, row.model, row.serial_number, row.category, siteName(s, row)].some(value => String(value ?? '').toLocaleLowerCase().includes(search))) &&
+      (!category || (category === '__uncategorized__' ? !row.category : row.category === category)) && (!statusValue || status(row.status) === statusValue) &&
+      (!site || (site === '__unassigned__' ? !row.site_id : row.site_id === site)));
+  }
+  function badge(row) {
+    const key = status(row.status), className = { AVAILABLE: 'available', IN_USE: 'inuse', REPAIR: 'repair', MISSING: 'missing' }[key] || 'neutral';
+    return `<span class="badge badge-${className}">${escape(labels[key] || row.status || 'Unknown')}</span>`;
+  }
+  const button = (action, text, id = '', extra = '') => `<button type="button" class="btn btn-secondary btn-sm" data-action="${action}" data-id="${escape(id)}" ${extra}>${text}</button>`;
+  function selection(s) {
+    const boxes = [...s.root.querySelectorAll('.row-checkbox')], count = boxes.filter(box => box.checked).length;
+    node(s, 'selectAll').checked = !!boxes.length && count === boxes.length;
+    node(s, 'selectAll').indeterminate = count > 0 && count < boxes.length;
+    node(s, 'bulkActionBar').style.display = s.selected.size ? 'flex' : 'none';
+    node(s, 'selectedCount').textContent = s.selected.size;
+  }
+  function render(s) {
+    if (!current(s)) return;
+    const rows = filtered(s), size = Number(window.MCPA.getPreferences?.().pageSize) || 10, pages = Math.max(1, Math.ceil(rows.length / size));
+    s.page = Math.max(1, Math.min(s.page, pages));
+    const start = (s.page - 1) * size;
+    node(s, 'equipmentTableBody').innerHTML = rows.slice(start, start + size).map(row => `<tr>
+      <td><input type="checkbox" class="row-checkbox" value="${escape(row.id)}" aria-label="Select ${escape(row.asset_id)}" ${s.selected.has(row.id) ? 'checked' : ''}></td>
+      <td><span class="tool-id-chip">${escape(row.asset_id || row.id)}</span></td><td><div class="cell-name">${escape(row.name)}</div><div class="cell-sub">${escape(row.model || '—')}</div></td>
+      <td>${escape(row.category || 'Uncategorized')}</td><td>${escape(row.brand || '—')}</td><td>${escape(siteName(s, row))}</td><td>${badge(row)}</td><td>${escape(row.condition || 'Not assessed')}</td><td>${escape(date(row.created_at))}</td>
+      <td><div class="masterlist-actions">${button('view', 'View', row.id)}${button('edit', 'Edit', row.id)}${button('delete', 'Delete', row.id)}</div></td></tr>`).join('');
+    node(s, 'emptyState').classList.toggle('hidden', rows.length > 0);
+    node(s, 'emptyState').querySelector('.d').textContent = s.rows.length ? 'Try adjusting your search or filters.' : 'Add an item to register equipment.';
+    node(s, 'paginationContainer').style.display = rows.length ? 'flex' : 'none';
+    node(s, 'paginationInfo').textContent = `Showing ${rows.length ? start + 1 : 0}–${Math.min(start + size, rows.length)} of ${rows.length} entries`;
+    node(s, 'paginationControls').innerHTML = button('page', 'Previous', s.page - 1, s.page === 1 ? 'disabled' : '') + `<span class="masterlist-page">Page ${s.page} of ${pages}</span>` + button('page', 'Next', s.page + 1, s.page === pages ? 'disabled' : '');
+    selection(s);
+  }
+  function view(s, name) {
+    ['masterlist', 'tool-profile'].forEach(key => { node(s, 'screen-' + key).style.display = name === key ? 'block' : 'none'; node(s, 'screen-' + key).classList.toggle('active', name === key); });
+    if (name === 'masterlist') s.profileId = null;
+  }
+  function profile(s, id) {
+    const row = s.rows.find(item => item.id === id || item.asset_id === id);
+    if (!row) { view(s, 'masterlist'); notice(s, 'This item is no longer available. Refresh the Masterlist.', true); return; }
+    s.profileId = row.id;
+    const fields = [['Asset ID', row.asset_id], ['Category', row.category], ['Brand', row.brand], ['Model', row.model], ['Serial number', row.serial_number], ['Condition', row.condition], ['Tracking type', row.tracking_type], ['Quantity', `${row.quantity ?? 1} ${row.unit || ''}`], ['Details', row.details], ['Site', siteName(s, row)], ['Holder reference', row.current_holder_id], ['Registered', date(row.created_at)]];
+    node(s, 'profileContent').innerHTML = `<div class="page-head"><div><h1 class="display">${escape(row.name)}</h1><p class="sub">${escape(row.asset_id)}</p></div>${badge(row)}</div><div class="masterlist-profile"><div class="card card-pad"><h2>Equipment information</h2>${fields.map(([label, value]) => `<div class="masterlist-kv"><span>${label}</span><strong>${escape(value ?? '—')}</strong></div>`).join('')}</div><div class="card card-pad"><h2>Actions &amp; QR tag</h2><div class="masterlist-tag"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&amp;data=${encodeURIComponent(row.asset_id || row.id)}" alt="Equipment QR tag" width="120" height="120"><p>${escape(row.asset_id || row.id)}</p></div><div class="masterlist-actions">${button('edit', 'Edit item', row.id)}${button('print', 'Print tag', row.id)}${button('delete', 'Delete item', row.id)}</div><h2 style="margin-top:24px">Movement history</h2><div id="equipmentHistory" aria-live="polite">Loading history…</div><p class="sub">Full movement records are available in Activity Log.</p>${button('activity', 'View activity')}</div></div>`;
+    view(s, 'tool-profile');
+    loadHistory(s, row.id, node(s, 'equipmentHistory'));
+  }
+  async function loadHistory(s, id, container) {
+    try {
+      let query = s.client.from('equipment_history').select('id,action,created_at').eq('equipment_id', id).order('created_at', { ascending: false }).limit(20);
+      if (query.abortSignal) query = query.abortSignal(s.controller.signal);
+      const result = await query;
+      if (result.error) throw result.error;
+      if (!current(s) || s.profileId !== id || !container.isConnected) return;
+      container.innerHTML = result.data?.length ? '<div class="timeline">' + result.data.map(row => `<div class="tl-item"><div class="tl-date">${escape(date(row.created_at))}</div><div class="tl-title">${escape(row.action || 'Movement recorded')}</div></div>`).join('') + '</div><p class="sub">Showing the latest 20 records at most.</p>' : '<p class="sub">No movement history has been recorded for this item.</p>';
+    } catch (error) { if (current(s) && container.isConnected) container.textContent = failure(error, 'load movement history') + ' Reopen this item to retry.'; }
+  }
+  function busyForm(s, id, busy) { node(s, id).querySelectorAll('input,select,textarea,button').forEach(input => { input.disabled = busy; }); node(s, id).setAttribute('aria-busy', String(busy)); }
+  function formChoices(s) {
+    const bulk = node(s, 'trackingType').value === 'Bulk', adding = node(s, 'equipmentCategory').value === '__new__';
+    ['quantityGroup', 'unitGroup'].forEach(id => { node(s, id).style.display = bulk ? 'block' : 'none'; });
+    ['equipmentQuantity', 'equipmentUnit'].forEach(id => { node(s, id).required = bulk; });
+    node(s, 'newCategoryGroup').hidden = !adding; node(s, 'newEquipmentCategory').required = adding;
+  }
+  function preserve(select, value) { if (value && ![...select.options].some(option => option.value === String(value))) select.add(new Option(value, value)); select.value = value ?? ''; }
+  async function edit(s, id) {
+    if (s.busy || s.loading) return;
+    const row = id ? s.rows.find(item => item.id === id || item.asset_id === id) : null;
+    if (id && !row) return notice(s, 'This item is no longer available.', true);
+    s.editId = row?.id || null;
+    s.editOriginal = row ? { ...row } : null;
+    const sequence = ++s.formSequence;
+    node(s, 'equipmentForm').reset(); notice(s, '', false, 'equipmentFormFeedback');
+    node(s, 'modalTitle').textContent = row ? 'Edit item: ' + row.asset_id : 'Add new item'; node(s, 'modalSubmitBtn').textContent = row ? 'Update item' : 'Save item';
+    const fields = { equipmentType: 'name', equipmentCategory: 'category', brand: 'brand', equipmentModel: 'model', serialNumber: 'serial_number', equipmentCondition: 'condition', trackingType: 'tracking_type', equipmentQuantity: 'quantity', equipmentUnit: 'unit', identifyingDetails: 'details', equipmentSite: 'site_id' };
+    Object.entries(fields).forEach(([id, key]) => { const input = node(s, id), value = row?.[key] ?? ({ equipmentQuantity: 1, equipmentCondition: 'Good', trackingType: 'Individual' }[id] ?? ''); if (input.tagName === 'SELECT') preserve(input, value); else input.value = value; });
+    formChoices(s); node(s, 'equipmentModal').style.display = 'flex'; s.formLoading = true; busyForm(s, 'equipmentForm', true);
+    try {
+      const [sites, rows] = await Promise.all([read(s, 'sites', 'id,name'), read(s, 'equipment', 'id,category')]);
+      if (!current(s) || sequence !== s.formSequence) return;
+      s.sites = sites.sort((a, b) => a.name.localeCompare(b.name));
+      options(node(s, 'equipmentSite'), s.sites.map(site => [site.id, site.name]), sites.length ? 'Unassigned' : 'No sites yet — unassigned', row?.site_id || '');
+      if (row?.site_id && !sites.some(site => site.id === row.site_id)) { node(s, 'equipmentSite').add(new Option('Assigned site unavailable', row.site_id)); node(s, 'equipmentSite').value = row.site_id; }
+      options(node(s, 'equipmentCategory'), categories(rows).map(name => [name, name]), 'Select category', row?.category || '');
+      node(s, 'equipmentCategory').add(new Option('+ Add a category…', '__new__')); if (row?.category) preserve(node(s, 'equipmentCategory'), row.category);
+      s.formReady = true;
+    } catch (error) { if (current(s) && sequence === s.formSequence) { s.formReady = false; notice(s, failure(error, 'load form choices') + ' Close and reopen the form to retry.', true, 'equipmentFormFeedback'); } }
+    finally { if (current(s) && sequence === s.formSequence) { s.formLoading = false; busyForm(s, 'equipmentForm', false); node(s, 'modalSubmitBtn').disabled = !s.formReady; node(s, 'equipmentType').focus(); } }
+  }
+  function closeEditor(s) { if (s.busy) return; ++s.formSequence; s.formLoading = false; s.editId = null; node(s, 'equipmentModal').style.display = 'none'; }
+  async function save(s, event) {
+    event.preventDefault();
+    if (s.busy || s.formLoading || !s.formReady || !node(s, 'equipmentForm').reportValidity()) return;
+    const value = id => node(s, id).value.trim();
+    let category = value('equipmentCategory') === '__new__' ? value('newEquipmentCategory').replace(/\s+/g, ' ') : value('equipmentCategory');
+    category = categories(s.rows).find(name => name.toLowerCase() === category.toLowerCase()) || category;
+    const bulk = value('trackingType') === 'Bulk', quantity = bulk ? Number(value('equipmentQuantity')) : 1;
+    if (!value('equipmentType') || !category || category.length > 120 || !Number.isSafeInteger(quantity) || quantity < 0) return notice(s, 'Enter an item name, a category up to 120 characters, and a whole, nonnegative quantity.', true, 'equipmentFormFeedback');
+    const payload = { name: value('equipmentType'), category, brand: value('brand') || null, model: value('equipmentModel') || null, serial_number: value('serialNumber') || null, condition: value('equipmentCondition'), tracking_type: value('trackingType'), quantity, unit: bulk ? value('equipmentUnit') : null, details: value('identifyingDetails') || null, site_id: value('equipmentSite') || null };
+    const editing = s.editId;
+    s.busy = true; busyForm(s, 'equipmentForm', true); notice(s, '', false, 'equipmentFormFeedback');
+    try {
+      let query = editing ? s.client.from('equipment').update(payload).eq('id', editing) : s.client.from('equipment').insert({ ...payload, asset_id: 'T-' + crypto.randomUUID().toUpperCase(), status: 'AVAILABLE' });
+      // A movement completed while the editor was open must not be overwritten.
+      if (editing) for (const key of ['status', 'site_id', 'current_holder_id', 'quantity']) {
+        const original = s.editOriginal[key];
+        query = original == null ? query.is(key, null) : query.eq(key, original);
       }
-
-      // Send to Supabase
-      const { error } = await supabaseClient
-        .from('equipment')
-        .update(updatePayload)
-        .in('asset_id', selectedAssets);
-
-      if (error) {
-        alert("Error updating items: " + error.message);
-      } else {
-        closeBulkModal();
-        clearBulkSelection(); 
-        initMasterlist(); 
+      const result = await query.select('id');
+      if (result.error) throw result.error;
+      if (result.data?.length !== 1) throw { code: 'STALE' };
+      if (!current(s)) return;
+      s.busy = false; closeEditor(s); await refresh(s);
+      if (current(s) && !node(s, 'masterlistFeedback').classList.contains('is-error')) notice(s, editing ? 'Item updated.' : 'Item registered.');
+    } catch (error) { notice(s, failure(error, 'save the item'), true, 'equipmentFormFeedback'); }
+    finally { if (current(s)) { s.busy = false; busyForm(s, 'equipmentForm', false); } }
+  }
+  async function remove(s, id) {
+    const row = s.rows.find(item => item.id === id);
+    if (s.busy || !row || !window.confirm(`Delete ${row.name} (${row.asset_id})? This permanently removes the equipment record.`)) return;
+    s.busy = true; s.root.querySelectorAll('[data-action="delete"]').forEach(input => { input.disabled = true; });
+    try {
+      const result = await s.client.from('equipment').delete().eq('id', id).select('id');
+      if (result.error) throw result.error;
+      if (result.data?.length !== 1) throw { code: 'STALE' };
+      if (!current(s)) return;
+      if (s.profileId === id) view(s, 'masterlist');
+      await refresh(s);
+      if (current(s) && !node(s, 'masterlistFeedback').classList.contains('is-error')) notice(s, 'Item deleted.');
+    } catch (error) { notice(s, failure(error, 'delete the item'), true); }
+    finally { if (current(s)) { s.busy = false; s.root.querySelectorAll('[data-action="delete"]').forEach(input => { input.disabled = false; }); } }
+  }
+  async function bulkDialog(s, mode) {
+    if (!s.selected.size || s.busy) return;
+    const sequence = ++s.bulkSequence;
+    s.bulkMode = mode; s.bulkReady = true; node(s, 'bulkActionForm').reset(); notice(s, '', false, 'bulkFormFeedback');
+    node(s, 'bulkModalTitle').textContent = `${mode === 'status' ? 'Update status' : 'Assign site'} (${s.selected.size} items)`;
+    node(s, 'bulkStatusField').style.display = mode === 'status' ? 'block' : 'none'; node(s, 'bulkLocationField').style.display = mode === 'location' ? 'block' : 'none'; node(s, 'bulkStatusSelect').required = mode === 'status';
+    node(s, 'bulkActionModal').style.display = 'flex'; busyForm(s, 'bulkActionForm', false);
+    if (mode !== 'location') return;
+    s.bulkLoading = true; busyForm(s, 'bulkActionForm', true);
+    try {
+      const sites = await read(s, 'sites', 'id,name');
+      if (!current(s) || sequence !== s.bulkSequence) return;
+      s.sites = sites.sort((a, b) => a.name.localeCompare(b.name)); options(node(s, 'bulkLocationInput'), s.sites.map(site => [site.id, site.name]), 'Unassigned');
+    } catch (error) { if (current(s) && sequence === s.bulkSequence) { s.bulkReady = false; notice(s, failure(error, 'load sites') + ' Close and reopen to retry.', true, 'bulkFormFeedback'); } }
+    finally { if (current(s) && sequence === s.bulkSequence) { s.bulkLoading = false; busyForm(s, 'bulkActionForm', false); node(s, 'bulkModalSubmitBtn').disabled = !s.bulkReady; } }
+  }
+  function closeBulk(s) { if (!s.busy) { ++s.bulkSequence; s.bulkLoading = false; node(s, 'bulkActionModal').style.display = 'none'; } }
+  async function saveBulk(s, event) {
+    event.preventDefault();
+    if (s.busy || s.bulkLoading || !s.bulkReady || !s.selected.size || !node(s, 'bulkActionForm').reportValidity()) return;
+    const ids = [...s.selected], payload = s.bulkMode === 'status' ? { status: node(s, 'bulkStatusSelect').value } : { site_id: node(s, 'bulkLocationInput').value || null };
+    s.busy = true; busyForm(s, 'bulkActionForm', true);
+    try {
+      const result = await s.client.from('equipment').update(payload).in('id', ids).select('id');
+      if (result.error) throw result.error;
+      if (!current(s)) return;
+      node(s, 'bulkActionModal').style.display = 'none'; s.selected.clear(); await refresh(s);
+      if (current(s)) notice(s, result.data?.length === ids.length ? `${ids.length} items updated.` : `${result.data?.length || 0} of ${ids.length} items updated. Some records changed or are inaccessible.`, result.data?.length !== ids.length);
+    } catch (error) { notice(s, failure(error, 'update selected items'), true, 'bulkFormFeedback'); }
+    finally { if (current(s)) { s.busy = false; busyForm(s, 'bulkActionForm', false); } }
+  }
+  function print(s, title, body, qr = false) {
+    const popup = window.open('', '_blank', 'width=900,height=650');
+    if (!popup) return notice(s, 'Allow pop-ups to print or export this document.', true);
+    popup.document.write(`<!doctype html><html><head><title>${escape(title)}</title><style>body{font:14px system-ui;padding:24px;color:#111}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #ccc;text-align:left}.tag{text-align:center}img{width:150px;height:150px}@media print{button{display:none}}</style></head><body>${body}<button type="button" id="print">Print</button></body></html>`); popup.document.close();
+    popup.document.getElementById('print').onclick = () => popup.print();
+    if (!qr) { popup.print(); return; }
+    const image = popup.document.querySelector('img'); image.onload = () => popup.print(); image.onerror = () => { const warning = popup.document.createElement('p'); warning.textContent = 'The QR service is unavailable. Close this window and try again.'; popup.document.body.append(warning); }; if (image.complete && image.naturalWidth) popup.print();
+  }
+  function exportRows(s) {
+    const rows = filtered(s);
+    print(s, 'Equipment Masterlist', `<h1>Equipment Masterlist</h1><p>${escape(new Date().toLocaleString())} · ${rows.length} items</p><table><thead><tr>${['Asset ID', 'Item', 'Category', 'Site', 'Status', 'Condition', 'Quantity'].map(label => `<th>${label}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${[row.asset_id, row.name, row.category, siteName(s, row), labels[status(row.status)] || row.status, row.condition, `${row.quantity ?? 1} ${row.unit || ''}`].map(value => `<td>${escape(value || '—')}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+  }
+  function bind(s) {
+    const signal = s.controller.signal;
+    s.root.addEventListener('click', event => {
+      const target = event.target.closest('button,[data-action]'); if (!target || target.disabled) return;
+      const id = target.dataset.id;
+      const actions = { refreshMasterlist: () => refresh(s), openAddEquipment: () => edit(s), closeEquipmentModal: () => closeEditor(s), cancelEquipmentModal: () => closeEditor(s), exportBtn: () => exportRows(s), btnBulkStatus: () => bulkDialog(s, 'status'), btnBulkLocation: () => bulkDialog(s, 'location'), btnBulkCancel: () => { s.selected.clear(); render(s); }, closeBulkModal: () => closeBulk(s), cancelBulkModal: () => closeBulk(s) };
+      if (actions[target.id]) return actions[target.id]();
+      switch (target.dataset.action) {
+        case 'view': return profile(s, id);
+        case 'edit': return edit(s, id);
+        case 'delete': return remove(s, id);
+        case 'page': s.page = Number(id); return render(s);
+        case 'back': return view(s, 'masterlist');
+        case 'activity': return window.showScreen('activity');
+        case 'print': { const row = s.rows.find(item => item.id === id); if (row) print(s, 'Asset tag', `<div class="tag"><h1>${escape(row.name)}</h1><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&amp;data=${encodeURIComponent(row.asset_id || row.id)}" alt="Equipment QR tag"><p>${escape(row.asset_id || row.id)}</p></div>`, true); }
       }
-    };
+    }, { signal });
+    s.root.addEventListener('input', event => { if (event.target.id === 'searchEquipment') { s.page = 1; render(s); } }, { signal });
+    s.root.addEventListener('change', event => {
+      const target = event.target;
+      if (['siteFilter', 'typeFilter', 'statusFilter'].includes(target.id)) { s.page = 1; render(s); }
+      if (['trackingType', 'equipmentCategory'].includes(target.id)) formChoices(s);
+      if (target.classList.contains('row-checkbox')) { target.checked ? s.selected.add(target.value) : s.selected.delete(target.value); selection(s); }
+      if (target.id === 'selectAll') { s.root.querySelectorAll('.row-checkbox').forEach(box => { box.checked = target.checked; target.checked ? s.selected.add(box.value) : s.selected.delete(box.value); }); selection(s); }
+    }, { signal });
+    s.root.addEventListener('keydown', event => { if (event.key === 'Escape' && !s.busy) { closeEditor(s); closeBulk(s); } }, { signal });
+    node(s, 'equipmentForm').addEventListener('submit', event => save(s, event), { signal });
+    node(s, 'bulkActionForm').addEventListener('submit', event => saveBulk(s, event), { signal });
   }
-  // ----------------------------------------
-
-  // Listen for clicks on the "Select All" header checkbox
-  const selectAllBtn = document.getElementById('selectAll');
-  if (selectAllBtn) {
-    selectAllBtn.addEventListener('change', (e) => {
-      const isChecked = e.target.checked;
-      const rowCheckboxes = document.querySelectorAll('.row-checkbox');
-      
-      rowCheckboxes.forEach(cb => {
-        cb.checked = isChecked;
-        handleCheckboxChange(cb.value, isChecked);
-      });
-      
-      updateBulkActionBar();
-    });
-  }
-
-  // Listen for clicks on individual row checkboxes (using event delegation)
-  const tbody = document.getElementById('equipmentTableBody');
-  if (tbody) {
-    tbody.addEventListener('change', (e) => {
-      if (e.target.classList.contains('row-checkbox')) {
-        handleCheckboxChange(e.target.value, e.target.checked);
-        updateSelectAllState();
-        updateBulkActionBar();
-      }
-    });
-  }
-
-  if (openBtn && modal) {
-    openBtn.onclick = () => {
-      currentEditId = null; 
-      
-      const modalTitle = modal.querySelector('h2');
-      const modalSubmitBtn = modal.querySelector('button[type="submit"]');
-      
-      if (modalTitle) modalTitle.innerText = 'Add New Item';
-      if (modalSubmitBtn) modalSubmitBtn.innerText = 'Save Item';
-      if (form) form.reset();
-      
-      modal.style.display = 'flex';
-    };
-  }
-
-  const closeModal = () => {
-    if (modal) modal.style.display = 'none';
-    if (form) form.reset();
-    currentEditId = null;
-  };
-
-  if (closeBtn) closeBtn.onclick = closeModal;
-  if (cancelBtn) cancelBtn.onclick = closeModal;
-  if (exportBtn) exportBtn.onclick = exportMasterlist;
-
-  if (trackingType) {
-    trackingType.onchange = function() {
-      const qGroup = document.getElementById('quantityGroup');
-      const uGroup = document.getElementById('unitGroup');
-      if (this.value === 'Bulk') {
-        if (qGroup) qGroup.style.display = 'block';
-        if (uGroup) uGroup.style.display = 'block';
-      } else {
-        if (qGroup) qGroup.style.display = 'none';
-        if (uGroup) uGroup.style.display = 'none';
-      }
-    };
-  }
-
-  if (form) {
-    form.onsubmit = async (e) => {
-      e.preventDefault();
-      
-      const payload = {
-        name: document.getElementById('equipmentType').value,
-        category: document.getElementById('equipmentCategory').value,
-        brand: document.getElementById('brand').value,
-        model: document.getElementById('equipmentModel').value,
-        serial_number: document.getElementById('serialNumber').value,
-        condition: document.getElementById('equipmentCondition').value,
-        tracking_type: document.getElementById('trackingType').value,
-        quantity: document.getElementById('trackingType').value === 'Bulk' ? document.getElementById('equipmentQuantity').value : 1,
-        unit: document.getElementById('trackingType').value === 'Bulk' ? document.getElementById('equipmentUnit').value : null,
-        details: document.getElementById('identifyingDetails').value
-      };
-
-      if (currentEditId) {
-        const { error } = await supabaseClient
-          .from('equipment')
-          .update(payload)
-          .eq('asset_id', currentEditId);
-
-        if (error) alert("Error updating tool: " + error.message);
-        else {
-          closeModal();
-          initMasterlist(); 
-        }
-      } else {
-        const newAssetId = 'T-' + Math.floor(1000 + Math.random() * 9000);
-        payload.asset_id = newAssetId;
-        payload.status = 'AVAILABLE';
-        
-        const { error } = await supabaseClient
-          .from('equipment')
-          .insert([payload]);
-
-        if (error) alert("Error saving tool: " + error.message);
-        else {
-          closeModal();
-          initMasterlist();
-        }
-      }
-    };
-  }
-}
-
-function printQRTag(assetId) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(assetId)}`;
-  const printWin = window.open('', '_blank', 'width=400,height=400');
-  
-  printWin.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Print Tag - ${assetId}</title>
-      <style>
-        @page { margin: 2mm; }
-        body { 
-          font-family: 'Inter', system-ui, sans-serif; 
-          display: flex; align-items: center; justify-content: center; 
-          height: 100vh; margin: 0; background: #fff;
-        }
-        .label-container { text-align: center; padding: 8px; }
-        .company-name {
-          font-size: 8px; font-weight: 700; letter-spacing: 0.05em;
-          text-transform: uppercase; color: #111; margin-bottom: 4px;
-        }
-        img { width: 30mm; height: 30mm; margin-bottom: 4px; }
-        .asset-id { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; color: #111; }
-      </style>
-    </head>
-    <body>
-      <div class="label-container">
-        <div class="company-name">BuildRight Corp.</div>
-        <img src="${qrUrl}" alt="QR Code" onload="window.print(); window.close();" />
-        <div class="asset-id">${assetId}</div>
-      </div>
-    </body>
-    </html>
-  `);
-  printWin.document.close();
-}
-
-function exportMasterlist() {
-  const searchInput = document.getElementById("searchEquipment");
-  const typeFilter = document.getElementById("typeFilter");
-  const statusFilter = document.getElementById("statusFilter");
-  const siteFilter = document.getElementById("siteFilter");
-
-  const search = searchInput ? searchInput.value.toLowerCase().trim() : "";
-  const typeVal = typeFilter ? typeFilter.value : "";
-  const statusVal = statusFilter ? statusFilter.value : "";
-  const siteVal = siteFilter ? siteFilter.value : "";
-
-  const filtered = equipmentList.filter(item => {
-    return (!search || item.assetId.toLowerCase().includes(search) || item.brand.toLowerCase().includes(search) || item.equipmentType.toLowerCase().includes(search)) &&
-           (!typeVal || item.category === typeVal) &&
-           (!statusVal || item.status === statusVal.toLowerCase().replace(/\s+/g, '')) &&
-           (!siteVal || item.site === siteVal);
-  });
-
-  const currentDate = new Date().toLocaleString('en-US', { 
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', 
-    hour: '2-digit', minute: '2-digit'
-  });
-
-  const tableRows = filtered.map(item => `
-    <tr>
-      <td style="font-family:monospace; font-weight:bold;">${escapeHTML(item.assetId)}</td>
-      <td>${escapeHTML(item.equipmentType)}</td>
-      <td>${escapeHTML(item.category)}</td>
-      <td>${escapeHTML(item.site)}</td>
-      <td>${escapeHTML(item.holder)}</td>
-      <td>${item.status.toUpperCase()}</td>
-    </tr>
-  `).join('');
-
-  const printWin = window.open('', '_blank');
-  printWin.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Masterlist Export Receipt</title>
-      <style>
-        body { font-family: 'Inter', system-ui, sans-serif; color: #111; padding: 40px; }
-        .header { border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 24px; }
-        .header h1 { font-size: 24px; margin: 0 0 4px 0; }
-        .header p { font-size: 13px; color: #555; margin: 0; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 20px; }
-        th { text-align: left; background: #f4f4f4; padding: 12px; border-bottom: 2px solid #ddd; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
-        td { padding: 12px; border-bottom: 1px solid #ddd; }
-        .footer { margin-top: 40px; font-size: 11px; color: #888; text-align: center; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1>BuildRight Corp. - Tools & Equipment Receipt</h1>
-        <p><strong>Status Report Printed On:</strong> ${currentDate}</p>
-        <p><strong>Total Items Listed:</strong> ${filtered.length}</p>
-      </div>
-      
-      <table>
-        <thead>
-          <tr>
-            <th>Asset ID</th>
-            <th>Item Name</th>
-            <th>Category</th>
-            <th>Location</th>
-            <th>Holder</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableRows}
-        </tbody>
-      </table>
-
-      <div class="footer">
-        Generated by Fieldmark Asset Management System
-      </div>
-      
-      <script>
-        window.onload = () => {
-          window.print();
-          window.close();
-        };
-      </script>
-    </body>
-    </html>
-  `);
-  printWin.document.close();
-}
-
-function escapeHTML(str) {
-  if (!str) return "";
-  return str.toString().replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-initMasterlist();
+  function destroy() { if (active) active.controller.abort(); active = null; }
+  window.MCPAModules = window.MCPAModules || {};
+  window.MCPAModules.masterlist = { async init(context) { destroy(); const s = { context, root: context.root, client: window.MCPA.getClient(), controller: new AbortController(), rows: [], sites: [], selected: new Set(), page: 1, formSequence: 0, bulkSequence: 0 }; active = s; if (context.signal) context.signal.addEventListener('abort', () => s.controller.abort(), { once: true }); bind(s); await refresh(s); }, destroy };
+  // Entry points used by the shared search and cross-module links.
+  window.initMasterlist = () => refresh();
+  window.filterMasterlist = window.filterAndResetPage = () => { if (active) { active.page = 1; render(active); } };
+  window.showToolProfile = id => { if (active) profile(active, id); };
+  window.showMasterlistView = name => { if (active) view(active, name); };
+})();

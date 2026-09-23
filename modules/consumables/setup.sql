@@ -1,9 +1,9 @@
 -- Run this complete file in the Supabase SQL Editor. Safe to rerun; no demo data.
 -- Only Consumables objects are created/changed. Existing modules are untouched.
--- ACCESS: the existing Sign In screen does not use Supabase Auth. As with Sites,
+-- ACCESS: the public workspace retains the existing prototype grants. As with Sites,
 -- anon and authenticated can read and invoke the module's validated operations.
 -- Anyone with the public API configuration can do this. Replace these grants and
--- policies with authenticated role checks when real application login is implemented.
+-- policies with authenticated role checks before deploying production roles.
 begin;
 
 create table if not exists public.consumables (

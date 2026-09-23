@@ -27,7 +27,7 @@ function buildNav(){
   const el = document.getElementById('nav-list');
   el.innerHTML = NAV.map(n=>{
     if(n.sec) return `<div class="nav-section-label">${n.sec}</div>`;
-    return `<div class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.label}</span></div>`;
+    return `<button type="button" class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.label}</span></button>`;
   }).join('');
 }
 
@@ -40,14 +40,19 @@ function setActiveNav(id){
    Loads the owning module (see js/app.js) if it isn't already
    in the DOM, then activates the requested screen within it.
    ============================================================ */
-function showScreen(id, afterActivate){
-  loadModule(id, function(){
-    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    const target = document.getElementById('screen-'+id);
-    if(target) target.classList.add('active');
-    setActiveNav(id);
+async function showScreen(id, afterActivate) {
+  // An explicit destination supersedes an older debounced search.
+  clearTimeout(searchTimer);
+  const loaded = await loadModule(id, function () {
+    document.querySelectorAll('.screen').forEach(screen => { screen.classList.remove('active'); screen.style.removeProperty('display'); });
+    const target = document.getElementById('screen-' + id);
+    if (!target) throw new Error('Page markup is missing.');
+    target.classList.add('active');
+    if (id === 'masterlist' && typeof window.showMasterlistView === 'function') window.showMasterlistView('masterlist');
+    setActiveNav(id === 'tool-profile' ? 'masterlist' : id === 'site-detail' ? 'sites' : id);
     document.getElementById('content').scrollTop = 0;
-    window.scrollTo(0,0);
-    if(afterActivate) afterActivate();
+    window.scrollTo(0, 0);
   });
+  if (loaded && afterActivate) await afterActivate();
+  return loaded;
 }

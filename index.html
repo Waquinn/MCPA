@@ -11,7 +11,6 @@
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/theme.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -23,19 +22,14 @@
     <div class="login-mark">MCPA</div>
     <h1 class="display">Construction Asset Management</h1>
     <p class="sub">Tools, Materials &amp; Accountability System</p>
-    <div class="field">
-      <label>Email / Username</label>
-      <input type="text" value="admin@buildright.co" />
-    </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" value="••••••••••" />
-    </div>
-    <div class="field-row">
-      <label class="checkbox-row"><input type="checkbox" checked /> Remember me</label>
-      <a class="link-btn" href="#">Forgot password?</a>
-    </div>
-    <button class="btn btn-primary btn-block" onclick="enterApp()">Sign In</button>
+    <form id="login-form" onsubmit="signInApp(event)">
+      <div id="login-feedback" class="app-feedback is-error hidden" role="alert"></div>
+      <div class="field"><label for="login-email">Email</label><input id="login-email" type="email" autocomplete="username" required /></div>
+      <div class="field"><label for="login-password">Password</label><input id="login-password" type="password" autocomplete="current-password" required /></div>
+      <button id="login-submit" class="btn btn-primary btn-block" type="submit">Sign In</button>
+    </form>
+    <p class="cell-sub" style="margin:16px 0 8px">Use your existing account, or open the current public prototype workspace.</p>
+    <button class="btn btn-secondary btn-block" type="button" onclick="enterApp()">Open Public Workspace</button>
   </div>
 </div>
 
@@ -57,10 +51,10 @@
     <div class="sidebar-foot">
       <div class="avatar">P</div>
       <div class="who">
-        <div class="name">Engr Pau</div>
-        <div class="role">Admin</div>
+        <div class="name">Public workspace</div>
+        <div class="role">Prototype access</div>
       </div>
-      <button class="icon-btn" title="Log out" onclick="location.reload()">
+      <button class="icon-btn" title="Log out" onclick="logoutApp()">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
       </button>
     </div>
@@ -82,9 +76,9 @@
           <svg id="theme-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
           <span id="theme-label">Night mode</span>
         </button>
-        <button class="icon-btn bell-wrap" style="color:var(--black); border:1px solid var(--line); width:36px; height:36px; border-radius:8px;" onclick="showMasterlistView('activity')">
+        <button class="icon-btn bell-wrap" style="color:var(--black); border:1px solid var(--line); width:36px; height:36px; border-radius:8px;" title="Activity logs" onclick="showScreen('activity')">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
-          <span class="bell-dot"></span>
+
         </button>
         <div class="avatar" style="width:36px;height:36px;">P</div>
       </div>
@@ -92,14 +86,18 @@
 
     <!-- Module container: showScreen()/loadModule() (js/navigation.js,
          js/app.js) fetch each screen's HTML/CSS/JS into here on demand. -->
+    <div id="app-feedback" class="app-feedback hidden" role="status"></div>
     <main id="content"></main>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/services.js"></script>
 <script src="js/data.js"></script>
+<script src="js/records.js"></script>
+<script src="js/movement.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/navigation.js"></script>
 <script src="js/app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </body>
 </html>

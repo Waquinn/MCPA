@@ -1,6 +1,6 @@
 -- Run in the Supabase SQL Editor. Safe to rerun on the original Sites setup.
 -- Adds Sites and a stable equipment reference; existing equipment stays unassigned.
--- The current app has no Supabase login, so Sites CRUD uses the anon role.
+-- Public workspace access uses anon; signed-in accounts use authenticated.
 -- These policies allow public Sites CRUD; they do not change equipment access.
 begin;
 
@@ -46,7 +46,7 @@ alter table public.sites drop constraint if exists sites_last_inventory_check_ch
 alter table public.sites add constraint sites_last_inventory_check_check
   check (last_inventory_check <= (current_timestamp at time zone 'Asia/Manila')::date);
 
--- Only the future assignment/movement workflow should change equipment.site_id.
+-- Assignments are maintained by Masterlist and the transactional Movement workflow.
 -- RESTRICT prevents deleting a site with equipment, including zero-quantity rows.
 comment on column public.equipment.site_id is
   'Current site assignment. Read-only in the Sites module; maintained by the assignment/movement workflow.';

@@ -1,8 +1,7 @@
 # Sites module
 
 Sites manages project records in Supabase and reads the equipment assigned to each
-site. Changes are limited to this module; the existing app shell, Masterlist and
-movement modules are unchanged.
+site. It uses the shared module lifecycle and reads the equipment movement ledger.
 
 ## Database setup
 
@@ -11,11 +10,11 @@ movement modules are unchanged.
    security, and adds validation and an update timestamp trigger. It does not
    insert sample records, assign existing equipment, or change equipment policies.
 2. The setup grants Sites select/insert/update/delete to `anon` and `authenticated`,
-   with matching row-level policies. The current app's Sign In button only reveals
-   the UI and does not establish a Supabase session, so it uses `anon`. This means
+   with matching row-level policies. Public workspace access uses `anon`; existing-account sign-in uses a real
+   Supabase session. This means
    site CRUD is public to callers of this project's API, matching the current
    prototype. RLS remains enabled, and equipment policies remain unchanged.
-   When the app adopts real authentication, replace these public policies with
+   Before deploying account roles, replace these public policies with
    the intended user/role restrictions. See [Supabase's RLS documentation](https://supabase.com/docs/guides/database/postgres/row-level-security).
 3. Open Sites and click Refresh. Use Add Site to create actual project records.
    The old static projects and counts are not database records.
@@ -42,8 +41,8 @@ database access. Never add a secret or service-role key to the frontend.
 - Inventory joins equipment to sites by `equipment.site_id`, so renaming a site
   preserves its assignments. Unassigned equipment is not attributed to a default
   site. The current live equipment table had no location column when inspected.
-- Actual assignments must populate `equipment.site_id` from the future
-  assignment/movement workflow or an authorized database import. This module does
+- Assignments use `equipment.site_id` from Masterlist or the transactional
+  Movement workflow. This module does
   not assign, transfer, create, edit, or delete equipment.
 - Counts sum quantities rather than record counts. The inventory hides zero
   quantities; Review Assigned Tools includes those records. Missing and disposed
@@ -53,10 +52,10 @@ database access. Never add a secret or service-role key to the frontend.
   holders display a dash.
 - A site with any linked equipment cannot be deleted, including zero-quantity
   equipment. Both the UI and a restrictive foreign key enforce this.
-- `repository.movements(siteId, equipmentId)` is the read-only integration point
-  for the future movement table. It currently returns no records. No movements or
-  last-transfer dates are invented. Add a restrictive site reference to that future
-  table to retain history even after equipment leaves a site.
+- `repository.movements(siteId, equipmentId)` reads recorded events from the
+  existing `equipment_history` table. Apply `database/movement.sql` for managed
+  workflows and site references that preserve history after equipment leaves.
+  Legacy history without site information is not attributed to an invented site.
 
 ## Verification
 

@@ -1,54 +1,49 @@
 <section class="screen" id="screen-purchase">
   <div class="page-head">
-    <div>
-      <h1 class="display">Purchases</h1>
-      <p class="sub">Consumable and tool purchase records, with receipts attached</p>
-    </div>
-    <div class="page-head-actions"><button class="btn btn-accent btn-sm">+ Add Purchase</button></div>
+    <div><h1 class="display">Purchases</h1><p class="sub">Consumable purchase requests and received quantities</p></div>
+    <div class="page-head-actions"><button class="btn btn-secondary btn-sm" data-action="refresh">Refresh</button><button class="btn btn-secondary btn-sm" data-action="export" disabled>Export CSV</button></div>
   </div>
-
+  <p class="module-note">Track consumable orders and deliveries here. Add newly acquired equipment in the Masterlist.</p>
+  <p id="purchase-status" class="module-status" role="status" aria-live="polite">Loading purchase requests…</p>
   <div class="two-col">
     <div>
-      <div class="section-title" style="margin-top:0;"><h2>New Purchase Record</h2></div>
-      <div class="card card-pad">
-        <div class="form-grid">
-          <div class="field"><label>Item</label><input type="text" value="Pipes (¾&quot;)"/></div>
-          <div class="field"><label>Quantity</label><input type="number" value="100"/></div>
-          <div class="field"><label>Supplier</label><input type="text" value="ABC Construction Supply"/></div>
-          <div class="field"><label>Purchased By</label><input type="text" value="Secretary — Anne Villaruz"/></div>
-          <div class="field"><label>Purchase Date</label><input type="date" value="2026-08-30"/></div>
-          <div class="field"><label>Total Price</label><input type="text" value="₱25,000"/></div>
-        </div>
-        <div class="field"><label>Notes</label><textarea rows="2">Restock for structural phase at Casa Buena.</textarea></div>
-        <div class="field"><label>Receipt</label>
-          <div class="upload-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-            Upload receipt
+      <div class="section-title"><h2>New purchase request</h2></div>
+      <form id="purchase-form" class="card card-pad">
+        <fieldset id="purchase-fields" disabled>
+          <div class="field"><label for="purchase-item">Consumable</label><select id="purchase-item" name="item" required><option value="">Loading…</option></select></div>
+          <div class="form-grid">
+            <div class="field"><label for="purchase-quantity">Quantity <span id="purchase-unit"></span></label><input id="purchase-quantity" name="quantity" type="number" min="0.001" max="999999999.999" step="0.001" required></div>
+            <div class="field"><label for="purchase-date">Needed by (optional)</label><input id="purchase-date" name="needed" type="date"></div>
           </div>
-        </div>
-        <button class="btn btn-primary btn-block" style="margin-top:6px;">Save Purchase Record</button>
-      </div>
+          <div class="field"><label for="purchase-requester">Requested by</label><input id="purchase-requester" name="requester" maxlength="120" required></div>
+          <div class="field"><label for="purchase-purpose">Purpose</label><textarea id="purchase-purpose" name="purpose" rows="3" maxlength="1000" required></textarea></div>
+          <button class="btn btn-primary btn-block" type="submit">Save purchase request</button>
+          <button class="btn btn-secondary btn-block" type="reset" style="margin-top:8px">Clear form</button>
+        </fieldset>
+      </form>
+      <div class="section-title"><h2>Request action</h2></div>
+      <div id="purchase-action-empty" class="card card-pad">Choose Receive or Cancel on an open request.</div>
+      <form id="purchase-action-form" class="card card-pad" hidden>
+        <h3 id="purchase-action-title" class="display"></h3>
+        <p id="purchase-action-detail" class="module-note"></p>
+        <fieldset id="purchase-action-fields">
+          <div class="field" id="purchase-receive-field"><label for="purchase-receive-quantity">Quantity received</label><input id="purchase-receive-quantity" name="received" type="number" min="0.001" step="0.001"></div>
+          <div class="field"><label for="purchase-action-note" id="purchase-action-note-label">Receipt note</label><textarea id="purchase-action-note" name="note" rows="3" maxlength="1000" required></textarea></div>
+          <div class="table-toolbar"><button type="submit" class="btn btn-primary" id="purchase-confirm">Save</button><button type="button" class="btn btn-secondary" data-action="close-action">Close</button></div>
+        </fieldset>
+      </form>
     </div>
-
     <div>
-      <div class="section-title" style="margin-top:0;"><h2>Purchase History</h2></div>
+      <div class="section-title"><h2>Purchase requests</h2><span id="purchase-count"></span></div>
       <div class="table-toolbar">
-        <button class="chip-filter">Date <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-        <button class="chip-filter">Supplier <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="field"><label for="purchase-search">Search item or requester</label><input id="purchase-search" type="search" placeholder="Search requests"></div>
+        <div class="field"><label for="purchase-filter">Status</label><select id="purchase-filter"><option value="">All statuses</option><option value="pending">Pending</option><option value="partial">Partially received</option><option value="received">Received</option><option value="cancelled">Cancelled</option></select></div>
       </div>
-      <div class="card">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>ID</th><th>Item</th><th>Qty</th><th>Amount</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td class="mono">PO-0231</td><td>Pipes (¾")</td><td>100</td><td>₱25,000</td><td><span class="badge badge-verified">Received</span></td></tr>
-              <tr><td class="mono">PO-0230</td><td>Cutting Discs</td><td>50</td><td>₱6,000</td><td><span class="badge badge-verified">Received</span></td></tr>
-              <tr><td class="mono">PO-0229</td><td>Welding Rods</td><td>20 kg</td><td>₱9,400</td><td><span class="badge badge-pending">In Transit</span></td></tr>
-              <tr><td class="mono">PO-0228</td><td>Grinder (Bosch)</td><td>3</td><td>₱18,750</td><td><span class="badge badge-verified">Received</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Request</th><th>Item / requester</th><th>Requested / received</th><th>Needed by</th><th>Status</th><th>Action</th></tr></thead><tbody id="purchase-rows"></tbody></table></div></div>
+      <div class="table-toolbar" style="margin-top:12px"><button class="btn btn-secondary btn-sm" data-action="previous">Previous</button><span id="purchase-page"></span><button class="btn btn-secondary btn-sm" data-action="next">Next</button></div>
+      <div class="section-title"><h2>Receipt history</h2></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Request</th><th>Item</th><th>Received</th><th>Note</th><th>Date</th></tr></thead><tbody id="purchase-receipts"></tbody></table></div></div>
+      <p class="module-note">Latest 25 receipts. View the full stock history in Activity Logs.</p>
     </div>
   </div>
 </section>

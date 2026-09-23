@@ -1,5 +1,6 @@
-/* Scoped to Sites: the module loader executes this file on every visit. */
-(function () {
+/* Scoped to Sites: a fresh controller is created for each mounted DOM tree. */
+window.MCPAModules = window.MCPAModules || {};
+window.MCPAModules.sites = { init(context) {
   'use strict';
 
   const root = document.getElementById('sites-module');
@@ -17,6 +18,7 @@
   };
   const state = { sites: [], equipment: [], selectedId: null, loading: false, saving: false, ready: false, review: { search: '', status: '' } };
   let dialogReturnFocus = null;
+  let dialogRequest = 0;
 
   function escape(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -44,17 +46,7 @@
   function visibleEquipment(site) { return siteEquipment(site).filter(item => item.quantity > 0); }
   function totalQuantity(items) { return items.reduce((sum, item) => sum + item.quantity, 0); }
 
-  function client() {
-    if (!window.supabaseClient) {
-      if (!window.supabase?.createClient) throw new Error('The database connection could not load. Check your connection and try again.');
-      // Same public project configuration as Masterlist. Reuse its client when loaded.
-      window.supabaseClient = window.supabase.createClient(
-        'https://zpqxlmiqwevhlstjirei.supabase.co',
-        'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58'
-      );
-    }
-    return window.supabaseClient;
-  }
+  function client() { return MCPA.getClient(); }
 
   function databaseError(error) {
     if (['PGRST205', '42703'].includes(error.code)) return 'Sites is not set up in the database yet. Contact your administrator to complete setup, then refresh.';
@@ -63,7 +55,7 @@
     if (error.code === '42501') return 'Site changes are blocked by database permissions. Ask your administrator to apply the Sites access update, then try again. Your entries have been kept.';
     if (['PGRST301', 'PGRST303'].includes(error.code)) return 'Your database session has expired or is invalid. Sign in again, then retry.';
     if (error.code === '23514') return 'Some site details are invalid. Please check the form and try again.';
-    return error.message || 'The database could not be reached. Please try again.';
+    return error.code ? 'The site could not be saved or loaded. Check your entries and try again.' : error.message || 'The database could not be reached. Please try again.';
   }
 
   async function readAll(table, columns, order) {
@@ -81,14 +73,16 @@
   // All database writes concern site metadata. Equipment and movement are read-only here.
   const repository = {
     async load() {
-      const [sites, equipment, profiles] = await Promise.all([
+      const [sites, equipment, profiles, historyResult] = await Promise.all([
         readAll('sites', '*', 'id'),
         readAll('equipment', 'id,asset_id,name,brand,model,serial_number,category,condition,tracking_type,quantity,unit,details,status,current_holder_id,site_id', 'id'),
         // A restricted profile must not hide otherwise readable equipment.
-        readAll('profiles', 'id,name', 'id').catch(() => [])
+        readAll('profiles', 'id,name', 'id').catch(() => []),
+        readAll('equipment_history', '*', 'id').then(rows => ({ rows })).catch(error => ({ rows: [], error }))
       ]);
       const holders = new Map(profiles.map(profile => [profile.id, profile.name]));
       return {
+        history: historyResult.rows.sort((a,b) => String(b.created_at).localeCompare(String(a.created_at))), historyError: historyResult.error,
         sites: sites.sort((a, b) => a.name.localeCompare(b.name)),
         equipment: equipment.map(item => {
           const status = String(item.status || '').toLowerCase().replace(/[\s_-]/g, '');
@@ -115,9 +109,11 @@
       if (error) throw error;
       if (!data?.length) throw new Error('This site changed or is no longer editable. Close this dialog and refresh before trying again.');
     },
-    // Replace this reader when the movement table is introduced. Never infer history
-    // from the current holder, site assignment, registration date, or mock screens.
-    async movements() { return []; }
+    async movements(siteId, equipmentId) {
+      const rows = await readAll('equipment_history', '*', 'id');
+      return rows.filter(row => equipmentId ? row.equipment_id === equipmentId : [row.details?.from_site_id,row.details?.to_site_id].includes(siteId))
+        .sort((a,b) => String(b.created_at).localeCompare(String(a.created_at)));
+    }
   };
 
   function feedback(message, isError = false) {
@@ -155,14 +151,16 @@
       const firstLoad = !state.ready;
       state.sites = result.sites;
       state.equipment = result.equipment;
+      state.history = result.history;
       state.ready = true;
-      if (firstLoad) state.selectedId = (state.sites.find(site => site.name === 'Casa Buena') || state.sites[0])?.id || null;
+      if (firstLoad) state.selectedId = (state.sites[0])?.id || null;
       else if (state.selectedId && !currentSite()) {
         state.selectedId = null;
         if (root.querySelector('#screen-site-detail.active')) showScreen('sites');
         feedback('This site is no longer available. The site list has been refreshed.');
       }
       render();
+      if (result.historyError) feedback('Inventory loaded, but movement history could not be read. Refresh to retry.', true);
     } catch (error) {
       if (!root.isConnected) return;
       feedback(databaseError(error), true);
@@ -226,7 +224,7 @@
         <div class="card card-pad"><span class="k">Assigned Engineer</span><div class="v">${escape(site.assigned_engineer)}</div></div>
         <div class="card card-pad"><span class="k">Total Tools On Site</span><div class="v">${totalQuantity(items)} tools</div></div>
         <div class="card card-pad"><span class="k">Last Inventory Check</span><div class="v">${formatDate(site.last_inventory_check)}</div></div>
-        <div class="card card-pad"><span class="k">Last Transfer</span><div class="v">Not recorded</div><button type="button" class="sites-text-button" data-action="view-movements">View movement history →</button></div>
+        <div class="card card-pad"><span class="k">Last Transfer</span><div class="v">${formatDate((state.history || []).find(row => /_(RECEIVE)$/.test(row.action) && [row.details?.from_site_id,row.details?.to_site_id].includes(site.id))?.created_at)}</div><button type="button" class="sites-text-button" data-action="view-movements">View movement history →</button></div>
       </div>
       <div class="section-title sites-section-title"><h2>Site Inventory</h2><span class="eyebrow">Zero-quantity items are hidden</span></div>
       <div class="card">${inventoryTable(items)}</div>
@@ -242,6 +240,7 @@
   }
 
   function openDialog(title, content, wide = false, view = '') {
+    dialogRequest++;
     if (!root.isConnected) return;
     if (!dialog.open) dialogReturnFocus = document.activeElement;
     root.querySelector('#sites-dialog-title').textContent = title;
@@ -255,6 +254,7 @@
 
   function closeDialog() {
     if (state.saving) return;
+    dialogRequest++;
     dialog.close();
     if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus();
     else root.querySelector('#screen-site-detail.active [data-action="edit-site"], #screen-sites.active [data-action="add-site"]')?.focus();
@@ -382,13 +382,16 @@
 
   function movementTable(records) {
     if (!records.length) return '<div class="empty-state sites-movement-empty"><p class="t">No movement records available</p><p class="d">Movement history will appear here when records are available. This view is read-only.</p></div>';
-    return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Tool</th><th>From</th><th>To</th><th>Quantity</th></tr></thead><tbody>${records.map(record => `<tr><td>${escape(formatDate(record.date))}</td><td>${escape(record.asset_id)}</td><td>${escape(record.from)}</td><td>${escape(record.to)}</td><td>${escape(record.quantity)}</td></tr>`).join('')}</tbody></table></div>`;
+    const siteName = id => state.sites.find(site => site.id === id)?.name || (id || 'Unassigned');
+    return '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Tool</th><th>Action</th><th>From</th><th>To</th></tr></thead><tbody>' + records.map(record => '<tr><td>' + escape(formatDate(record.created_at)) + '</td><td>' + escape(state.equipment.find(item => item.id === record.equipment_id)?.asset_id || record.equipment_id) + '</td><td>' + escape(String(record.action || '').replaceAll('_',' ')) + '</td><td>' + escape(siteName(record.details?.from_site_id)) + '</td><td>' + escape(['repair','missing'].includes(record.details?.kind) ? 'Same site' : siteName(record.details?.to_site_id)) + '</td></tr>').join('') + '</tbody></table></div>';
   }
 
   async function viewMovements() {
     const site = currentSite();
     if (!site) return;
+    const request = ++dialogRequest;
     const records = await repository.movements(site.id);
+    if (!root.isConnected || currentSite()?.id !== site.id || request !== dialogRequest) return;
     openDialog(`Movement History — ${site.name}`, `<p class="sites-dialog-description">Equipment movement into and out of this site.</p><div class="card">${movementTable(records)}</div><div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true);
   }
 
@@ -397,7 +400,9 @@
     const item = site && siteEquipment(site).find(record => record.id === id);
     if (!item) return;
     const fromReview = dialog.open && dialog.dataset.view === 'review';
+    const request = ++dialogRequest;
     const records = await repository.movements(site.id, item.id);
+    if (!root.isConnected || currentSite()?.id !== site.id || request !== dialogRequest) return;
     const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Site', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
     openDialog(item.name, `
       <p class="sites-dialog-description">Equipment details for ${escape(site.name)}.</p>
@@ -418,7 +423,7 @@
       'review-tools': reviewTools, 'view-tool': () => viewTool(button.dataset.id),
       'view-movements': viewMovements, 'close-dialog': closeDialog
     };
-    actions[button.dataset.action]?.();
+    Promise.resolve(actions[button.dataset.action]?.()).catch(error => { if (root.isConnected) feedback(MCPA.errorMessage(error, 'Movement history could not be loaded. Try again.'), true); });
   });
   root.addEventListener('submit', event => {
     if (event.target.id !== 'sites-form') return;
@@ -428,5 +433,6 @@
   root.addEventListener('input', event => { if (event.target.id === 'sites-tool-search') filterTools(); });
   root.addEventListener('change', event => { if (event.target.id === 'sites-tool-status') filterTools(); });
   dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
-  refresh();
-})();
+  context.signal.addEventListener('abort', () => { if (dialog.open) dialog.close(); }, { once: true });
+  return refresh();
+} };

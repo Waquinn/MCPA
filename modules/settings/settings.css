@@ -1,3 +1,4 @@
-/* No styles specific to the settings module — every class its markup
-   uses (.card, .table-wrap, table, .badge, .form-grid, .kv, .two-col,
-   etc.) is a shared primitive defined in css/components.css. */
+#screen-settings #settings-profile > p { font-size:13px; line-height:1.6; color:var(--gray); }
+#screen-settings .app-feedback { margin:0 0 18px; }
+#screen-settings .page-head-actions { gap:8px; }
+#screen-settings input[readonly] { background:var(--off-white); color:var(--gray); }

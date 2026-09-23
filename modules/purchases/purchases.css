@@ -1,3 +1,8 @@
-/* No styles specific to the purchases module — every class its markup
-   uses (.card, .table-wrap, table, .badge, .form-grid, .kv, .two-col,
-   etc.) is a shared primitive defined in css/components.css. */
+#screen-purchase fieldset { border:0; padding:0; margin:0; min-width:0; }
+#screen-purchase fieldset:disabled { opacity:.65; }
+#screen-purchase [hidden] { display:none; }
+#screen-purchase #purchase-action-title { font-size:18px; }
+#screen-purchase .two-col { align-items:start; }
+#screen-purchase .field { min-width:0; }
+#screen-purchase td { overflow-wrap:anywhere; }
+@media(max-width:650px) { #screen-purchase .form-grid { grid-template-columns:1fr; } }

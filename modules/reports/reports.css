@@ -1,7 +1,16 @@
-/* Reports-specific styles.
-   Shared primitives (.chart-placeholder, .chart-bar, .kv, .two-col,
-   etc.) live in css/components.css. */
-
-.tabs{display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:18px;}
-.tab{padding:10px 4px; margin-right:22px; font-size:13px; font-weight:600; color:var(--gray); border-bottom:2px solid transparent; cursor:pointer;}
-.tab.active{color:var(--black); border-color:var(--gold);}
+#screen-reports .tabs { display:flex; flex-wrap:wrap; gap:4px; border-bottom:1px solid var(--line); margin:18px 0; }
+#screen-reports .tab { background:transparent; padding:10px 8px; font-size:13px; font-weight:600; color:var(--gray); border:0; border-bottom:2px solid transparent; cursor:pointer; }
+#screen-reports .tab.active { color:var(--black); border-color:var(--gold); }
+#screen-reports #reports-title { font-size:22px; margin-bottom:14px; }
+@media print {
+  body { background:white!important; color:black!important; }
+  #sidebar, #topbar, #login-screen, #screen-reports .page-head-actions, #screen-reports .tabs,
+  #screen-reports .table-toolbar, #screen-reports #reports-status, #app-notice { display:none!important; }
+  #app-shell, #main-col, #content { display:block!important; width:100%!important; margin:0!important; padding:0!important; height:auto!important; overflow:visible!important; }
+  #screen-reports { display:block!important; }
+  #screen-reports .table-wrap { overflow:visible; }
+  #screen-reports .card { border:0; box-shadow:none; }
+  #screen-reports table { font-size:9px; }
+  #screen-reports td, #screen-reports th { white-space:normal; overflow-wrap:anywhere; padding:5px; color:black!important; background:white!important; }
+  #screen-reports tr { break-inside:avoid; }
+}

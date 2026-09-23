@@ -1,0 +1,9 @@
+{
+  "name": "mcpa",
+  "private": true,
+  "scripts": {
+    "test": "node tests/run.cjs",
+    "test:database": "node tests/run.cjs database",
+    "test:browser": "node tests/run.cjs browser"
+  }
+}

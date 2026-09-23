@@ -1,5 +1,6 @@
-/* The module loader executes this closure on every visit. */
-(function () {
+/* A fresh controller is created for each mount; leaving aborts its timer. */
+window.MCPAModules = window.MCPAModules || {};
+window.MCPAModules.consumables = { init(context) {
   'use strict';
   const root = document.getElementById('screen-consumables');
   if (!root) return;
@@ -43,14 +44,7 @@
   function button(action, label, id = '', style = 'secondary') {
     return `<button type="button" class="btn btn-${style} btn-sm" data-action="${action}" data-id="${escape(id)}">${label}</button>`;
   }
-  function client() {
-    if (!window.supabaseClient) {
-      if (!window.supabase?.createClient) throw new Error('The database connection could not load. Check your connection and refresh.');
-      // Reuse the same public project and client as Sites and Masterlist.
-      window.supabaseClient = window.supabase.createClient('https://zpqxlmiqwevhlstjirei.supabase.co', 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58');
-    }
-    return window.supabaseClient;
-  }
+  function client() { return MCPA.getClient(); }
   function errorMessage(error) {
     if (['PGRST205', 'PGRST202', '42P01', '42703', '42883'].includes(error.code)) return 'Consumables database setup is incomplete. Ask your administrator to complete setup, then refresh.';
     if (error.code === '42501') return 'Consumables access is blocked by database permissions. Ask your administrator to apply the Consumables setup, then retry.';
@@ -335,9 +329,6 @@
   const timer = setInterval(() => {
     if (root.isConnected && root.classList.contains('active') && !document.hidden) refresh(true);
   }, 30000);
-  const observer = new MutationObserver(() => {
-    if (!root.isConnected) { clearInterval(timer); observer.disconnect(); dialogRevision++; }
-  });
-  observer.observe(document.getElementById('content'), { childList: true });
-  refresh();
-})();
+  context.signal.addEventListener('abort', () => { clearInterval(timer); dialogRevision++; if (dialog.open) dialog.close(); }, { once: true });
+  return refresh();
+} };

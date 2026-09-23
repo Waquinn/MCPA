@@ -1,25 +1,7 @@
 <section class="screen" id="screen-activity">
-  <div class="page-head">
-    <div>
-      <h1 class="display">Activity Logs</h1>
-      <p class="sub">A permanent audit trail of every action taken in the system</p>
-    </div>
-    <div class="page-head-actions"><button class="btn btn-secondary btn-sm">Export</button></div>
-  </div>
-
-  <div class="card">
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>User</th><th>Action</th><th>Item</th><th>Previous State</th><th>New State</th><th>Date / Time</th></tr></thead>
-        <tbody>
-          <tr><td class="person"><div class="avatar">JK</div>John Kiel</td><td>Transferred</td><td class="mono">GRD-001</td><td>Casa Buena</td><td>San Gabriel</td><td>Aug 30, 3:42 PM</td></tr>
-          <tr><td class="person"><div class="avatar">RS</div>Rowena Santos</td><td>Approved request</td><td class="mono">REQ-1042</td><td>Reviewing</td><td>Approved</td><td>Aug 30, 1:15 PM</td></tr>
-          <tr><td class="person"><div class="avatar">MR</div>Mark Reyes</td><td>Returned</td><td class="mono">CRS-004</td><td>In Use</td><td>Good — Returned</td><td>Aug 30, 10:02 AM</td></tr>
-          <tr><td class="person"><div class="avatar">AV</div>Anne Villaruz</td><td>Logged purchase</td><td class="mono">PO-0231</td><td>—</td><td>Received</td><td>Aug 29, 4:40 PM</td></tr>
-          <tr><td class="person"><div class="avatar">BS</div>B. Santiago</td><td>Reported missing</td><td class="mono">GRD-009</td><td>In Use</td><td>Missing</td><td>Aug 22, 9:05 AM</td></tr>
-          <tr><td class="person"><div class="avatar">JK</div>John Kiel</td><td>Sent for repair</td><td class="mono">GRD-004</td><td>In Use</td><td>For Repair</td><td>Aug 20, 8:30 AM</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <div class="page-head"><div><h1 class="display">Activity Logs</h1><p class="sub">Equipment movements and consumable stock history</p></div><div class="page-head-actions"><button class="btn btn-secondary" data-action="refresh">Refresh</button><button class="btn btn-secondary" data-action="export" disabled>Export CSV</button></div></div>
+  <p id="activity-status" role="status" class="module-status">Loading history…</p>
+  <div class="filter-row" style="margin:16px 0;display:flex;gap:12px;flex-wrap:wrap"><div class="field"><label for="activity-search">Search history</label><input id="activity-search" type="search" placeholder="Item, action, actor or notes"></div><div class="field"><label for="activity-source">Source</label><select id="activity-source"><option value="">All history</option><option value="Equipment">Equipment</option><option value="Consumables">Consumables</option></select></div></div>
+  <div class="card"><div class="table-wrap"><table><thead id="activity-head"></thead><tbody id="activity-rows"></tbody></table></div></div>
+  <div class="page-head-actions" style="margin-top:16px"><button class="btn btn-secondary" data-action="previous">Previous</button><span id="activity-page"></span><button class="btn btn-secondary" data-action="next">Next</button></div>
 </section>
