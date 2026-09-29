@@ -1,7 +1,11 @@
 /* ============================================================
    NAVIGATION CONFIG
    ============================================================ */
-const NAV = [
+/* ============================================================
+   NAVIGATION CONFIG
+   ============================================================ */
+// 1. The full menu for Admins
+const ADMIN_NAV = [
   {sec:"Overview"},
   {id:"dashboard", label:"Dashboard", icon:"grid"},
   {sec:"Assets"},
@@ -23,9 +27,33 @@ const NAV = [
   {id:"settings", label:"Settings", icon:"cog"},
 ];
 
+// 2. The restricted menu for Engineers (Customize this as needed!)
+const ENGR_NAV = [
+  {sec:"Overview"},
+  {id:"dashboard", label:"Dashboard", icon:"grid"},
+  {sec:"Assets"},
+  {id:"masterlist", label:"Masterlist", icon:"list"},
+  {id:"sites", label:"Sites", icon:"map"},
+  {id:"consumables", label:"Consumables", icon:"box"},
+  {sec:"Movement"},
+  {id:"request", label:"Requests", icon:"inbox"},
+  {id:"transfer", label:"Transfers", icon:"swap"},
+  {id:"return", label:"Returns", icon:"undo"},
+  {id:"repair", label:"Repairs", icon:"wrench"},
+  {id:"missing", label:"Missing", icon:"alert"},
+  {sec:"System"},
+  {id:"settings", label:"Settings", icon:"cog"},
+  // Notice that Records, Purchases, Reports, and System sections are removed here
+];
+
 function buildNav(){
   const el = document.getElementById('nav-list');
-  el.innerHTML = NAV.map(n=>{
+  
+  // 3. Detect which portal we are in
+  const isEngr = window.location.pathname.includes('2-engr');
+  const currentNav = isEngr ? ENGR_NAV : ADMIN_NAV;
+
+  el.innerHTML = currentNav.map(n=>{
     if(n.sec) return `<div class="nav-section-label">${n.sec}</div>`;
     return `<div class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.label}</span></div>`;
   }).join('');

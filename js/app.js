@@ -41,7 +41,15 @@ function loadModule(screenId, callback){
     callback();
     return;
   }
-  const base = 'modules/' + mod + '/' + mod;
+
+  // Detect which portal we are in to load the correct modules folder
+  let pathPrefix = '1-admin/modules/';
+  if (window.location.pathname.includes('2-engr')) {
+    pathPrefix = 'modules/'; // Loads from 2-engr/modules/
+  }
+  
+  const base = pathPrefix + mod + '/' + mod;
+  
   fetch(base + '.html')
     .then(function(res){ return res.text(); })
     .then(function(html){
@@ -57,7 +65,7 @@ function ensureModuleCSS(mod, href){
   if(document.querySelector('link[data-module="' + mod + '"]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = href;
+  link.href = href + '?v=' + new Date().getTime();
   link.dataset.module = mod;
   document.head.appendChild(link);
 }
@@ -66,7 +74,7 @@ function loadModuleScript(mod, src, callback){
   const old = document.querySelector('script[data-module="' + mod + '"]');
   if(old) old.remove();
   const script = document.createElement('script');
-  script.src = src;
+  script.src = src + '?v=' + new Date().getTime();
   script.dataset.module = mod;
   script.onload = callback;
   script.onerror = function(){
@@ -80,10 +88,19 @@ function loadModuleScript(mod, src, callback){
    APP INITIALIZATION
    ============================================================ */
 function enterApp(){
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app-shell').classList.remove('hidden');
-  buildNav();
-  showScreen('dashboard');
+  const userInput = document.getElementById('userInput').value.trim().toLowerCase();
+
+  // Route based on what the user typed
+  if (userInput.includes('engr')) {
+    // Redirect to the Engineer portal (make sure you create an index.html inside the 2-engr folder)
+    window.location.href = '2-engr/index.html';
+  } else {
+    // Default to the Admin side
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-shell').classList.remove('hidden');
+    buildNav();
+    showScreen('dashboard');
+  }
 }
 
 /* ============================================================

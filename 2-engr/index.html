@@ -7,42 +7,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,480;9..144,560&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/global.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="../css/global.css">
+<link rel="stylesheet" href="../css/layout.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/theme.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
 <!-- ============================================================
-     LOGIN SCREEN
-     ============================================================ -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-mark">MCPA</div>
-    <h1 class="display">Construction Asset Management</h1>
-    <p class="sub">Tools, Materials &amp; Accountability System</p>
-    <div class="field">
-      <label>Email / Username</label>
-      <input type="text" id="userInput" value="admin@buildright.co" />
-    </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" value="••••••••••" />
-    </div>
-    <div class="field-row">
-      <label class="checkbox-row"><input type="checkbox" checked /> Remember me</label>
-      <a class="link-btn" href="#">Forgot password?</a>
-    </div>
-    <button class="btn btn-primary btn-block" onclick="enterApp()">Sign In</button>
-  </div>
-</div>
-
-<!-- ============================================================
      APP SHELL
      ============================================================ -->
-<div id="app-shell" class="hidden">
+<div id="app-shell">
 
   <!-- SIDEBAR -->
   <aside id="sidebar">
@@ -55,10 +31,10 @@
     </div>
     <nav class="nav" id="nav-list"></nav>
     <div class="sidebar-foot">
-      <div class="avatar">ES</div>
+      <div class="avatar">E.S</div>
       <div class="who">
-        <div class="name">Engr Pau</div>
-        <div class="role">Admin</div>
+        <div class="name">Engr Sky</div>
+        <div class="role">Engineer</div>
       </div>
       <button class="icon-btn" title="Log out" onclick="location.reload()">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -86,7 +62,7 @@
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
           <span class="bell-dot"></span>
         </button>
-        <div class="avatar" style="width:36px;height:36px;">P</div>
+        <div class="avatar" style="width:36px;height:36px;">E.S</div>
       </div>
     </header>
 
@@ -96,10 +72,28 @@
   </div>
 </div>
 
-<script src="js/data.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/navigation.js"></script>
-<script src="js/app.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/navigation.js"></script>
+<script src="../js/app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Initialize the app immediately since we bypassed the login screen
+  window.onload = () => {
+    buildNav();
+    showScreen('dashboard');
+  };
+</script>
+<!-- Add this new scanner library -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<script>
+  window.onload = () => {
+    buildNav();
+    showScreen('dashboard');
+  };
+</script>
+
+
 </body>
 </html>
