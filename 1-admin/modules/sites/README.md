@@ -53,10 +53,11 @@ database access. Never add a secret or service-role key to the frontend.
   holders display a dash.
 - A site with any linked equipment cannot be deleted, including zero-quantity
   equipment. Both the UI and a restrictive foreign key enforce this.
-- `repository.movements(siteId, equipmentId)` is the read-only integration point
-  for the future movement table. It currently returns no records. No movements or
-  last-transfer dates are invented. Add a restrictive site reference to that future
-  table to retain history even after equipment leaves a site.
+- `repository.movements(siteId, equipmentId)` now reads confirmed transfers and
+  returns from the [movement workflow](../movements/README.md). Source and
+  destination IDs retain history after site renames and after equipment leaves.
+  The movement schema restricts deletion of historically referenced sites.
+  Engineer and demo views are read-only; demo inventory comes from browser data.
 
 ## Verification
 

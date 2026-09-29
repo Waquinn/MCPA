@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    NAVIGATION CONFIG
    ============================================================ */
 /* ============================================================
@@ -9,21 +9,23 @@ const ADMIN_NAV = [
   {sec:"Overview"},
   {id:"dashboard", label:"Dashboard", icon:"grid"},
   {sec:"Assets"},
-  {id:"masterlist", label:"Masterlist", icon:"list"},
-  {id:"sites", label:"Sites", icon:"map"},
-  {id:"consumables", label:"Consumables", icon:"box"},
+  {id:"masterlist", label:"Equipment Tracking", icon:"list"},
+  {id:"sites", label:"Projects", icon:"map"},
+  
   {sec:"Movement"},
   {id:"request", label:"Requests", icon:"inbox"},
   {id:"transfer", label:"Transfers", icon:"swap"},
   {id:"return", label:"Returns", icon:"undo"},
   {id:"repair", label:"Repairs", icon:"wrench"},
   {id:"missing", label:"Missing", icon:"alert"},
+  {sec:"Materials"},
+  {id:"consumables", label:"Material Requests", icon:"box"},
   {sec:"Records"},
   {id:"purchase", label:"Purchases", icon:"cart"},
   {id:"reports", label:"Reports", icon:"chart"},
   {id:"activity", label:"Activity Logs", icon:"clock"},
   {sec:"System"},
-  {id:"users", label:"Users", icon:"users"},
+  {id:"users", label:"People & Accountability", icon:"users"},
   {id:"settings", label:"Settings", icon:"cog"},
 ];
 
@@ -32,16 +34,19 @@ const ENGR_NAV = [
   {sec:"Overview"},
   {id:"dashboard", label:"Dashboard", icon:"grid"},
   {sec:"Assets"},
-  {id:"masterlist", label:"Masterlist", icon:"list"},
-  {id:"sites", label:"Sites", icon:"map"},
-  {id:"consumables", label:"Consumables", icon:"box"},
+  {id:"masterlist", label:"Equipment Tracking", icon:"list"},
+  {id:"sites", label:"Projects", icon:"map"},
+  
   {sec:"Movement"},
   {id:"request", label:"Requests", icon:"inbox"},
   {id:"transfer", label:"Transfers", icon:"swap"},
   {id:"return", label:"Returns", icon:"undo"},
   {id:"repair", label:"Repairs", icon:"wrench"},
   {id:"missing", label:"Missing", icon:"alert"},
-  {sec:"System"},
+  {sec:"Materials"},
+  {id:"consumables", label:"Material Requests", icon:"box"},
+  {sec:"Records"},
+  {id:"activity", label:"Activity Logs", icon:"clock"},
   {id:"settings", label:"Settings", icon:"cog"},
   // Notice that Records, Purchases, Reports, and System sections are removed here
 ];
@@ -55,7 +60,7 @@ function buildNav(){
 
   el.innerHTML = currentNav.map(n=>{
     if(n.sec) return `<div class="nav-section-label">${n.sec}</div>`;
-    return `<div class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.label}</span></div>`;
+    return `<button type="button" class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.label}</span></button>`;
   }).join('');
 }
 
@@ -73,9 +78,11 @@ function showScreen(id, afterActivate){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     const target = document.getElementById('screen-'+id);
     if(target) target.classList.add('active');
+    if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
     setActiveNav(id);
     document.getElementById('content').scrollTop = 0;
     window.scrollTo(0,0);
     if(afterActivate) afterActivate();
   });
 }
+

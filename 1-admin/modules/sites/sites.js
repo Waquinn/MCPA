@@ -1,9 +1,14 @@
-/* Scoped to Sites: the module loader executes this file on every visit. */
+/* Projects retains the sites DOM IDs for existing navigation. */
 (function () {
   'use strict';
 
   const root = document.getElementById('sites-module');
+  window.MCPAProjects?.dispose();
   const dialog = root.querySelector('#sites-dialog');
+  const demo = window.MovementStore?.mode === 'demo';
+  const context = () => window.MovementStore?.getContext() || { role: location.pathname.includes('2-engr') ? 'engineer' : 'admin' };
+  const isEngineer = () => context().role !== 'admin';
+  const readOnly = demo || isEngineer();
   const siteStatuses = {
     active: ['Active', 'inuse'], discrepancy: ['Discrepancy', 'discrepancy'],
     verified: ['Verified', 'verified'], turnover: ['Turnover', 'pending'],
@@ -15,7 +20,7 @@
     repair: ['For Repair', 'repair'], underrepair: ['Under Repair', 'underrepair'],
     missing: ['Missing', 'missing'], disposed: ['Disposed', 'disposed']
   };
-  const state = { sites: [], equipment: [], selectedId: null, loading: false, saving: false, ready: false, review: { search: '', status: '' } };
+  const state = { sites: [], equipment: [], profiles: [], selectedId: null, loading: false, saving: false, ready: false, dirty: false, disposed: false, scope: isEngineer() ? 'mine' : 'all', search: '', includeArchived: false, review: { search: '', status: '' } };
   let dialogReturnFocus = null;
 
   function escape(value) {
@@ -35,11 +40,25 @@
     const date = new Date(`${value.slice(0, 10)}T12:00:00`);
     return Number.isNaN(date.getTime()) ? 'Not recorded' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
+  function formatTimestamp(value) {
+    const date = new Date(value);
+    return !value || Number.isNaN(date.getTime()) ? 'Not recorded' : date.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Manila' });
+  }
   function badge(value, statuses) {
     const [label, style] = statuses[value] || [value || 'Unknown', 'disposed'];
     return `<span class="badge badge-${style}">${escape(label)}</span>`;
   }
   function currentSite() { return state.sites.find(site => site.id === state.selectedId); }
+  function assignedToMe(site) {
+    const user = context();
+    if (site.assigned_engineer_id) return site.assigned_engineer_id === user.id;
+    return Boolean(user.name) && site.assigned_engineer === user.name;
+  }
+  function filteredSites() {
+    return state.sites.filter(site => (state.includeArchived || !site.archived_at)
+      && (state.scope !== 'mine' || assignedToMe(site))
+      && (!state.search || [site.name, site.location, site.assigned_engineer, site.phase].some(value => String(value || '').toLowerCase().includes(state.search))));
+  }
   function siteEquipment(site) { return state.equipment.filter(item => item.site_id === site.id); }
   function visibleEquipment(site) { return siteEquipment(site).filter(item => item.quantity > 0); }
   function totalQuantity(items) { return items.reduce((sum, item) => sum + item.quantity, 0); }
@@ -57,12 +76,12 @@
   }
 
   function databaseError(error) {
-    if (['PGRST205', '42703'].includes(error.code)) return 'Sites is not set up in the database yet. Contact your administrator to complete setup, then refresh.';
-    if (error.code === '23505') return 'A site with this name already exists. Please use a different name.';
-    if (['23503', '23001'].includes(error.code)) return 'This site still has linked records and cannot be deleted. Its equipment and history must be retained.';
-    if (error.code === '42501') return 'Site changes are blocked by database permissions. Ask your administrator to apply the Sites access update, then try again. Your entries have been kept.';
+    if (['PGRST205', '42703'].includes(error.code)) return 'Projects is not set up in the database yet. An administrator must apply the Projects setup, then retry.';
+    if (error.code === '23505') return 'A project with this name already exists. Please use a different name.';
+    if (['23503', '23001'].includes(error.code)) return 'This project has linked records. Preserve its equipment and history by archiving it.';
+    if (error.code === '42501') return 'Project changes are blocked by database permissions. Ask your administrator to apply the Projects access update, then try again. Your entries have been kept.';
     if (['PGRST301', 'PGRST303'].includes(error.code)) return 'Your database session has expired or is invalid. Sign in again, then retry.';
-    if (error.code === '23514') return 'Some site details are invalid. Please check the form and try again.';
+    if (error.code === '23514') return 'Some project details are invalid. Please check the form and try again.';
     return error.message || 'The database could not be reached. Please try again.';
   }
 
@@ -81,15 +100,25 @@
   // All database writes concern site metadata. Equipment and movement are read-only here.
   const repository = {
     async load() {
+      if (demo) {
+        await window.MovementStore.initialize();
+        const snapshot = window.MovementStore.getState();
+        return {
+          sites: snapshot.sites.map(site => ({...site, location: site.location || 'Demo project', assigned_engineer: site.assigned_engineer || site.engineer || 'Unassigned', phase: site.phase || '', status: site.status || 'active', progress: site.progress || 0})),
+          equipment: snapshot.tools.map(tool => ({...tool, id: tool.id, asset_id: tool.id, quantity: tool.qty, category: tool.cat, site_id: tool.siteId || snapshot.sites.find(site => site.name === tool.site)?.id, current_holder_id: tool.holderId, holder: tool.holder || 'Unassigned'})),
+          profiles: snapshot.users || []
+        };
+      }
       const [sites, equipment, profiles] = await Promise.all([
         readAll('sites', '*', 'id'),
         readAll('equipment', 'id,asset_id,name,brand,model,serial_number,category,condition,tracking_type,quantity,unit,details,status,current_holder_id,site_id', 'id'),
         // A restricted profile must not hide otherwise readable equipment.
-        readAll('profiles', 'id,name', 'id').catch(() => [])
+        readAll('profiles', '*', 'id').catch(() => [])
       ]);
       const holders = new Map(profiles.map(profile => [profile.id, profile.name]));
       return {
         sites: sites.sort((a, b) => a.name.localeCompare(b.name)),
+        profiles: profiles.filter(profile => !profile.role || /engineer|architect/i.test(profile.role)),
         equipment: equipment.map(item => {
           const status = String(item.status || '').toLowerCase().replace(/[\s_-]/g, '');
           const quantity = Number(item.quantity ?? (item.tracking_type === 'Individual' ? 1 : 0));
@@ -98,26 +127,42 @@
       };
     },
     async save(values, original) {
+      if (readOnly || isEngineer()) throw new Error('Only an Admin can edit live project records.');
       let query = original
         ? client().from('sites').update(values).eq('id', original.id).eq('updated_at', original.updated_at)
         : client().from('sites').insert(values);
       const { data, error } = await query.select('*');
       if (error) throw error;
-      if (!data?.length) throw new Error('This site changed or is no longer editable. Close this form and refresh before trying again.');
+      if (!data?.length) throw new Error('This project changed or is no longer editable. Close this form and retry after the next update.');
       return data[0];
     },
-    async remove(site) {
-      // The foreign key also enforces this if equipment is assigned after this check.
-      const { data: equipment, error: readError } = await client().from('equipment').select('id').eq('site_id', site.id).limit(1);
-      if (readError) throw readError;
-      if (equipment?.length) throw new Error('This site has linked equipment and cannot be deleted.');
-      const { data, error } = await client().from('sites').delete().eq('id', site.id).eq('updated_at', site.updated_at).select('id');
-      if (error) throw error;
-      if (!data?.length) throw new Error('This site changed or is no longer editable. Close this dialog and refresh before trying again.');
+    async history(siteId) {
+      if (demo) return [];
+      const rows = [];
+      for (let offset = 0; ; offset += 500) {
+        const { data, count, error } = await client().from('project_history').select('*', {count: 'exact'}).eq('project_id', siteId).order('changed_at', {ascending: false}).range(offset, offset + 499);
+        if (error) throw error;
+        rows.push(...(data || []));
+        if (!data?.length || (count != null ? rows.length >= count : data.length < 500)) return rows;
+      }
     },
-    // Replace this reader when the movement table is introduced. Never infer history
-    // from the current holder, site assignment, registration date, or mock screens.
-    async movements() { return []; }
+    async movements(siteId, equipmentId) {
+      if (!window.MovementStore) return [];
+      const snapshot = await window.MovementStore.refresh();
+      const site = state.sites.find(item => item.id === siteId);
+      const asset = snapshot.tools.find(item => (item.dbId || item.id) === equipmentId);
+      const rows = [];
+      [...snapshot.transfers.filter(item => item.status === 'received'), ...snapshot.returns].forEach(record => {
+        (record.source || []).forEach(source => {
+          if (equipmentId && source.toolId !== asset?.id) return;
+          const inspection = (record.inspections || record.conditions || []).find(item => item.toolId === source.toolId);
+          if (!inspection || inspection.condition === 'lost') return;
+          if (source.siteId !== siteId && record.destinationId !== siteId && source.site !== site?.name && record.destination !== site?.name) return;
+          rows.push({date: record.receivedAt || record.createdAt, asset_id: source.toolId, from: source.site || 'Unassigned', to: record.destination || source.site, quantity: source.qty ?? snapshot.tools.find(item => item.id === source.toolId)?.qty ?? 1});
+        });
+      });
+      return rows.sort((a,b) => b.date.localeCompare(a.date));
+    }
   };
 
   function feedback(message, isError = false) {
@@ -138,13 +183,14 @@
 
   function syncControls() {
     root.querySelectorAll('[data-action="refresh"]').forEach(button => { button.disabled = state.loading || state.saving; });
-    root.querySelectorAll('[data-action="add-site"], [data-action="edit-site"], [data-action="delete-site"]').forEach(button => {
-      button.disabled = !state.ready || state.loading || state.saving;
+    root.querySelectorAll('[data-action="add-site"], [data-action="edit-site"], [data-action="archive-site"]').forEach(button => {
+      button.disabled = readOnly || isEngineer() || !state.ready || state.loading || state.saving;
+      button.hidden = readOnly || isEngineer();
     });
   }
 
-  async function refresh() {
-    if (state.loading || state.saving) return;
+  async function refresh(automatic = false) {
+    if (state.loading || state.saving || state.disposed || (automatic && (dialog.open || state.dirty || document.hidden || !root.querySelector('.screen.active')))) return;
     state.loading = true;
     feedback('');
     root.querySelector('#sites-list').setAttribute('aria-busy', 'true');
@@ -155,12 +201,13 @@
       const firstLoad = !state.ready;
       state.sites = result.sites;
       state.equipment = result.equipment;
+      state.profiles = result.profiles;
       state.ready = true;
-      if (firstLoad) state.selectedId = (state.sites.find(site => site.name === 'Casa Buena') || state.sites[0])?.id || null;
+      if (firstLoad) state.selectedId = filteredSites()[0]?.id || null;
       else if (state.selectedId && !currentSite()) {
         state.selectedId = null;
         if (root.querySelector('#screen-site-detail.active')) showScreen('sites');
-        feedback('This site is no longer available. The site list has been refreshed.');
+        feedback('This project is no longer available. The project list has been updated.');
       }
       render();
     } catch (error) {
@@ -178,18 +225,24 @@
   }
 
   function render() {
-    root.querySelector('#sites-list').innerHTML = state.sites.length ? state.sites.map(site => {
+    const projects = filteredSites();
+    root.querySelector('#projects-count').textContent = `${projects.length} of ${state.sites.length} projects · ${new Set(state.sites.filter(site => !site.archived_at).map(site => site.assigned_engineer_id || site.assigned_engineer).filter(value => value && value !== 'Unassigned')).size} assigned engineers / architects`;
+    root.querySelector('#projects-scope').value = state.scope;
+    root.querySelector('#projects-scope').hidden = !isEngineer();
+    root.querySelector('#projects-mode-note').textContent = demo ? 'Demo projects are read-only. Assignment history is recorded for live projects.' : 'Updates automatically every 25 seconds. Admins manage project details and assignments.';
+    root.querySelector('#sites-list').innerHTML = projects.length ? projects.map(site => {
       const items = visibleEquipment(site);
       const count = (...statuses) => totalQuantity(items.filter(item => statuses.includes(item.status)));
       const stats = [['Total', totalQuantity(items)], ['Avail.', count('available')], ['In Use', count('inuse')], ['Repair', count('repair', 'underrepair')]];
       if (count('missing')) stats.push(['Missing', count('missing')]);
       if (count('disposed')) stats.push(['Disposed', count('disposed')]);
       return `<button type="button" class="card site-card" data-action="open-site" data-id="${escape(site.id)}" aria-label="View ${escape(site.name)}">
-        <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.phase)}</span></span>${badge(site.status, siteStatuses)}</span>
+        <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.phase || 'Phase not specified')}</span><span class="sites-muted">${escape(site.location)}</span></span>${site.archived_at ? '<span class="badge badge-disposed">Archived</span>' : badge(site.status, siteStatuses)}</span>
         <span class="site-stat-row">${stats.map(([label, number]) => `<span class="site-stat"><span class="n">${number}</span><span class="l">${label}</span></span>`).join('')}</span>
       </button>`;
-    }).join('') : '<div class="card empty-state sites-full"><p class="t">No sites yet</p><p class="d">Add a site to start tracking its equipment.</p><button type="button" class="btn btn-secondary btn-sm" data-action="add-site">+ Add Site</button></div>';
+    }).join('') : `<div class="card empty-state sites-full"><p class="t">${state.scope === 'mine' ? 'No projects assigned to you' : 'No matching projects'}</p><p class="d">${state.scope === 'mine' ? 'An Admin can assign your profile to one or more projects. Choose All projects to view other projects.' : 'Adjust the filters or add a project to track its equipment.'}</p><button type="button" class="btn btn-secondary btn-sm" data-action="add-site">+ Add Project</button></div>`;
     renderDetail();
+    syncControls();
   }
 
   function inventoryTable(items, emptyText = 'No equipment is currently assigned to this site.') {
@@ -217,20 +270,25 @@
         <p class="sub">${escape(site.location)} · ${escape(site.phase)} — ${site.progress}% complete</p>
       </div><div class="page-head-actions">
         ${badge(site.status, siteStatuses)}
-        <button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Refresh</button>
-        <button type="button" class="btn btn-secondary btn-sm" data-action="edit-site">Edit Site</button>
-        <button type="button" class="btn btn-danger btn-sm" data-action="delete-site">Delete Site</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="project-history">Project History</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="edit-site">Edit Project</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="archive-site">${site.archived_at ? 'Restore Project' : 'Archive Project'}</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="review-tools">Review Assigned Tools</button>
       </div></div>
       <div class="grid grid-4 sites-summary">
-        <div class="card card-pad"><span class="k">Assigned Engineer</span><div class="v">${escape(site.assigned_engineer)}</div></div>
-        <div class="card card-pad"><span class="k">Total Tools On Site</span><div class="v">${totalQuantity(items)} tools</div></div>
+        <div class="card card-pad"><span class="k">Accountable Engineer / Architect</span><div class="v">${escape(site.assigned_engineer)}</div>${site.assigned_engineer_id ? '' : '<span class="sites-muted">Profile link not recorded</span>'}</div>
+        <div class="card card-pad"><span class="k">Equipment at Project</span><div class="v">${totalQuantity(items)} units</div></div>
         <div class="card card-pad"><span class="k">Last Inventory Check</span><div class="v">${formatDate(site.last_inventory_check)}</div></div>
-        <div class="card card-pad"><span class="k">Last Transfer</span><div class="v">Not recorded</div><button type="button" class="sites-text-button" data-action="view-movements">View movement history →</button></div>
+        <div class="card card-pad"><span class="k">Last Movement</span><div class="v" data-last-movement>Loading…</div><button type="button" class="sites-text-button" data-action="view-movements">View movement history →</button></div>
       </div>
       <div class="section-title sites-section-title"><h2>Site Inventory</h2><span class="eyebrow">Zero-quantity items are hidden</span></div>
       <div class="card">${inventoryTable(items)}</div>
       <p class="sites-muted sites-inventory-note">${hiddenCount ? `${hiddenCount} zero-quantity record${hiddenCount === 1 ? ' is' : 's are'} hidden. ` : ''}Equipment assignments and movement are shown for reference only.</p>`;
+    syncControls();
+    const lastMovement = container.querySelector('[data-last-movement]');
+    repository.movements(site.id).then(records => {
+      if (lastMovement.isConnected) lastMovement.textContent = records.length ? formatDate(records[0].date) : 'Not recorded';
+    }).catch(() => { if (lastMovement.isConnected) lastMovement.textContent = 'History unavailable'; });
   }
 
   function openSite(id) {
@@ -256,35 +314,45 @@
   function closeDialog() {
     if (state.saving) return;
     dialog.close();
+    state.dirty = false;
     if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus();
     else root.querySelector('#screen-site-detail.active [data-action="edit-site"], #screen-sites.active [data-action="add-site"]')?.focus();
   }
 
   function editSite(site = null) {
-    if (!state.ready || state.loading) return;
+    if (readOnly || isEngineer() || !state.ready || state.loading) return;
     const value = (field, fallback = '') => escape(site?.[field] ?? fallback);
-    openDialog(site ? 'Edit Site' : 'Add Site', `
+    const legacy = site && !state.profiles.some(profile => profile.id === site.assigned_engineer_id);
+    state.dirty = false;
+    openDialog(site ? 'Edit Project' : 'Add Project', `
       <form id="sites-form" data-id="${value('id')}">
-        <p class="sites-dialog-description">Keep the project details and assigned engineer up to date. Required fields are marked *.</p>
+        <p class="sites-dialog-description">Changes retain the previous and new values in Project History. Select an existing Engineer / Architect profile; one person may handle multiple projects. Required fields are marked *.</p>
         <div id="sites-form-error" class="sites-form-error hidden" role="alert" tabindex="-1"></div>
         <div class="form-grid">
           <div class="field full"><label for="site-name">Site Name *</label><input id="site-name" name="name" value="${value('name')}" maxlength="120" required autofocus autocomplete="off"></div>
           <div class="field full"><label for="site-location">Location *</label><input id="site-location" name="location" value="${value('location')}" maxlength="240" required></div>
-          <div class="field"><label for="site-engineer">Assigned Engineer *</label><input id="site-engineer" name="assigned_engineer" value="${value('assigned_engineer')}" maxlength="120" required></div>
-          <div class="field"><label for="site-phase">Project Phase *</label><input id="site-phase" name="phase" value="${value('phase', 'Planning Phase')}" maxlength="80" required></div>
+          <div class="field"><label for="site-engineer">Engineer / Architect *</label><select id="site-engineer" name="assigned_engineer_id" required><option value="">Select an existing profile</option>${legacy ? `<option value="legacy" selected>${value('assigned_engineer')} (existing assignment)</option>` : ''}${state.profiles.map(profile => `<option value="${escape(profile.id)}"${profile.id === site?.assigned_engineer_id ? ' selected' : ''}>${escape(profile.name)}</option>`).join('')}</select>${!state.profiles.length ? '<small class="sites-muted">No accessible profiles. An Admin must add or make the actual Engineer / Architect profiles available before assigning a new project.</small>' : ''}</div>
+          <div class="field"><label for="site-phase">Project Phase</label><input id="site-phase" name="phase" value="${value('phase')}" maxlength="80" placeholder="Enter the phase used by your team"><small class="sites-muted">Use your actual project terminology, or leave blank.</small></div>
           <div class="field"><label for="site-status">Status *</label><select id="site-status" name="status" required>${Object.entries(siteStatuses).map(([key, [label]]) => `<option value="${key}"${(site?.status || 'planning') === key ? ' selected' : ''}>${label}</option>`).join('')}</select></div>
           <div class="field"><label for="site-progress">Completion (%) *</label><input id="site-progress" name="progress" type="number" value="${value('progress', 0)}" min="0" max="100" step="1" required></div>
           <div class="field full"><label for="site-check">Last Inventory Check</label><input id="site-check" name="last_inventory_check" type="date" value="${value('last_inventory_check')}" max="${today()}"></div>
         </div>
-        <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="btn btn-primary">${site ? 'Save Changes' : 'Create Site'}</button></div>
+        <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="btn btn-primary">${site ? 'Save Changes' : 'Create Project'}</button></div>
       </form>`);
   }
 
   async function saveSite(form) {
-    if (state.saving || state.loading || !form.reportValidity()) return;
+    if (readOnly || isEngineer() || state.saving || state.loading || !form.reportValidity()) return;
     const original = state.sites.find(site => site.id === form.dataset.id);
     const values = Object.fromEntries(new FormData(form));
-    for (const field of ['name', 'location', 'assigned_engineer', 'phase']) {
+    const profile = state.profiles.find(profile => profile.id === values.assigned_engineer_id);
+    if (values.assigned_engineer_id === 'legacy' && original) {
+      values.assigned_engineer_id = original.assigned_engineer_id || null;
+      values.assigned_engineer = original.assigned_engineer;
+    } else if (profile) values.assigned_engineer = profile.name;
+    else { formError('Select an existing Engineer / Architect profile.'); return; }
+    values.phase = normalizeName(values.phase || '');
+    for (const field of ['name', 'location', 'assigned_engineer']) {
       values[field] = normalizeName(values[field]);
       if (!values[field]) { formError('Please complete all required fields. Blank spaces are not valid values.'); return; }
     }
@@ -318,39 +386,37 @@
     syncControls();
     dialog.setAttribute('aria-busy', String(saving));
     dialog.querySelectorAll('button, input, select').forEach(element => { element.disabled = saving; });
-    const submit = dialog.querySelector('[type="submit"], [data-action="confirm-delete"]');
+    const submit = dialog.querySelector('[type="submit"], [data-action="confirm-archive"]');
     if (submit) {
-      if (saving) { submit.dataset.label = submit.textContent; submit.textContent = submit.dataset.action === 'confirm-delete' ? 'Deleting…' : 'Saving…'; }
+      if (saving) { submit.dataset.label = submit.textContent; submit.textContent = 'Saving…'; }
       else if (submit.dataset.label) submit.textContent = submit.dataset.label;
     }
   }
 
-  function deleteSite() {
+  function archiveSite() {
+    if (readOnly || isEngineer()) return;
     const site = currentSite();
     if (!site) return;
-    const linked = siteEquipment(site).length;
-    openDialog('Delete Site', `
+    openDialog(site.archived_at ? 'Restore Project' : 'Archive Project', `
       <div id="sites-form-error" class="sites-form-error hidden" role="alert" tabindex="-1"></div>
-      <p class="sites-dialog-description">${linked ? `${escape(site.name)} has ${linked} linked equipment record${linked === 1 ? '' : 's'}, including any zero-quantity records. A site with linked equipment cannot be deleted.` : `Delete ${escape(site.name)}? This permanently removes the site record and cannot be undone.`}</p>
-      <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog" autofocus>${linked ? 'Close' : 'Cancel'}</button>${linked ? '' : '<button type="button" class="btn btn-danger" data-action="confirm-delete">Delete Site</button>'}</div>`);
+      <p class="sites-dialog-description">${site.archived_at ? 'Restore' : 'Archive'} ${escape(site.name)}? Its equipment assignments and full history will remain available. Archiving does not transfer or return equipment.</p>
+      <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog" autofocus>Cancel</button><button type="button" class="btn btn-primary" data-action="confirm-archive">${site.archived_at ? 'Restore' : 'Archive'}</button></div>`);
   }
 
-  async function confirmDelete() {
-    if (state.saving) return;
+  async function confirmArchive() {
+    if (readOnly || isEngineer() || state.saving) return;
     const site = currentSite();
     if (!site) return;
     setSaving(true);
     try {
-      await repository.remove(site);
+      const saved = await repository.save({ archived_at: site.archived_at ? null : new Date().toISOString() }, site);
       if (!root.isConnected) return;
-      state.sites = state.sites.filter(record => record.id !== site.id);
-      state.selectedId = null;
+      state.sites = state.sites.map(record => record.id === site.id ? saved : record);
       render();
       setSaving(false);
       closeDialog();
       showScreen('sites');
-      root.querySelector('[data-action="add-site"]').focus();
-      feedback(`${site.name} deleted successfully.`);
+      feedback(`${site.name} ${saved.archived_at ? 'archived' : 'restored'}. Its history has been preserved.`);
     } catch (error) { formError(databaseError(error)); }
     finally { setSaving(false); }
   }
@@ -381,6 +447,7 @@
   }
 
   function movementTable(records) {
+    if (records.error) return `<div class="empty-state"><p class="t">Movement history unavailable</p><p class="d">${escape(records.error)}</p></div>`;
     if (!records.length) return '<div class="empty-state sites-movement-empty"><p class="t">No movement records available</p><p class="d">Movement history will appear here when records are available. This view is read-only.</p></div>';
     return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Tool</th><th>From</th><th>To</th><th>Quantity</th></tr></thead><tbody>${records.map(record => `<tr><td>${escape(formatDate(record.date))}</td><td>${escape(record.asset_id)}</td><td>${escape(record.from)}</td><td>${escape(record.to)}</td><td>${escape(record.quantity)}</td></tr>`).join('')}</tbody></table></div>`;
   }
@@ -388,7 +455,8 @@
   async function viewMovements() {
     const site = currentSite();
     if (!site) return;
-    const records = await repository.movements(site.id);
+    const records = await repository.movements(site.id).catch(error => ({error: error.message}));
+    if (!root.isConnected) return;
     openDialog(`Movement History — ${site.name}`, `<p class="sites-dialog-description">Equipment movement into and out of this site.</p><div class="card">${movementTable(records)}</div><div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true);
   }
 
@@ -397,7 +465,8 @@
     const item = site && siteEquipment(site).find(record => record.id === id);
     if (!item) return;
     const fromReview = dialog.open && dialog.dataset.view === 'review';
-    const records = await repository.movements(site.id, item.id);
+    const records = await repository.movements(site.id, item.id).catch(error => ({error: error.message}));
+    if (!root.isConnected) return;
     const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Site', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
     openDialog(item.name, `
       <p class="sites-dialog-description">Equipment details for ${escape(site.name)}.</p>

@@ -7,10 +7,10 @@ if (typeof supabaseClient === 'undefined') {
 var equipmentList = [];
 var currentEditId = null; 
 
-let currentPage = 1;
-let selectedAssets = []; 
-let bulkActionMode = ''; // Tracks if we are updating 'status' or 'location'
-const itemsPerPage = 10;
+var currentPage = 1;
+var selectedAssets = [];
+var bulkActionMode = '';
+var itemsPerPage = 10;
 
 function filterAndResetPage() {
   currentPage = 1;
@@ -32,6 +32,13 @@ async function initMasterlist() {
     return;
   }
 
+  const [siteResult, holderResult] = await Promise.all([
+    supabaseClient.from('sites').select('id,name'),
+    supabaseClient.from('profiles').select('id,name')
+  ]);
+  if (!tbody?.isConnected) return;
+  const siteNames = new Map((siteResult.data || []).map(site => [site.id, site.name]));
+  const holderNames = new Map((holderResult.data || []).map(profile => [profile.id, profile.name]));
   equipmentList = (data || []).map(item => ({
     assetId: item.asset_id,
     equipmentType: item.name,
@@ -39,12 +46,12 @@ async function initMasterlist() {
     brand: item.brand || 'Unknown',
     model: item.model || '—',
     serialNumber: item.serial_number || '—',
-    site: item.site || 'Casa Buena',
-    holder: item.current_holder_id || '—',
+    site: siteNames.get(item.site_id) || item.site_id || 'Unassigned',
+    holder: holderNames.get(item.current_holder_id) || item.current_holder_id || '—',
     status: formatDbStatus(item.status),
-    condition: item.condition || 'Good',
+    condition: ['repair','underrepair'].includes(formatDbStatus(item.status)) ? 'Damaged' : formatDbStatus(item.status) === 'missing' ? 'Unconfirmed' : item.condition || 'Good',
     trackingType: item.tracking_type || 'Individual',
-    quantity: item.quantity || 1,
+    quantity: item.quantity ?? 1,
     unit: item.unit || '',
     details: item.details || '—',
     createdAt: item.created_at
@@ -78,7 +85,9 @@ function formatDbStatus(status) {
   if (!status) return 'available';
   const s = status.toString().toUpperCase();
   if (s === 'IN_USE') return 'inuse';
-  if (s === 'REPAIR') return 'repair';
+  if (s === 'REPAIR' || s === 'FOR_REPAIR') return 'repair';
+  if (s === 'UNDER_REPAIR') return 'underrepair';
+  if (s === 'DISPOSED') return 'disposed';
   if (s === 'MISSING') return 'missing';
   return 'available';
 }
@@ -372,6 +381,14 @@ function showToolProfile(assetId) {
 
   showMasterlistView('tool-profile');
 
+  const timeline = content.querySelector('.timeline');
+  timeline.textContent = 'Loading recorded movement…';
+  window.MovementStore.refresh().then(state => {
+    if (!timeline.isConnected) return;
+    const events = state.activity.filter(event => event.toolIds?.includes(assetId));
+    timeline.innerHTML = events.length ? events.map(event => `<div class="tl-item"><div class="tl-date">${escapeHTML(formatDate(event.createdAt))}</div><div class="tl-title">${escapeHTML(event.action)}</div><div class="tl-detail">${escapeHTML(event.summary)}</div><div class="tl-meta">${escapeHTML(event.actor)} · ${escapeHTML(event.entityId)}</div></div>`).join('') : '<p>No movement has been recorded for this tool.</p>';
+  }).catch(error => { if (timeline.isConnected) timeline.textContent = error.message; });
+
   setTimeout(() => {
     const qrEl = document.getElementById("qrContainerProfile");
     if (qrEl) {
@@ -427,8 +444,8 @@ function setupMasterlistListeners() {
   const btnBulkLocation = document.getElementById('btnBulkLocation');
   const btnBulkCancel = document.getElementById('btnBulkCancel');
   
-  if (btnBulkStatus) btnBulkStatus.onclick = bulkUpdateStatus;
-  if (btnBulkLocation) btnBulkLocation.onclick = bulkAssignLocation;
+  if (btnBulkStatus) { btnBulkStatus.textContent = 'Report an issue'; btnBulkStatus.onclick = () => { window.movementDraft = {kind:'repair',toolIds:selectedAssets.slice(0,1)}; showScreen('repair'); }; }
+  if (btnBulkLocation) { btnBulkLocation.textContent = 'Transfer selected tools'; btnBulkLocation.onclick = () => { window.movementDraft = {kind:'transfer',toolIds:selectedAssets.slice()}; showScreen('transfer'); }; }
   if (btnBulkCancel) btnBulkCancel.onclick = clearBulkSelection;
 
   // --- CONNECTING THE BULK MODAL CLOSE BUTTONS ---

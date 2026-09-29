@@ -21,4 +21,4 @@ const TOOLS = [
   {id:"JHM-003", name:"Jackhammer", cat:"Power Tool", brand:"Bosch", qty:1, site:"Northgate Depot", holder:"—", status:"available", acquired:"Feb 11, 2026"},
 ];
 
-const STATUS_LABEL = {available:"Available", inuse:"In Use", repair:"For Repair", underrepair:"Under Repair", missing:"Missing", disposed:"Disposed"};
+const STATUS_LABEL = {available:"Available", inuse:"Deployed", repair:"For Repair", underrepair:"Under Repair", missing:"Missing", disposed:"Retired"};
