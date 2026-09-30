@@ -126,7 +126,7 @@
   }
   function site(next, name, required) {
     var result = text(name, 'Destination', required);
-    if (result && !next.sites.some(function (record) { return record.name === result || record.id === result; })) fail('Choose an existing destination site.');
+    if (result && !next.sites.some(function (record) { return record.name === result || record.id === result; })) fail('Choose an existing destination project.');
     var match = next.sites.find(function (record) { return record.name === result || record.id === result; });
     return match ? match.name : result;
   }

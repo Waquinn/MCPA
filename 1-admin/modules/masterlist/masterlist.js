@@ -19,27 +19,29 @@ function filterAndResetPage() {
 
 async function initMasterlist() {
   const tbody = document.getElementById("equipmentTableBody");
-  if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--gray);">Loading data...</td></tr>`;
-
-  const { data, error } = await supabaseClient
-    .from('equipment')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
+  const owner = window.AdminEquipment;
+  if (!tbody || owner?.disposed) return;
+  const request = owner.request = (owner.request || 0) + 1;
+  if (!tbody.children.length) tbody.innerHTML = '<tr><td colspan="10">Loading equipment…</td></tr>';
+  let data;
+  try { data = await window.EquipmentTracking.readAll('equipment'); }
+  catch (error) {
     console.error("Error fetching equipment:", error.message);
-    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:red;">Failed to load data.</td></tr>`;
+    if (tbody.isConnected) document.getElementById('inventory-sync').textContent = 'Equipment could not load. Retrying automatically.';
     return;
   }
 
   const [siteResult, holderResult] = await Promise.all([
-    supabaseClient.from('sites').select('id,name'),
-    supabaseClient.from('profiles').select('id,name')
+    window.EquipmentTracking.readAll('sites').then(data => ({data})),
+    window.EquipmentTracking.readAll('profiles').then(data => ({data})).catch(() => ({data: []}))
   ]);
-  if (!tbody?.isConnected) return;
+  if (!tbody?.isConnected || owner?.disposed || owner !== window.AdminEquipment || request !== owner.request) return;
   const siteNames = new Map((siteResult.data || []).map(site => [site.id, site.name]));
   const holderNames = new Map((holderResult.data || []).map(profile => [profile.id, profile.name]));
   equipmentList = (data || []).map(item => ({
+    site_id: item.site_id,
+    image_url: item.image_url,
+    availability: window.EquipmentTracking.availability(item),
     assetId: item.asset_id,
     equipmentType: item.name,
     category: item.category || 'Uncategorized',
@@ -49,6 +51,7 @@ async function initMasterlist() {
     site: siteNames.get(item.site_id) || item.site_id || 'Unassigned',
     holder: holderNames.get(item.current_holder_id) || item.current_holder_id || '—',
     status: formatDbStatus(item.status),
+    dbStatus: item.status,
     condition: ['repair','underrepair'].includes(formatDbStatus(item.status)) ? 'Damaged' : formatDbStatus(item.status) === 'missing' ? 'Unconfirmed' : item.condition || 'Good',
     trackingType: item.tracking_type || 'Individual',
     quantity: item.quantity ?? 1,
@@ -59,7 +62,8 @@ async function initMasterlist() {
 
   populateFilters();
   renderTable();
-  setupMasterlistListeners();
+  if (!tbody.dataset.listeners) { setupMasterlistListeners(); tbody.dataset.listeners = 'true'; }
+  document.getElementById('inventory-sync').textContent = 'Updates automatically';
 }
 
 function populateFilters() {
@@ -76,7 +80,7 @@ function populateFilters() {
   if (siteFilter) {
     const currentSite = siteFilter.value;
     const sites = [...new Set(equipmentList.map(item => item.site).filter(Boolean))].sort();
-    siteFilter.innerHTML = '<option value="">Site</option>' + sites.map(s => `<option value="${s}">${escapeHTML(s)}</option>`).join('');
+    siteFilter.innerHTML = '<option value="">Project</option>' + sites.map(s => `<option value="${s}">${escapeHTML(s)}</option>`).join('');
     siteFilter.value = currentSite;
   }
 }
@@ -196,7 +200,7 @@ function renderTable() {
   const filtered = equipmentList.filter(item => {
     return (!search || item.assetId.toLowerCase().includes(search) || item.brand.toLowerCase().includes(search) || item.equipmentType.toLowerCase().includes(search)) &&
            (!typeVal || item.category === typeVal) &&
-           (!statusVal || item.status === statusVal.toLowerCase().replace(/\s+/g, '')) &&
+           window.EquipmentTracking.matchesStatus({...item, status: item.dbStatus}, statusVal) &&
            (!siteVal || item.site === siteVal);
   });
 
@@ -235,13 +239,15 @@ function renderTable() {
         <span class="tool-id-chip">${escapeHTML(item.assetId)}</span>
       </td>
       <td style="padding:12px; border-bottom:1px solid var(--line);">
+        <div class="equipment-identity">${window.EquipmentVisual.thumbnail(item)}<div>
         <div class="cell-name" style="font-weight:600;">${escapeHTML(item.equipmentType)}</div>
         <div class="cell-sub" style="font-size:11px; color:var(--gray);">${escapeHTML(item.model !== '—' ? item.model : 'Standard')}</div>
+        </div></div>
       </td>
       <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.category)}</td>
       <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.brand)}</td>
       <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.site)}</td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);"><span class="badge ${getBadgeClass(item.status)}">${item.status.toUpperCase()}</span></td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);"><span class="badge ${getBadgeClass(item.status)}">${escapeHTML(STATUS_LABEL[item.status] || item.status)}</span><div class="cell-sub">${escapeHTML(item.availability)}</div></td>
       
       <td style="padding:12px; border-bottom:1px solid var(--line);">
         <span style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; ${getConditionColor(item.condition)}">
@@ -655,7 +661,7 @@ function exportMasterlist() {
   const filtered = equipmentList.filter(item => {
     return (!search || item.assetId.toLowerCase().includes(search) || item.brand.toLowerCase().includes(search) || item.equipmentType.toLowerCase().includes(search)) &&
            (!typeVal || item.category === typeVal) &&
-           (!statusVal || item.status === statusVal.toLowerCase().replace(/\s+/g, '')) &&
+           window.EquipmentTracking.matchesStatus({...item, status: item.dbStatus}, statusVal) &&
            (!siteVal || item.site === siteVal);
   });
 
@@ -741,4 +747,17 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-initMasterlist();
+(function () {
+  window.AdminEquipment?.dispose();
+  const owner = {disposed: false, dispose() { this.disposed = true; stop(); }};
+  let stop = () => {};
+  window.AdminEquipment = owner;
+  stop = window.EquipmentTracking.watch(initMasterlist, message => {
+    const target = document.getElementById('inventory-sync');
+    if (target && !owner.disposed) target.textContent = message;
+  });
+  initMasterlist().catch(() => {
+    const target = document.getElementById('inventory-sync');
+    if (target && !owner.disposed) target.textContent = 'Projects could not load. Retrying automatically.';
+  });
+})();

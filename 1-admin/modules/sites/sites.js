@@ -1,4 +1,4 @@
-/* Projects retains the sites DOM IDs for existing navigation. */
+/* Projects retains the projects DOM IDs for existing navigation. */
 (function () {
   'use strict';
 
@@ -51,11 +51,11 @@
   function currentSite() { return state.sites.find(site => site.id === state.selectedId); }
   function assignedToMe(site) {
     const user = context();
-    if (site.assigned_engineer_id) return site.assigned_engineer_id === user.id;
+    if (site.assigned_engineer_id) return project.assigned_engineer_id === user.id;
     return Boolean(user.name) && site.assigned_engineer === user.name;
   }
   function filteredSites() {
-    return state.sites.filter(site => (state.includeArchived || !site.archived_at)
+    return state.sites.filter(site => (state.includeArchived || (demo ? !site.archived_at : site.is_active === true))
       && (state.scope !== 'mine' || assignedToMe(site))
       && (!state.search || [site.name, site.location, site.assigned_engineer, site.phase].some(value => String(value || '').toLowerCase().includes(state.search))));
   }
@@ -111,7 +111,7 @@
       }
       const [sites, equipment, profiles] = await Promise.all([
         readAll('sites', '*', 'id'),
-        readAll('equipment', 'id,asset_id,name,brand,model,serial_number,category,condition,tracking_type,quantity,unit,details,status,current_holder_id,site_id', 'id'),
+        readAll('equipment', '*', 'id'),
         // A restricted profile must not hide otherwise readable equipment.
         readAll('profiles', '*', 'id').catch(() => [])
       ]);
@@ -214,8 +214,8 @@
       if (!root.isConnected) return;
       feedback(databaseError(error), true);
       if (!state.ready) {
-        root.querySelector('#sites-list').innerHTML = '<div class="card empty-state sites-full"><p class="t">Unable to load sites</p><p class="d">Please check the database connection and try again.</p><button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Try Again</button></div>';
-        root.querySelector('#site-detail-content').innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Sites</button><div class="card empty-state"><p class="t">Unable to load site details</p><button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Try Again</button></div>';
+        root.querySelector('#sites-list').innerHTML = '<div class="card empty-state sites-full"><p class="t">Unable to load projects</p><p class="d">Please check the database connection and try again.</p><button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Try Again</button></div>';
+        root.querySelector('#site-detail-content').innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Projects</button><div class="card empty-state"><p class="t">Unable to load project details</p><button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Try Again</button></div>';
       }
     } finally {
       state.loading = false;
@@ -229,27 +229,28 @@
     root.querySelector('#projects-count').textContent = `${projects.length} of ${state.sites.length} projects · ${new Set(state.sites.filter(site => !site.archived_at).map(site => site.assigned_engineer_id || site.assigned_engineer).filter(value => value && value !== 'Unassigned')).size} assigned engineers / architects`;
     root.querySelector('#projects-scope').value = state.scope;
     root.querySelector('#projects-scope').hidden = !isEngineer();
-    root.querySelector('#projects-mode-note').textContent = demo ? 'Demo projects are read-only. Assignment history is recorded for live projects.' : 'Updates automatically every 25 seconds. Admins manage project details and assignments.';
+    root.querySelector('#projects-mode-note').textContent = demo ? 'Demo projects are read-only.' : 'Projects and equipment update automatically. Admins manage project details and assignments.';
     root.querySelector('#sites-list').innerHTML = projects.length ? projects.map(site => {
       const items = visibleEquipment(site);
       const count = (...statuses) => totalQuantity(items.filter(item => statuses.includes(item.status)));
-      const stats = [['Total', totalQuantity(items)], ['Avail.', count('available')], ['In Use', count('inuse')], ['Repair', count('repair', 'underrepair')]];
+      const totals = window.EquipmentTracking.tally(items);
+      const stats = [['Total', totals.total], ['Available', totals.available], ['Deployed', totals.deployed], ['Repair', count('repair', 'underrepair')]];
       if (count('missing')) stats.push(['Missing', count('missing')]);
       if (count('disposed')) stats.push(['Disposed', count('disposed')]);
       return `<button type="button" class="card site-card" data-action="open-site" data-id="${escape(site.id)}" aria-label="View ${escape(site.name)}">
-        <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.phase || 'Phase not specified')}</span><span class="sites-muted">${escape(site.location)}</span></span>${site.archived_at ? '<span class="badge badge-disposed">Archived</span>' : badge(site.status, siteStatuses)}</span>
-        <span class="site-stat-row">${stats.map(([label, number]) => `<span class="site-stat"><span class="n">${number}</span><span class="l">${label}</span></span>`).join('')}</span>
+        <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.phase || 'Phase not specified')}</span><span class="sites-muted">${escape(site.location)}</span></span>${site.is_active === false ? '<span class="badge badge-disposed">Archived</span>' : badge(site.status, siteStatuses)}</span>
+        <span class="site-stat-row">${stats.filter(([, number]) => number > 0).map(([label, number]) => `<span class="site-stat"><span class="n">${number}</span><span class="l">${label}</span></span>`).join('')}</span>
       </button>`;
     }).join('') : `<div class="card empty-state sites-full"><p class="t">${state.scope === 'mine' ? 'No projects assigned to you' : 'No matching projects'}</p><p class="d">${state.scope === 'mine' ? 'An Admin can assign your profile to one or more projects. Choose All projects to view other projects.' : 'Adjust the filters or add a project to track its equipment.'}</p><button type="button" class="btn btn-secondary btn-sm" data-action="add-site">+ Add Project</button></div>`;
     renderDetail();
     syncControls();
   }
 
-  function inventoryTable(items, emptyText = 'No equipment is currently assigned to this site.') {
+  function inventoryTable(items, emptyText = 'No equipment is currently assigned to this project.') {
     return `<div class="table-wrap"><table><thead><tr><th>Tool</th><th>Quantity</th><th>Status</th><th>Current Holder</th><th><span class="sites-muted">Details</span></th></tr></thead><tbody>${items.length ? items.map(item => `<tr>
-      <td class="cell-name">${escape(item.name)}<div class="cell-sub mono">${escape(item.asset_id)}</div></td>
+      <td class="cell-name"><div class="equipment-identity">${window.EquipmentVisual.thumbnail(item)}<div>${escape(item.name)}<div class="cell-sub mono">${escape(item.asset_id)}</div></div></div></td>
       <td class="mono">${item.quantity}${item.unit ? ` <span class="sites-muted">${escape(item.unit)}</span>` : ''}</td>
-      <td>${badge(item.status, toolStatuses)}</td><td>${escape(item.holder)}</td>
+      <td>${badge(item.status, toolStatuses)}<div class="cell-sub">${escape(window.EquipmentTracking.availability(item))}</div></td><td>${escape(item.holder)}</td>
       <td class="sites-row-action"><button type="button" class="sites-text-button" data-action="view-tool" data-id="${escape(item.id)}" aria-label="View ${escape(item.name)} ${escape(item.asset_id)}">View →</button></td>
     </tr>`).join('') : `<tr><td colspan="5" class="empty-state">${escape(emptyText)}</td></tr>`}</tbody></table></div>`;
   }
@@ -258,21 +259,21 @@
     const container = root.querySelector('#site-detail-content');
     const site = currentSite();
     if (!site) {
-      container.innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Sites</button><div class="card empty-state"><h1 class="t" id="site-heading">No site selected</h1><p class="d">Add a site or select one from All Sites.</p></div>';
+      container.innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Projects</button><div class="card empty-state"><h1 class="t" id="site-heading">No project selected</h1><p class="d">Add a project or select one from All Projects.</p></div>';
       return;
     }
     const items = visibleEquipment(site);
     const hiddenCount = siteEquipment(site).length - items.length;
     container.innerHTML = `
       <div class="page-head"><div>
-        <button type="button" class="sites-back eyebrow" data-action="all-sites">← All Sites</button>
+        <button type="button" class="sites-back eyebrow" data-action="all-sites">← All Projects</button>
         <h1 class="display" id="site-heading">${escape(site.name)}</h1>
         <p class="sub">${escape(site.location)} · ${escape(site.phase)} — ${site.progress}% complete</p>
       </div><div class="page-head-actions">
         ${badge(site.status, siteStatuses)}
         <button type="button" class="btn btn-secondary btn-sm" data-action="project-history">Project History</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="edit-site">Edit Project</button>
-        <button type="button" class="btn btn-secondary btn-sm" data-action="archive-site">${site.archived_at ? 'Restore Project' : 'Archive Project'}</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="archive-site">${site.is_active === false ? 'Restore Project' : 'Archive Project'}</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="review-tools">Review Assigned Tools</button>
       </div></div>
       <div class="grid grid-4 sites-summary">
@@ -281,7 +282,7 @@
         <div class="card card-pad"><span class="k">Last Inventory Check</span><div class="v">${formatDate(site.last_inventory_check)}</div></div>
         <div class="card card-pad"><span class="k">Last Movement</span><div class="v" data-last-movement>Loading…</div><button type="button" class="sites-text-button" data-action="view-movements">View movement history →</button></div>
       </div>
-      <div class="section-title sites-section-title"><h2>Site Inventory</h2><span class="eyebrow">Zero-quantity items are hidden</span></div>
+      <div class="section-title sites-section-title"><h2>Project Inventory</h2><span class="eyebrow">Zero-quantity items are hidden</span></div>
       <div class="card">${inventoryTable(items)}</div>
       <p class="sites-muted sites-inventory-note">${hiddenCount ? `${hiddenCount} zero-quantity record${hiddenCount === 1 ? ' is' : 's are'} hidden. ` : ''}Equipment assignments and movement are shown for reference only.</p>`;
     syncControls();
@@ -315,6 +316,7 @@
     if (state.saving) return;
     dialog.close();
     state.dirty = false;
+    void refresh(true);
     if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus();
     else root.querySelector('#screen-site-detail.active [data-action="edit-site"], #screen-sites.active [data-action="add-site"]')?.focus();
   }
@@ -329,7 +331,7 @@
         <p class="sites-dialog-description">Changes retain the previous and new values in Project History. Select an existing Engineer / Architect profile; one person may handle multiple projects. Required fields are marked *.</p>
         <div id="sites-form-error" class="sites-form-error hidden" role="alert" tabindex="-1"></div>
         <div class="form-grid">
-          <div class="field full"><label for="site-name">Site Name *</label><input id="site-name" name="name" value="${value('name')}" maxlength="120" required autofocus autocomplete="off"></div>
+          <div class="field full"><label for="site-name">Project Name *</label><input id="site-name" name="name" value="${value('name')}" maxlength="120" required autofocus autocomplete="off"></div>
           <div class="field full"><label for="site-location">Location *</label><input id="site-location" name="location" value="${value('location')}" maxlength="240" required></div>
           <div class="field"><label for="site-engineer">Engineer / Architect *</label><select id="site-engineer" name="assigned_engineer_id" required><option value="">Select an existing profile</option>${legacy ? `<option value="legacy" selected>${value('assigned_engineer')} (existing assignment)</option>` : ''}${state.profiles.map(profile => `<option value="${escape(profile.id)}"${profile.id === site?.assigned_engineer_id ? ' selected' : ''}>${escape(profile.name)}</option>`).join('')}</select>${!state.profiles.length ? '<small class="sites-muted">No accessible profiles. An Admin must add or make the actual Engineer / Architect profiles available before assigning a new project.</small>' : ''}</div>
           <div class="field"><label for="site-phase">Project Phase</label><input id="site-phase" name="phase" value="${value('phase')}" maxlength="80" placeholder="Enter the phase used by your team"><small class="sites-muted">Use your actual project terminology, or leave blank.</small></div>
@@ -361,7 +363,7 @@
     }
     values.progress = Number(values.progress);
     if (!Number.isInteger(values.progress) || values.progress < 0 || values.progress > 100) { formError('Completion must be a whole number from 0 to 100.'); return; }
-    if (!(values.status in siteStatuses)) { formError('Please select a valid site status.'); return; }
+    if (!(values.status in siteStatuses)) { formError('Please select a valid project status.'); return; }
     if (values.last_inventory_check > today()) { formError('The inventory check cannot be in the future.'); return; }
     values.last_inventory_check ||= null;
     formError('');
@@ -397,10 +399,10 @@
     if (readOnly || isEngineer()) return;
     const site = currentSite();
     if (!site) return;
-    openDialog(site.archived_at ? 'Restore Project' : 'Archive Project', `
+    openDialog(site.is_active === false ? 'Restore Project' : 'Archive Project', `
       <div id="sites-form-error" class="sites-form-error hidden" role="alert" tabindex="-1"></div>
-      <p class="sites-dialog-description">${site.archived_at ? 'Restore' : 'Archive'} ${escape(site.name)}? Its equipment assignments and full history will remain available. Archiving does not transfer or return equipment.</p>
-      <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog" autofocus>Cancel</button><button type="button" class="btn btn-primary" data-action="confirm-archive">${site.archived_at ? 'Restore' : 'Archive'}</button></div>`);
+      <p class="sites-dialog-description">${site.is_active === false ? 'Restore' : 'Archive'} ${escape(site.name)}? Its equipment assignments and full history will remain available. Archiving does not transfer or return equipment.</p>
+      <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog" autofocus>Cancel</button><button type="button" class="btn btn-primary" data-action="confirm-archive">${site.is_active === false ? 'Restore' : 'Archive'}</button></div>`);
   }
 
   async function confirmArchive() {
@@ -409,14 +411,15 @@
     if (!site) return;
     setSaving(true);
     try {
-      const saved = await repository.save({ archived_at: site.archived_at ? null : new Date().toISOString() }, site);
+      const restore = site.is_active === false;
+      const saved = await repository.save({ is_active: restore, archived_at: restore ? null : new Date().toISOString() }, site);
       if (!root.isConnected) return;
       state.sites = state.sites.map(record => record.id === site.id ? saved : record);
       render();
       setSaving(false);
       closeDialog();
       showScreen('sites');
-      feedback(`${site.name} ${saved.archived_at ? 'archived' : 'restored'}. Its history has been preserved.`);
+      feedback(`${site.name} ${saved.is_active === false ? 'archived' : 'restored'}. Its history has been preserved.`);
     } catch (error) { formError(databaseError(error)); }
     finally { setSaving(false); }
   }
@@ -426,7 +429,7 @@
     if (!site) return;
     if (!dialog.open) state.review = { search: '', status: '' };
     openDialog(`Assigned Tools — ${site.name}`, `
-      <p class="sites-dialog-description">Review the equipment assigned to this site, including zero-quantity records. Assignments and holders are read-only.</p>
+      <p class="sites-dialog-description">Review the equipment assigned to this project, including zero-quantity records. Assignments and holders are read-only.</p>
       <div class="table-toolbar">
         <div class="field sites-review-search"><label for="sites-tool-search">Search equipment</label><input type="search" id="sites-tool-search" value="${escape(state.review.search)}" placeholder="Tool name, asset ID, brand or holder" autofocus></div>
         <div class="field"><label for="sites-tool-status">Status</label><select id="sites-tool-status" class="chip-filter"><option value="">All statuses</option>${Object.entries(toolStatuses).map(([key, [label]]) => `<option value="${key}"${state.review.status === key ? ' selected' : ''}>${label}</option>`).join('')}</select></div>
@@ -443,7 +446,7 @@
     const status = root.querySelector('#sites-tool-status').value;
     state.review = { search: root.querySelector('#sites-tool-search').value, status };
     const items = siteEquipment(currentSite()).filter(item => (!status || item.status === status) && (!search || [item.name, item.asset_id, item.brand, item.holder, item.current_holder_id].some(value => String(value || '').toLowerCase().includes(search))));
-    target.innerHTML = inventoryTable(items, search || status ? 'No equipment matches your filters.' : 'No equipment is currently assigned to this site.');
+    target.innerHTML = inventoryTable(items, search || status ? 'No equipment matches your filters.' : 'No equipment is currently assigned to this project.');
   }
 
   function movementTable(records) {
@@ -457,7 +460,7 @@
     if (!site) return;
     const records = await repository.movements(site.id).catch(error => ({error: error.message}));
     if (!root.isConnected) return;
-    openDialog(`Movement History — ${site.name}`, `<p class="sites-dialog-description">Equipment movement into and out of this site.</p><div class="card">${movementTable(records)}</div><div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true);
+    openDialog(`Movement History — ${site.name}`, `<p class="sites-dialog-description">Equipment movement into and out of this project.</p><div class="card">${movementTable(records)}</div><div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true);
   }
 
   async function viewTool(id) {
@@ -467,7 +470,7 @@
     const fromReview = dialog.open && dialog.dataset.view === 'review';
     const records = await repository.movements(site.id, item.id).catch(error => ({error: error.message}));
     if (!root.isConnected) return;
-    const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Site', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
+    const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Project', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
     openDialog(item.name, `
       <p class="sites-dialog-description">Equipment details for ${escape(site.name)}.</p>
       <div class="sites-tool-details">${fields.map(([label, value]) => `<div class="kv"><span class="k">${label}</span><span class="v">${escape(value ?? '—') || '—'}</span></div>`).join('')}<div class="kv"><span class="k">Status</span><span class="v">${badge(item.status, toolStatuses)}</span></div></div>
@@ -483,7 +486,15 @@
       refresh, 'add-site': () => editSite(), 'open-site': () => openSite(button.dataset.id),
       'all-sites': () => { feedback(''); showScreen('sites'); },
       'edit-site': () => { if (currentSite()) editSite(currentSite()); },
-      'delete-site': deleteSite, 'confirm-delete': confirmDelete,
+      'archive-site': archiveSite, 'confirm-archive': confirmArchive,
+      'project-history': async () => {
+        const site = currentSite(); if (!site) return;
+        try {
+          const records = await repository.history(site.id);
+          if (!root.isConnected) return;
+          openDialog('Project History', records.length ? records.map(record => `<p>${escape(formatTimestamp(record.changed_at))} · ${escape(record.change_types.join(', '))}</p>`).join('') : '<p>No project changes recorded.</p>');
+        } catch (error) { feedback(databaseError(error), true); }
+      },
       'review-tools': reviewTools, 'view-tool': () => viewTool(button.dataset.id),
       'view-movements': viewMovements, 'close-dialog': closeDialog
     };
@@ -494,8 +505,19 @@
     event.preventDefault();
     saveSite(event.target);
   });
-  root.addEventListener('input', event => { if (event.target.id === 'sites-tool-search') filterTools(); });
-  root.addEventListener('change', event => { if (event.target.id === 'sites-tool-status') filterTools(); });
+  root.addEventListener('input', event => {
+    if (event.target.id === 'sites-tool-search') filterTools();
+    if (event.target.id === 'projects-search') { state.search = event.target.value.trim().toLowerCase(); render(); }
+  });
+  root.addEventListener('change', event => {
+    if (event.target.id === 'sites-tool-status') filterTools();
+    if (event.target.id === 'projects-scope') { state.scope = event.target.value; render(); }
+    if (event.target.id === 'projects-archived') { state.includeArchived = event.target.checked; render(); }
+  });
   dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
+  const stopWatching = demo ? () => {} : window.EquipmentTracking.watch(() => refresh(true), message => {
+    const label = root.querySelector('.inventory-sync'); if (label && !state.disposed) label.textContent = message;
+  });
+  window.MCPAProjects = {dispose() { state.disposed = true; stopWatching(); }};
   refresh();
 })();

@@ -164,7 +164,7 @@ const passed = title => { count++; console.log(`PASS ${title}`); };
   const historicalReturn = await action('createReturn', { toolIds: ['A'], destination: 'Main', conditions: [check('A')] }, bob);
   assert.equal(historicalReturn.source[0].siteId, historicalSite);
   assert.equal(historicalReturn.destinationId, main);
-  await assert.rejects(() => asRole('anon', 'delete from sites where id=$1', [historicalSite]), error => ['23503', '23001'].includes(error.code));
+  await assert.rejects(() => asRole('anon', 'delete from sites where id=$1', [historicalSite]), error => error.code === '42501');
   passed('Receipt rejects external custody changes and stable destination IDs survive site rename');
 
   for (const role of ['anon', 'authenticated']) {

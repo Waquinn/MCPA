@@ -2,7 +2,8 @@
   "name": "mcpa-movement-tests",
   "private": true,
   "scripts": {
-    "test": "node --test movement-store.test.cjs && node movement-database.test.cjs && node movement.browser.cjs"
+    "test": "node --test movement-store.test.cjs inventory.test.cjs archive-database.test.cjs && node movement-database.test.cjs && node movement.browser.cjs",
+    "test:inventory": "node --test inventory.test.cjs archive-database.test.cjs && node inventory.browser.cjs"
   },
   "devDependencies": { "@electric-sql/pglite": "0.5.8" }
 }

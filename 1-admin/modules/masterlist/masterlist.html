@@ -2,11 +2,11 @@
 <section class="screen active" id="screen-masterlist">
   <div class="page-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
     <div>
-      <h1 class="display" style="font-size:24px; font-weight:700; margin:0 0 4px 0;">Masterlist</h1>
+      <h1 class="display" style="font-size:24px; font-weight:700; margin:0 0 4px 0;">Equipment Tracking</h1>
       <p class="sub" style="color:var(--gray); font-size:13px; margin:0;">Manage registered tools, equipment, and their identifying information</p>
     </div>
     <div class="page-head-actions" style="display:flex; gap:8px;">
-      <button class="btn btn-secondary btn-sm" onclick="initMasterlist()">Refresh</button>
+      <span class="inventory-sync" id="inventory-sync" role="status">Updates automatically</span>
       <button class="btn btn-secondary btn-sm" id="exportBtn">Export</button>
       <button class="btn btn-accent btn-sm" id="openAddEquipment">+ Add Item</button>
     </div>
@@ -19,7 +19,7 @@
       <input id="searchEquipment" type="text" placeholder="Search asset ID, item, brand, serial..." style="width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:6px;" oninput="filterAndResetPage()"/>
     </div>
     <!-- Updated onchange -->
-    <select id="siteFilter" class="chip-filter" onchange="filterAndResetPage()"><option value="">Site</option></select>
+    <select id="siteFilter" class="chip-filter" onchange="filterAndResetPage()"><option value="">Project</option></select>
     <select id="typeFilter" class="chip-filter" onchange="filterAndResetPage()"><option value="">Category</option></select>
     <select id="statusFilter" class="chip-filter" onchange="filterAndResetPage()">
       <option value="">Status</option>
@@ -228,7 +228,7 @@
       <!-- Dynamic Input for Location -->
       <div class="field full" id="bulkLocationField" style="display:none;">
         <label for="bulkLocationInput" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">New Location <span style="color:#c58b00;">*</span></label>
-        <input type="text" id="bulkLocationInput" placeholder="e.g. Warehouse A, Site B..." style="width:100%; padding:9px; border:1px solid var(--line); border-radius:6px;" />
+        <input type="text" id="bulkLocationInput" placeholder="e.g. Warehouse A, Project B..." style="width:100%; padding:9px; border:1px solid var(--line); border-radius:6px;" />
       </div>
 
       <div class="form-grid full" style="display:flex; gap:10px; margin-top:10px;">

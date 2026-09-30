@@ -21,14 +21,21 @@
     if (['engineer','engr','architect'].includes(role)) return 'engineer';
     return null;
   }
-  function availability(tool, snapshot = {}) {
-    const id = tool.id || tool.assetId;
-    if (!(Number(tool.qty ?? tool.quantity ?? 0) > 0)) return 'No units';
-    if (tool.status === 'inuse') return 'Deployed';
-    if (tool.status !== 'available') return 'Unavailable';
-    if (tool.holder && tool.holder !== '—') return 'Assignment needs review';
-    if ((snapshot.transfers || []).some(r => r.status === 'pending' && r.toolIds.includes(id)) || (snapshot.requests || []).some(r => r.status === 'approved' && r.toolIds.includes(id))) return 'Reserved';
-    return 'Available';
+  function thumbnail(tool) {
+    const name = tool.name || tool.equipmentType || 'Equipment';
+    const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    let url = '';
+    try {
+      const value = tool.image_url || tool.imageUrl;
+      if (value) {
+        const parsed = new URL(value, location.href);
+        if (['http:', 'https:'].includes(parsed.protocol)) url = parsed.href;
+      }
+    } catch (_) { /* Invalid image URLs use the tool symbol. */ }
+    return `<span class="equipment-thumbnail">${icon(name, tool.category || tool.cat)}${url ? `<img src="${escape(url)}" alt="${escape(name)}" loading="lazy" decoding="async">` : ''}</span>`;
   }
-  window.EquipmentVisual = {icon, roleGroup, availability};
+  document.addEventListener('error', event => {
+    if (event.target.matches?.('.equipment-thumbnail img')) event.target.remove();
+  }, true);
+  window.EquipmentVisual = {icon, thumbnail, roleGroup, availability: tool => window.EquipmentTracking.availability(tool)};
 })();

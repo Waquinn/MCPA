@@ -46,7 +46,7 @@
   function client() {
     if (!window.supabaseClient) {
       if (!window.supabase?.createClient) throw new Error('The database connection could not load. Check your connection and refresh.');
-      // Reuse the same public project and client as Sites and Masterlist.
+      // Reuse the same public project and client as Projects and Masterlist.
       window.supabaseClient = window.supabase.createClient('https://zpqxlmiqwevhlstjirei.supabase.co', 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58');
     }
     return window.supabaseClient;

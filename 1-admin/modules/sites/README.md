@@ -1,8 +1,8 @@
-# Sites module
+# Projects module
 
-Sites manages project records in Supabase and reads the equipment assigned to each
-site. Changes are limited to this module; the existing app shell, Masterlist and
-movement modules are unchanged.
+Projects manages records in the unchanged Supabase `sites` table and reads
+equipment linked by the unchanged `site_id` field. Projects are archived instead
+of deleted; equipment assignments and historical references are retained.
 
 ## Database setup
 
@@ -10,15 +10,25 @@ movement modules are unchanged.
    adds the nullable `equipment.site_id` foreign key and index, enables row-level
    security, and adds validation and an update timestamp trigger. It does not
    insert sample records, assign existing equipment, or change equipment policies.
-2. The setup grants Sites select/insert/update/delete to `anon` and `authenticated`,
+2. The setup grants Projects select/insert/update to `anon` and `authenticated`,
    with matching row-level policies. The current app's Sign In button only reveals
    the UI and does not establish a Supabase session, so it uses `anon`. This means
    site CRUD is public to callers of this project's API, matching the current
    prototype. RLS remains enabled, and equipment policies remain unchanged.
    When the app adopts real authentication, replace these public policies with
    the intended user/role restrictions. See [Supabase's RLS documentation](https://supabase.com/docs/guides/database/postgres/row-level-security).
-3. Open Sites and click Refresh. Use Add Site to create actual project records.
-   The old static projects and counts are not database records.
+3. Run [realtime-archive.sql](realtime-archive.sql) after `setup.sql`. It adds and
+   backfills `is_active`, synchronizes it with the legacy `archived_at` field,
+   revokes browser deletion, and adds `equipment` and `sites` to the existing
+   Supabase Realtime publication. It preserves other published tables.
+4. Open Projects. Records update through Realtime, with automatic checks every
+   30 seconds and on reconnect/tab focus. Use Add Project for new records.
+   Archive writes `is_active: false`; Restore writes `true`. Active dashboard
+   projects are queried with `.eq('is_active', true)`.
+
+The migration is supplied for the Supabase SQL Editor; it has not been applied
+to the live project by this frontend change. See [frontend update notes](../../../FRONTEND-UPDATES.md)
+for the availability rule, code locations, and current focused tests.
 
 ### If Add Site reports a permission error after the original setup
 

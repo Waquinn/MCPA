@@ -18,6 +18,10 @@ create table if not exists public.sites (
 
 alter table public.sites add column if not exists assigned_engineer_id uuid;
 alter table public.sites add column if not exists archived_at timestamptz;
+alter table public.sites add column if not exists is_active boolean;
+update public.sites set is_active = (archived_at is null) where is_active is null;
+alter table public.sites alter column is_active set default true;
+alter table public.sites alter column is_active set not null;
 alter table public.sites alter column phase set default '';
 alter table public.sites drop constraint if exists sites_phase_check;
 alter table public.sites add constraint sites_phase_check check (char_length(btrim(phase)) <= 80);
@@ -151,7 +155,8 @@ comment on column public.equipment.site_id is
 
 alter table public.sites enable row level security;
 
-grant select, insert, update, delete on public.sites to anon, authenticated;
+grant select, insert, update on public.sites to anon, authenticated;
+revoke delete on public.sites from anon, authenticated;
 
 drop policy if exists sites_read on public.sites;
 create policy sites_read on public.sites
@@ -163,8 +168,6 @@ drop policy if exists sites_update on public.sites;
 create policy sites_update on public.sites
 for update to anon, authenticated using (true) with check (true);
 drop policy if exists sites_delete on public.sites;
-create policy sites_delete on public.sites
-for delete to anon, authenticated using (true);
 
 -- No mock projects, engineers, phases, quantities or transfers are inserted.
 -- Projects are archived in the UI. Every recorded project retains its history.

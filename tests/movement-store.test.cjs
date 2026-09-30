@@ -163,7 +163,7 @@ test('damaged receipt transfers physical custody; lost receipt retains the dispa
   const transfer = env.api.createTransfer(transferInput(['GRD-001', 'BRC-002']));
   env.engineer();
   env.api.receiveTransfer(transfer.id, { inspections: [
-    { toolId: 'GRD-001', condition: 'damaged', notes: 'Cable cut' },
+    { toolId: 'GRD-001', condition: 'damaged', notes: 'Cable cut', disposition: 'accepted' },
     { toolId: 'BRC-002', condition: 'lost', notes: 'Not delivered' },
   ] });
   assert.equal(tool(env.api, 'GRD-001').status, 'repair');
@@ -229,7 +229,7 @@ test('stale custody rejects receipt atomically even when a preceding item inspec
   const transfer = env.api.createTransfer(transferInput(['GRD-002', 'JHM-003']));
   env.tamper(state => { state.tools.find(item => item.id === 'JHM-003').holder = 'New custodian'; });
   assert.throws(() => env.api.receiveTransfer(transfer.id, { inspections: [
-    { toolId: 'GRD-002', condition: 'damaged', notes: 'Bent handle' },
+    { toolId: 'GRD-002', condition: 'damaged', notes: 'Bent handle', disposition: 'accepted' },
     { toolId: 'JHM-003', condition: 'good' },
   ] }), /Custody or condition/);
   const stored = JSON.parse(env.saved.get(env.api.storageKey));

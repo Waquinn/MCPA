@@ -17,7 +17,7 @@
     return window.supabaseClient;
   }
   function explain(error) {
-    if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error?.code)) return new Error('Movement storage is not set up yet. Run Sites setup.sql, then 1-admin/modules/movements/setup.sql in Supabase, and refresh. You can try the workflow with demo data now.');
+    if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error?.code)) return new Error('Movement storage is not set up yet. Run Projects setup.sql, then 1-admin/modules/movements/setup.sql in Supabase, and refresh. You can try the workflow with demo data now.');
     return new Error(error?.message || 'Could not reach movement storage. Your form has been kept; refresh or retry.');
   }
   function context() {
