@@ -48,10 +48,16 @@
     return normalize(tool.status) === expected;
   }
   async function snapshot() {
+    if (window.MCPAAuth && !window.MCPAPermissions.fullInventory(window.MCPAAuth.profile?.role)) {
+      await window.MovementStore.refresh();
+      const data=window.MovementStore.getState();
+      return {tools:data.tools,sites:data.sites,activeProjects:data.sites.filter(s=>s.is_active!==false)};
+    }
+    if(window.MCPAAuth) window.MCPAAuth.requireLive();
     const [equipment, sites, activeProjects, profiles] = await Promise.all([
       readAll('equipment'), readAll('sites'),
       readAll('sites', query => query.eq('is_active', true)),
-      readAll('profiles').catch(() => [])
+      readAll('profiles', query => query.select('id,name,role', {count:'exact'})).catch(() => [])
     ]);
     const names = new Map(sites.map(site => [site.id, site.name]));
     const holders = new Map(profiles.map(profile => [profile.id, profile.name]));

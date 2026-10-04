@@ -4,10 +4,9 @@
   const empty = () => ({version: 1, revision: 0, tools: [], sites: [], users: [], requests: [], transfers: [], returns: [], repairs: [], missing: [], activity: []});
   let state = empty(), ready = false, loading = null, saving = false, stale = false;
   let mode = 'live';
-  try { if (localStorage.getItem('mcpa.movement.mode') === 'demo') mode = 'demo'; } catch (_) { /* Live reads still work. */ }
   const pending = new Map();
   const clone = value => JSON.parse(JSON.stringify(value));
-  const role = () => location.pathname.includes('2-engr') ? 'engineer' : 'admin';
+  let revision = 0;
   const notify = () => window.dispatchEvent(new CustomEvent('mcpa:movement-change'));
   function client() {
     if (!window.supabaseClient) {
@@ -17,55 +16,62 @@
     return window.supabaseClient;
   }
   function explain(error) {
-    if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error?.code)) return new Error('Movement storage is not set up yet. Run Projects setup.sql, then 1-admin/modules/movements/setup.sql in Supabase, and refresh. You can try the workflow with demo data now.');
-    return new Error(error?.message || 'Could not reach movement storage. Your form has been kept; refresh or retry.');
+    if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error?.code)) return new Error('Movement storage is not configured. Ask your administrator to follow supabase/AUTH-DEPLOYMENT.md, then refresh.');
+    if (error?.code === '42501') return new Error('Your account is not permitted to perform this operation. Sign in again or contact your administrator.');
+    if (['22023','40001'].includes(error?.code)) return new Error(error.message);
+    return new Error('Movement records could not be loaded or saved. Your form has been kept; check your connection and retry.');
   }
   function context() {
-    if (mode === 'demo') return window.MovementDemoStore.getContext();
-    let selected;
-    try { selected = localStorage.getItem('mcpa.movement.profile.' + role()); } catch (_) { /* Choose a profile before writing. */ }
-    const defaultName = role() === 'engineer' ? 'Engr Sky' : 'Engr Pau';
-    const user = state.users.find(u => u.id === selected) || state.users.find(u => u.name === defaultName);
-    return {role: role(), name: user?.name || '', id: user?.id || null};
+    const user = window.MCPAAuth?.profile;
+    if (!user) return {role:null,name:'',id:null};
+    return {role:user.role,name:user.name,id:user.id};
   }
   async function refresh() {
     if (mode === 'demo') {
       window.MovementDemoStore.activate();
       return window.MovementDemoStore.refresh();
     }
+    window.MCPAAuth.requireLive();
+    const requestRevision = revision;
     if (loading) return loading;
     loading = (async () => {
       const {data, error} = await client().rpc('mcpa_movement_snapshot');
       if (error) throw explain(error);
       if (!data || !Array.isArray(data.tools) || !Array.isArray(data.requests)) throw new Error('The movement database returned an invalid snapshot. Refresh after checking the setup.');
       // Ignore a live response after the user has switched to demo mode.
-      if (mode !== 'live') return window.MovementDemoStore.getState();
+      if (mode !== 'live' || requestRevision !== revision) return clone(state);
       state = {...empty(), ...data}; ready = true; stale = false;
       TOOLS.splice(0, TOOLS.length, ...clone(state.tools));
       notify();
       return clone(state);
     })();
-    try { return await loading; } finally { loading = null; }
+    try { return await loading; } finally { if (requestRevision === revision) loading = null; }
   }
   async function mutate(action, payload) {
+    if (!window.MCPAAuth?.canAction(action)) throw new Error('This action is not permitted for your account.');
     if (mode === 'demo') return window.MovementDemoStore[action](...payload.args);
+    window.MCPAAuth.requireLive();
+    const requestRevision = revision;
     if (saving) throw new Error('A movement is already saving. Please wait.');
     if (stale) throw new Error('A movement was saved, but the latest records could not load. Refresh before making another change.');
     if (!ready) await refresh();
+    if (requestRevision !== revision) throw new Error('Your session changed. Sign in again before continuing.');
     const actor = context();
-    if (!actor.id) throw new Error('Choose your profile in the bar above before recording a movement. Profiles must already exist in the database.');
-    const values = {...payload.values, actor};
+    if (!actor.id) throw new Error('Sign in to record a movement.');
+    const values = {...payload.values};
     const key = JSON.stringify([action, values]);
     if (!pending.has(key)) pending.set(key, crypto.randomUUID());
     saving = true;
     try {
       const {data, error} = await client().rpc('mcpa_movement_action', {p_action: action, p_payload: values, p_operation_id: pending.get(key)});
+      if (requestRevision !== revision) throw new Error('Your session changed. Check the saved records after signing in again.');
       if (error) throw explain(error);
       try { await refresh(); }
-      catch (error) { stale = true; throw new Error('Saved successfully, but the updated records could not load. Refresh before continuing. ' + error.message); }
+      catch (error) { if (requestRevision === revision) stale = true; throw new Error('Saved successfully, but the updated records could not load. Refresh before continuing. ' + error.message); }
+      if (requestRevision !== revision) throw new Error('Your session changed. Check the saved records after signing in again.');
       pending.delete(key);
       return data;
-    } finally { saving = false; }
+    } finally { if (requestRevision === revision) saving = false; }
   }
   const api = {
     get mode() { return mode; },
@@ -73,22 +79,16 @@
     getContext: context,
     async initialize() { if (mode === 'demo') return window.MovementDemoStore.activate(); return ready ? clone(state) : refresh(); },
     refresh,
-    async setMode(value) {
-      if (!['live', 'demo'].includes(value)) throw new Error('Unknown data mode.');
-      if (saving) throw new Error('Wait for the current movement to finish.');
-      localStorage.setItem('mcpa.movement.mode', value);
-      const previousMode = mode;
-      mode = value; ready = false; state = empty();
-      if (previousMode === 'demo' && value === 'live') window.MovementDemoStore.deactivate();
-      TOOLS.splice(0, TOOLS.length);
-      if (mode === 'demo') window.MovementDemoStore.activate();
-      else notify();
-      return refresh();
+    clear() {
+      ++revision; loading = null; ready = false; saving = false; stale = false; state = empty(); pending.clear();
+      window.MovementDemoStore.deactivate(); mode='live';
+      TOOLS.splice(0,TOOLS.length);
     },
-    setContext(id) {
-      if (mode !== 'live') return;
-      if (!state.users.some(u => u.id === id)) throw new Error('Choose an existing profile.');
-      localStorage.setItem('mcpa.movement.profile.' + role(), id); notify();
+    async useLive() { api.clear(); return clone(state); },
+    async useDemo() { api.clear(); mode='demo'; window.MovementDemoStore.activate(); return api.getState(); },
+    async setMode(value) {
+      if (value !== mode) throw new Error('Exit this workspace before changing between demo and company data.');
+      return refresh();
     },
     findTransfer(code) {
       if (mode === 'demo') return window.MovementDemoStore.findTransfer(code);
@@ -99,10 +99,10 @@
       if (mode === 'demo') return window.MovementDemoStore.resolveQr(value);
       const code = String(value || '').trim();
       const actor = context();
-      const addressed = transfer => actor.role === 'admin' || (transfer.receiverId ? transfer.receiverId === actor.id : transfer.receiver === actor.name);
+      const addressed = transfer => transfer.receiverId ? transfer.receiverId === actor.id : transfer.receiver === actor.name;
       const transfer = api.findTransfer(code);
       if (transfer) {
-        if (!addressed(transfer)) throw new Error('Only the named receiver or an administrator can open this handover for receipt.');
+        if (!addressed(transfer)) throw new Error('Only the named receiver can confirm this handover.');
         return {kind: 'transfer', transfer};
       }
       const assets = state.tools.filter(tool => tool.id === code);
@@ -126,12 +126,4 @@
   window.MovementStore = api;
   // Live records refresh when returning to a tab; form controls are not replaced.
   window.addEventListener('focus', () => { if (ready && !saving && mode === 'live') refresh().catch(() => {}); });
-  window.addEventListener('storage', event => {
-    if (event.key === 'mcpa.movement.mode' && event.newValue !== mode) {
-      const previousMode = mode;
-      mode = event.newValue === 'demo' ? 'demo' : 'live'; ready = false; state = empty();
-      if (previousMode === 'demo') window.MovementDemoStore.deactivate();
-      refresh().catch(() => notify());
-    } else if (event.key?.startsWith('mcpa.movement.profile.')) notify();
-  });
 })();

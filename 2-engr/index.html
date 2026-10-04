@@ -20,7 +20,8 @@
 <!-- ============================================================
      APP SHELL
      ============================================================ -->
-<div id="app-shell">
+<div id="login-screen"><p role="status">Checking your session?</p></div>
+<div id="app-shell" class="hidden">
 
   <!-- SIDEBAR -->
   <aside id="sidebar">
@@ -52,7 +53,7 @@
       </button>
       <div class="search-wrap">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" placeholder="Search tool ID, name, serial, project, holder…" oninput="globalSearch(this.value)"/>
+        <input type="text" placeholder="Search tool ID, equipment, serial, project, or holder&#8230;" aria-label="Search equipment" oninput="globalSearch(this.value)"/>
       </div>
       <div class="topbar-spacer"></div>
       <div class="topbar-actions">
@@ -75,24 +76,21 @@
   </div>
 </div>
 
+<script src="../js/permissions.js"></script>
 <script src="../js/data.js"></script>
 <script src="../js/equipment-visual.js"></script>
 <script src="../js/equipment-tracking.js"></script>
 <script src="../js/movement-store.js"></script>
 <script src="../js/movement-cloud.js"></script>
 <script src="../js/movement-ui.js"></script>
+<script src="../js/dashboard-view.js"></script>
 <script src="../js/movement-overview.js"></script>
 <script src="../js/utils.js"></script>
 <script src="../js/navigation.js"></script>
 <script src="../js/app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  // Initialize the app immediately since we bypassed the login screen
-  window.onload = () => {
-    buildNav();
-    showScreen(location.hash.slice(1) in SCREEN_MODULE ? location.hash.slice(1) : 'dashboard');
-  };
-</script>
+<script src="../js/auth.js"></script>
+
 <!-- Add this new scanner library -->
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 

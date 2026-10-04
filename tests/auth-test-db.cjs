@@ -1,0 +1,37 @@
+const fs=require('node:fs');
+const path=require('node:path');
+const {randomUUID}=require('node:crypto');
+const {database}=require('./movement-test-db.cjs');
+const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610040001_authenticated_access.sql'),'utf8');
+async function authDatabase(){
+  const fixture=await database(),{db,actors,sites}=fixture;
+  await db.exec(`create schema auth;create table auth.users(id uuid primary key);
+    create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;`);
+  await db.exec(fs.readFileSync(path.join(__dirname,'../1-admin/modules/consumables/setup.sql'),'utf8'));
+  await db.exec(migration);
+  for(const [key,role] of [['architect','architect'],['secretary','secretary'],['handler','tool_handler'],['inactive','engineer']]){
+    actors[key]={id:randomUUID(),name:'Test '+key,role};
+    await db.query('insert into public.profiles(id,name) values($1,$2)',[actors[key].id,actors[key].name]);
+  }
+  for(const [key,actor] of Object.entries(actors)){
+    actor.authId=randomUUID();await db.query('insert into auth.users values($1)',[actor.authId]);
+    await db.query('update profiles set auth_user_id=$1,role=$2,account_status=$3 where id=$4',[actor.authId,actor.role,key==='inactive'?'inactive':'active',actor.id]);
+  }
+  await db.query('update sites set assigned_engineer_id=$1 where id=$2',[actors.sky.id,sites.casa]);
+  let queue=Promise.resolve();
+  function query(actor,sql,params=[]){
+    const run=async()=>{
+      await db.query("select set_config('request.jwt.claim.sub',$1,false)",[actor?.authId||'']);
+      await db.exec('set role '+(actor?'authenticated':'anon'));
+      try{return await db.query(sql,params);}finally{await db.exec('reset role');}
+    };
+    const result=queue.then(run);queue=result.catch(()=>{});return result;
+  }
+  const rpc=async(actor,name,args={})=>{
+    const allowed={mcpa_my_profile:[],mcpa_movement_snapshot:[],mcpa_accounts:[],mcpa_movement_action:['p_action','p_payload','p_operation_id'],mcpa_save_account:['p_id','p_name','p_role','p_status','p_auth_user_id']};
+    if(!allowed[name])throw new Error('Unknown test RPC');
+    const keys=allowed[name];const result=await query(actor,`select public.${name}(${keys.map((_,i)=>'$'+(i+1)).join(',')}) as value`,keys.map(key=>args[key]??null));return result.rows[0].value;
+  };
+  return {...fixture,query,rpc,migration};
+}
+module.exports={authDatabase,migration};

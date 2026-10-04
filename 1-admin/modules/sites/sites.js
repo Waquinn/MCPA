@@ -6,7 +6,7 @@
   window.MCPAProjects?.dispose();
   const dialog = root.querySelector('#sites-dialog');
   const demo = window.MovementStore?.mode === 'demo';
-  const context = () => window.MovementStore?.getContext() || { role: location.pathname.includes('2-engr') ? 'engineer' : 'admin' };
+  const context = () => window.MovementStore?.getContext() || {role:null,name:'',id:null};
   const isEngineer = () => context().role !== 'admin';
   const readOnly = demo || isEngineer();
   const siteStatuses = {
@@ -100,7 +100,7 @@
   // All database writes concern site metadata. Equipment and movement are read-only here.
   const repository = {
     async load() {
-      if (demo) {
+      if (demo || !window.MCPAPermissions.fullInventory(context().role)) {
         await window.MovementStore.initialize();
         const snapshot = window.MovementStore.getState();
         return {
@@ -113,7 +113,7 @@
         readAll('sites', '*', 'id'),
         readAll('equipment', '*', 'id'),
         // A restricted profile must not hide otherwise readable equipment.
-        readAll('profiles', '*', 'id').catch(() => [])
+        readAll('profiles', 'id,name,role', 'id').catch(() => [])
       ]);
       const holders = new Map(profiles.map(profile => [profile.id, profile.name]));
       return {

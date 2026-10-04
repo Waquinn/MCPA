@@ -18,8 +18,9 @@ const db = {
 const writes=[], errors=[];
 let chrome, socket;
 const sdk = `window.__channels=[];window.__emit=table=>window.__channels.forEach(c=>c.listeners.filter(l=>l.filter.table===table).forEach(l=>l.fn({})));window.supabase={createClient(){return {
+auth:{getSession:async()=>({data:{session:{user:{id:'fixture-admin'}}}}),onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}}},signOut:async()=>({error:null})},
 channel(){const c={listeners:[],on(type,filter,fn){this.listeners.push({filter,fn});return this;},subscribe(fn){setTimeout(()=>fn('SUBSCRIBED'),0);return this;}};window.__channels.push(c);return c;},removeChannel(c){window.__channels=window.__channels.filter(x=>x!==c);return Promise.resolve();},
-rpc(){return Promise.resolve({data:{tools:[],sites:[],users:[{id:'u1',name:'Engr Pau'}],requests:[],transfers:[],returns:[],repairs:[],missing:[],activity:[]}});},
+rpc(name){if(name==='mcpa_my_profile')return Promise.resolve({data:{id:'u1',name:'Engr Pau',role:'admin',account_status:'active'}});return Promise.resolve({data:{tools:[],sites:[],users:[{id:'u1',name:'Engr Pau'}],requests:[],transfers:[],returns:[],repairs:[],missing:[],activity:[]}});},
 from(table){const q={table,filters:[]};return {select(){return this;},order(){return this;},range(start,end){q.start=start;q.end=end;return this;},eq(key,value){q.filters.push([key,value]);return this;},update(values){q.values=values;return this;},then(resolve,reject){return fetch('/__db',{method:'POST',body:JSON.stringify(q)}).then(r=>r.json()).then(resolve,reject);}}}
 }}};`;
 const server=http.createServer(async(req,res)=>{
@@ -54,7 +55,7 @@ const server=http.createServer(async(req,res)=>{
   await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');
   await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1050,deviceScaleFactor:1,mobile:false});
   await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/index.html`});
-  await wait("typeof enterApp==='function'");await evaluate('enterApp()');
+  await wait("window.MCPAAuth?.profile?.role==='admin'");
   await wait("document.querySelector('.dashboard-projects')");
   assert.equal(await evaluate("document.querySelector('.overview-kpis .num').textContent"),'5');
   assert.ok(await evaluate("document.querySelector('.dashboard-projects').textContent.includes('Drill: 3') && !document.querySelector('.dashboard-projects').textContent.includes('Zero quantity tool') && !document.querySelector('.dashboard-projects').textContent.includes('Archived project')"));
@@ -63,7 +64,26 @@ const server=http.createServer(async(req,res)=>{
   db.equipment[0].quantity=7;await evaluate("__emit('equipment')");
   await wait("document.querySelector('.overview-kpis .num').textContent==='9'");
   await shot('dashboard-desktop');
+  await click('[data-status="available"]');
+  assert.ok(await evaluate("document.querySelector('#overview-results').textContent.includes('GRIND-001') && !document.querySelector('#overview-results').textContent.includes('DRILL-001')"),'Available filter follows existing location rule');
+  await click('[data-status="inuse"]');
+  await click('[data-tool="DRILL-001"]');
+  assert.ok(await evaluate("document.querySelector('dialog[open]').textContent.includes('Engr Pau')"),'Dashboard Details opens current custody');
+  await click('[data-close]');
+  await click('[data-status=""]');
+  await evaluate("document.querySelector('#dashboard-search').value='Grinder';document.querySelector('#dashboard-search').dispatchEvent(new Event('input',{bubbles:true}))");
+  assert.ok(await evaluate("!document.querySelector('#overview-results').textContent.includes('DRILL-001')"),'Inventory search filters rows');
+  await evaluate("document.querySelector('#dashboard-search').value='';document.querySelector('#dashboard-search').dispatchEvent(new Event('input',{bubbles:true}));toggleTheme()");
+  assert.equal(await evaluate("getComputedStyle(document.body).getPropertyValue('--background').trim()"),'#0f0f0e');
+  assert.equal(await evaluate("localStorage.getItem('mcpa.theme')"),'dark');
+  await pause(300); // Let the existing theme transition finish before capture.
+  await shot('dashboard-desktop-dark');
+  await command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'Dashboard fits laptop');
+  await shot('dashboard-laptop-dark');
   await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  await shot('dashboard-mobile-dark');
+  await evaluate('toggleTheme()');
   await shot('dashboard-mobile');
   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'Dashboard fits mobile');
   console.log('PASS Dashboard sums quantities, auto-updates, hides zero entries and archived projects');

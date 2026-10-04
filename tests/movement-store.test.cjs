@@ -15,6 +15,7 @@ function browser(options = {}) {
   const listeners = {};
   let failWrites = false;
   const window = {
+    MCPAAuth: {isDemo:true,profile:options.engineer ? {role:'engineer',name:'Engr Sky'} : {role:'admin',name:'Engr Pau'}},
     location: { pathname: options.engineer ? '/2-engr/index.html' : '/index.html' },
     console,
     localStorage: {
@@ -33,8 +34,8 @@ function browser(options = {}) {
   return {
     api, window, tools, saved, events,
     activate: () => api.activate(),
-    engineer: () => { window.location.pathname = '/2-engr/index.html'; },
-    admin: () => { window.location.pathname = '/index.html'; },
+    engineer: () => { window.MCPAAuth.profile={role:'engineer',name:'Engr Sky'}; },
+    admin: () => { window.MCPAAuth.profile={role:'admin',name:'Engr Pau'}; },
     failWrites: value => { failWrites = value; },
     storageEvent: () => listeners.storage({ key: api.storageKey }),
     tamper: mutate => {

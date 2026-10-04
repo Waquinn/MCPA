@@ -54,10 +54,9 @@ const ENGR_NAV = [
 function buildNav(){
   const el = document.getElementById('nav-list');
   
-  // 3. Detect which portal we are in
-  const isEngr = window.location.pathname.includes('2-engr');
-  const currentNav = isEngr ? ENGR_NAV : ADMIN_NAV;
-
+  const role = window.MCPAAuth?.profile?.role;
+  const source = MCPAPermissions.operational(role) ? ENGR_NAV : ADMIN_NAV;
+  const currentNav = source.filter(n => !n.id || window.MCPAAuth.canRoute(n.id)).filter((n,index,list) => n.id || list[index+1]?.id);
   el.innerHTML = currentNav.map(n=>{
     if(n.sec) return `<div class="nav-section-label">${n.sec}</div>`;
     return `<button type="button" class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.label}</span></button>`;
@@ -74,6 +73,7 @@ function setActiveNav(id){
    in the DOM, then activates the requested screen within it.
    ============================================================ */
 function showScreen(id, afterActivate){
+  if (!window.MCPAAuth?.canRoute(id)) { if (window.MCPAAuth?.profile) { resetApplication(); MCPAAuth.deny(); } return; }
   loadModule(id, function(){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     const target = document.getElementById('screen-'+id);

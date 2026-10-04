@@ -33,7 +33,7 @@ async function initMasterlist() {
 
   const [siteResult, holderResult] = await Promise.all([
     window.EquipmentTracking.readAll('sites').then(data => ({data})),
-    window.EquipmentTracking.readAll('profiles').then(data => ({data})).catch(() => ({data: []}))
+    window.EquipmentTracking.readAll('profiles', query => query.select('id,name,role', {count:'exact'})).then(data => ({data})).catch(() => ({data: []}))
   ]);
   if (!tbody?.isConnected || owner?.disposed || owner !== window.AdminEquipment || request !== owner.request) return;
   const siteNames = new Map((siteResult.data || []).map(site => [site.id, site.name]));

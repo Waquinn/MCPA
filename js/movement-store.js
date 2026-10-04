@@ -16,9 +16,12 @@
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
   function fail(message) { throw new Error(message); }
   function context() {
-    return global.location.pathname.indexOf('2-engr') !== -1
-      ? { role: 'engineer', name: 'Engr Sky' }
-      : { role: 'admin', name: 'Engr Pau' };
+    if (global.MCPAAuth) {
+      if (!global.MCPAAuth.isDemo) fail('Open the offline demonstration to use sample records.');
+      const user=global.MCPAAuth.profile;
+      return {role:user.role === 'architect' ? 'engineer' : user.role,name:user.name};
+    }
+    fail('Open the offline demonstration before selecting sample records.');
   }
   function requireAdmin() {
     if (context().role !== 'admin') fail('Only an administrator can perform this action.');
@@ -161,6 +164,7 @@
       seen.add(entry.toolId);
       if (['good', 'damaged', 'lost'].indexOf(entry.condition) === -1) fail('Choose Good, Damaged, or Lost for each record.');
       var result = { toolId: entry.toolId, condition: entry.condition, notes: text(entry.notes, 'Condition notes', entry.condition !== 'good') };
+      if (entry.tested !== undefined) result.tested = entry.tested === true;
       if (receipt) {
         if (entry.condition === 'damaged' && ['accepted', 'declined'].indexOf(entry.disposition) === -1) fail('Explicitly accept or decline custody of each damaged tool.');
         if (entry.condition === 'lost' && entry.disposition && entry.disposition !== 'declined') fail('Missing equipment cannot be accepted.');

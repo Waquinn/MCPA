@@ -34,6 +34,7 @@ let moduleAbort = null;
    (e.g. renderMasterlist) always run against fresh markup; the
    module's CSS is only ever attached once. */
 function loadModule(screenId, callback){
+  if (!window.MCPAAuth?.canRoute(screenId)) { if (window.MCPAAuth?.profile) MCPAAuth.deny(); return; }
   const request = ++moduleRequest;
   const mod = SCREEN_MODULE[screenId];
   if(!mod){
@@ -52,13 +53,12 @@ function loadModule(screenId, callback){
   window.TrackingView?.dispose();
   window.MCPAProjects?.dispose();
   window.AdminEquipment?.dispose();
-  // Shared inventory modules have one implementation in the Admin folder.
-  let pathPrefix = '1-admin/modules/';
-  if (window.location.pathname.includes('2-engr')) {
-    pathPrefix = ['sites', 'consumables'].includes(mod) ? '../1-admin/modules/' : 'modules/';
-  }
-  if (mod === 'masterlist' && window.MovementStore?.mode === 'demo') pathPrefix = window.location.pathname.includes('2-engr') ? 'modules/' : '2-engr/modules/';
-  
+  const relative = location.pathname.includes('/2-engr/') ? '../' : '';
+  const user = window.MCPAAuth.profile;
+  const operational = MCPAPermissions.operational(user.role);
+  let pathPrefix = relative + (operational ? '2-engr/modules/' : '1-admin/modules/');
+  if (['sites','consumables','users','settings','reports','purchases'].includes(mod)) pathPrefix = relative + '1-admin/modules/';
+  if (mod === 'masterlist' && (operational || user.role === 'tool_handler' || window.MCPAAuth.isDemo)) pathPrefix = relative + '2-engr/modules/';
   const base = pathPrefix + mod + '/' + mod;
   
   document.getElementById('content').setAttribute('aria-busy', 'true');
@@ -111,22 +111,16 @@ function loadModuleScript(mod, src, callback){
 /* ============================================================
    APP INITIALIZATION
    ============================================================ */
-function enterApp(){
-  const userInput = document.getElementById('userInput').value.trim().toLowerCase();
-
-  // Route based on what the user typed
-  if (userInput.includes('engr') || userInput.includes('engineer') || userInput.includes('architect')) {
-    // Redirect to the Engineer portal (make sure you create an index.html inside the 2-engr folder)
-    window.location.href = '2-engr/index.html';
-  } else {
-    // Default to the Admin side
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('app-shell').classList.remove('hidden');
-    buildNav();
-    showScreen(location.hash.slice(1) in SCREEN_MODULE ? location.hash.slice(1) : 'dashboard');
-  }
+function enterApp(event){ return window.MCPAAuth?.signIn(event); }
+function resetApplication(){
+  ++moduleRequest; moduleAbort?.abort(); currentModule=null; clearTimeout(searchTimer);
+  window.MovementUI?.dispose(); window.MovementOverview?.dispose(); window.TrackingView?.dispose();
+  window.MCPAProjects?.dispose(); window.AdminEquipment?.dispose();
+  window.mcpaSearch='';
+  window.movementDraft=null;
+  if (typeof equipmentList !== 'undefined') equipmentList=[];
+  if (typeof selectedAssets !== 'undefined') selectedAssets=[];
 }
-
 /* ============================================================
    GLOBAL EVENT HANDLING
    ============================================================ */
@@ -148,10 +142,7 @@ function globalSearch(q){
   }), 180);
 }
 
-function logout(){
-  window.MovementUI?.dispose();
-  window.location.href = window.location.pathname.includes('2-engr') ? '../index.html' : 'index.html';
-}
+function logout(){ return window.MCPAAuth?.logout(); }
 try { if (localStorage.getItem('mcpa.theme') === 'dark') { document.body.classList.add('dark'); document.getElementById('theme-label').textContent = 'Light mode'; } } catch (_) {}
 window.addEventListener('hashchange', () => {
   const id = location.hash.slice(1);

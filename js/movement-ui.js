@@ -11,6 +11,8 @@
   const state = () => store().getState();
   const context = () => store().getContext();
   const admin = () => context().role === 'admin';
+  const operational = () => ['engineer','architect'].includes(context().role);
+  const handler = () => context().role === 'tool_handler';
   const mode = () => typeof store().getMode === 'function' ? store().getMode() : (store().mode || state().mode || 'live');
   const tools = () => state().tools || [];
   const toolById = id => tools().find(tool => tool.id === id);
@@ -27,7 +29,7 @@
   function visibleRecords() {
     const records = state()[COLLECTIONS[current.kind]] || [];
     const name = context().name;
-    if (admin()) return records;
+    if (mode() === 'live' || admin() || handler()) return records;
     return records.filter(record => [record.requester, record.receiver, record.sender, record.returnedBy, record.reportedBy].includes(name) || (record.toolId && toolById(record.toolId)?.holder === name));
   }
 
@@ -36,9 +38,9 @@
     const reserved = new Set((state().requests || []).filter(r => r.status === 'approved').flatMap(ids));
     return tools().filter(tool => {
       if (locked.has(tool.id) || reserved.has(tool.id) || !(tool.qty > 0)) return false;
-      const owns = admin() || tool.holder === context().name;
+      const owns = tool.holder === context().name;
       if (kind === 'request') return tool.status === 'available';
-      if (kind === 'transfer') return (admin() && tool.status === 'available') || (tool.status === 'inuse' && owns);
+      if (kind === 'transfer') return (handler() && tool.status === 'available' && (!tool.holder || tool.holder === '?')) || (tool.status === 'inuse' && owns);
       if (kind === 'repair' || kind === 'missing') return (tool.status === 'inuse' && owns) || (admin() && tool.status === 'available');
       return tool.status === 'inuse' && owns;
     });
@@ -51,7 +53,7 @@
 
   function receiverField() {
     const users = state().users || state().profiles || [];
-    return `<div class="field"><label for="mv-receiver">Receiving Engineer / Architect</label><input id="mv-receiver" name="receiver" list="mv-receivers" required maxlength="120" placeholder="Choose an existing Engineer / Architect"><datalist id="mv-receivers">${users.filter(user => !user.role || ['engineer', 'engr', 'architect'].includes(user.role.toLowerCase())).map(user => `<option value="${esc(user.name || user.full_name)}">${user.role ? esc(user.role) : 'Role awaiting verification'}</option>`).join('')}</datalist><p class="mv-help">Only the named receiver or Admin can confirm receipt. Profiles without a role need company verification.</p></div>`;
+    return `<div class="field"><label for="mv-receiver">Receiving Engineer / Architect</label><input id="mv-receiver" name="receiver" list="mv-receivers" required maxlength="120" placeholder="Choose an existing Engineer / Architect"><datalist id="mv-receivers">${users.filter(user => !user.role || ['engineer', 'engr', 'architect'].includes(user.role.toLowerCase())).map(user => `<option value="${esc(user.name || user.full_name)}">${user.role ? esc(user.role) : 'Role awaiting verification'}</option>`).join('')}</datalist><p class="mv-help">Only the named receiving Engineer or Architect can inspect and confirm receipt.</p></div>`;
   }
 
   function toolPicker(kind) {
@@ -66,14 +68,15 @@
     return toolIds.map(id => {
       const tool = toolById(id);
       const key = `${prefix}-${id}`;
-      const decision = prefix === 'receive' ? `<div class="field mv-custody-decision" data-decision-field hidden><label for="${esc(key)}-disposition">Custody decision for damaged equipment</label><select id="${esc(key)}-disposition" data-disposition disabled><option value="">Choose after reviewing the damage</option><option value="declined">Report issue and decline custody</option><option value="accepted">Accept custody with recorded damage</option></select><p class="mv-help">Declining keeps the current holder and project. Acceptance changes custody and preserves the reported damage for review; this record does not determine who caused it.</p></div>` : '';
-      return `<div class="mv-inspection" data-inspection="${esc(id)}"><div class="mv-inspection-title"><strong>${esc(tool?.name || id)}</strong><span class="tool-id-chip">${esc(id)}</span></div>${prefix === 'receive' ? `<p class="mv-help">Current holder: <strong>${esc(tool?.holder || 'Unassigned')}</strong> · ${esc(tool?.site || 'Unassigned project')}</p>` : ''}<div class="field"><label for="${esc(key)}-condition">Inspected condition</label><select id="${esc(key)}-condition" data-condition required><option value="">Select after inspection</option><option value="good">Good — ready for use</option><option value="damaged">Damaged — needs repair</option><option value="lost">Missing — not received</option></select></div><div class="field"><label for="${esc(key)}-notes">Inspection notes <span class="mv-optional">(required for damaged or missing)</span></label><textarea id="${esc(key)}-notes" data-condition-notes rows="2" maxlength="2000" placeholder="Describe the condition and any pre-existing issue"></textarea></div>${decision}</div>`;
+      const decision = prefix === 'receive' ? `<div class="field mv-custody-decision" data-decision-field hidden><label for="${esc(key)}-disposition">Custody decision for damaged equipment</label><select id="${esc(key)}-disposition" data-disposition disabled><option value="">Choose after reviewing the damage</option>${mode() === 'demo' ? '<option value="declined">Report issue and decline custody</option>' : ''}<option value="accepted">Accept custody with recorded damage</option></select><p class="mv-help">Acceptance changes custody and records the damage for review. ${mode() === 'demo' ? 'Declining keeps the current holder and project.' : 'If you cannot accept custody, contact Admin before confirming receipt.'} This record does not determine who caused the damage.</p></div>` : '';
+      return `<div class="mv-inspection" data-inspection="${esc(id)}"><div class="mv-inspection-title"><strong>${esc(tool?.name || id)}</strong><span class="tool-id-chip">${esc(id)}</span></div>${prefix === 'receive' ? `<p class="mv-help">Current holder: <strong>${esc(tool?.holder || 'Unassigned')}</strong> · ${esc(tool?.site || 'Unassigned project')}</p>` : ''}<div class="field"><label for="${esc(key)}-condition">Inspected condition</label><select id="${esc(key)}-condition" data-condition required><option value="">Select after inspection</option><option value="good">Good — ready for use</option><option value="damaged">Damaged — needs repair</option><option value="lost">Missing — not received</option></select></div><div class="field"><label for="${esc(key)}-notes">Inspection notes <span class="mv-optional">(required for damaged or missing)</span></label><textarea id="${esc(key)}-notes" data-condition-notes rows="2" maxlength="2000" placeholder="Describe the condition and any pre-existing issue"></textarea></div>${decision}${prefix === 'receive' ? `<label class="checkbox-row"><input type="checkbox" data-tested> I tested this tool (not required for missing items).</label>` : ''}</div>`;
     }).join('');
   }
 
   function createForm() {
     const kind = current.kind;
-    if (kind === 'request' && admin()) return `<aside class="card card-pad mv-guide"><p class="eyebrow">Admin review</p><h2>Keep the handover moving</h2><ol><li>Review the engineer's selected tools and destination.</li><li>Approve to reserve the tools, or reject with a reason.</li><li>Release to generate a transfer code for the receiver.</li></ol><p class="mv-help">Stock and custody change as each movement is confirmed. Select a request to review it.</p></aside>`;
+    if (!operational() && kind !== 'request' && !(handler() && kind === 'transfer')) return '<aside class="card card-pad mv-guide"><h2>Review saved '+TITLES[kind].toLowerCase()+'</h2><p class="mv-help">Open a record to inspect its history and available follow-up actions. The named receiving Engineer or Architect confirms physical custody.</p></aside>';
+    if (!operational() && !(handler() && kind === 'transfer')) return `<aside class="card card-pad mv-guide"><p class="eyebrow">Admin review</p><h2>Keep the handover moving</h2><ol><li>Review the engineer's selected tools and destination.</li><li>Approve to reserve the tools, or reject with a reason.</li><li>Release to generate a transfer code for the receiver.</li></ol><p class="mv-help">Stock and custody change as each movement is confirmed. Select a request to review it.</p></aside>`;
     const title = { request: 'Request tools', transfer: 'Create a transfer', return: 'Return tools', repair: 'Report a repair', missing: 'Report a missing tool' }[kind];
     const submit = { request: 'Submit request', transfer: 'Create transfer', return: 'Confirm return', repair: 'Submit repair report', missing: 'Submit missing report' }[kind];
     let fields = '';
@@ -81,7 +84,7 @@
     if (kind === 'transfer') fields = `${siteField('destination', 'Destination project', true)}${receiverField()}<div class="field"><label for="mv-notes">Handover notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000" placeholder="Instructions for the receiver"></textarea></div>`;
     if (kind === 'return') fields = `${siteField('destination', 'Return destination', true, 'Riverside Warehouse')}<div data-return-conditions></div><div class="field"><label for="mv-notes">Return notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000"></textarea></div><p class="mv-help">Good tools become available. Damaged and missing tools open a report for admin follow-up.</p>`;
     if (kind === 'repair' || kind === 'missing') fields = `<div class="field"><label for="mv-notes">${kind === 'repair' ? 'Damage / issue details' : 'Last seen and circumstances'}</label><textarea id="mv-notes" name="notes" required rows="4" maxlength="2000" placeholder="${kind === 'repair' ? 'Describe the fault and when it occurred' : 'Describe the last known location and what happened'}"></textarea></div><p class="mv-help">Submitting updates the tool's status and adds it to the admin ${kind === 'repair' ? 'repair queue' : 'missing tools register'}.</p>`;
-    return `<section class="card card-pad mv-create"><h2>${title}</h2><p class="mv-help mv-identity">${esc(context().name ? `Submitting as ${context().name}` : 'Choose your profile in the header to submit movements.')}</p><form data-form="create">${toolPicker(kind)}${fields}<button class="btn btn-primary btn-block" type="submit"${!eligibleTools(kind).length ? ' disabled' : ''}>${submit}</button></form></section>`;
+    return `<section class="card card-pad mv-create"><h2>${title}</h2><p class="mv-help mv-identity">${esc(context().name ? `Submitting as ${context().name}` : 'Sign in to submit movements.')}</p><form data-form="create">${toolPicker(kind)}${fields}<button class="btn btn-primary btn-block" type="submit"${!eligibleTools(kind).length ? ' disabled' : ''}>${submit}</button></form></section>`;
   }
 
   function transferLookup() {
@@ -100,7 +103,7 @@
 
   function renderShell() {
     if (!current) return;
-    current.root.innerHTML = `<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1><p class="sub">${descriptions()}</p></div><div class="page-head-actions mv-header-actions"><label class="mv-mode-label">Data source<select aria-label="Movement data source" data-mode><option value="live"${mode() === 'live' ? ' selected' : ''}>Live database</option><option value="demo"${mode() === 'demo' ? ' selected' : ''}>Demo data</option></select></label>${button('Refresh', 'refresh')}</div></div><div data-notice role="status" aria-live="polite"></div>${mode() === 'demo' ? '<div class="mv-demo-banner">Demo data · Saved in this browser and shared between the demo Engineer and Admin portals.</div>' : ''}<div data-summary class="mv-summary"></div>${current.kind === 'transfer' ? transferLookup() : ''}<div class="mv-workspace"><div data-create-panel>${createForm()}</div><div class="mv-record-area"><section class="card mv-records"><div class="mv-record-header"><h2>${admin() ? 'All' : 'Your'} ${TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section><section class="card card-pad mv-detail" data-detail hidden aria-label="Movement details"></section></div></div></div>`;
+    current.root.innerHTML = `<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1><p class="sub">${descriptions()}</p></div><div class="page-head-actions mv-header-actions"><span data-mode>${mode()==='demo'?'Offline demo':'Live database'}</span>${button('Refresh', 'refresh')}</div></div><div data-notice role="status" aria-live="polite"></div>${mode() === 'demo' ? '<div class="mv-demo-banner">Demo data · Saved in this browser and shared between the demo Engineer and Admin portals.</div>' : ''}<div data-summary class="mv-summary"></div>${current.kind === 'transfer' && operational() ? transferLookup() : ''}<div class="mv-workspace"><div data-create-panel>${createForm()}</div><div class="mv-record-area"><section class="card mv-records"><div class="mv-record-header"><h2>${admin() ? 'All' : 'Your'} ${TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section><section class="card card-pad mv-detail" data-detail hidden aria-label="Movement details"></section></div></div></div>`;
     renderLists();
     renderNotice();
     if (current.detailId) renderDetail();
@@ -157,8 +160,8 @@
     if (kind === 'request' && record.transferId) actions += `<div class="mv-transfer-code"><span>Handover code</span><strong>${esc(record.transferId)}</strong>${button('Open transfer', 'open-transfer', record.transferId)}</div>`;
     if (kind === 'transfer') {
       actions = `<div class="mv-transfer-code"><span>Share this code with ${esc(record.receiver)}</span><strong>${esc(record.code || record.id)}</strong>${button('Copy code', 'copy', record.code || record.id)}<div data-transfer-qr></div></div>`;
-      if (record.status === 'pending' && (admin() || record.receiver === context().name)) actions += `<form data-form="receive" data-id="${esc(record.id)}" class="mv-followup"><h3>Inspect the handover</h3><p class="mv-help">Choose a condition for every tool. Damaged and missing items will open follow-up reports.</p>${conditionFields(ids(record), 'receive')}<button type="submit" class="btn btn-primary btn-block">Confirm receipt of all inspected tools</button></form>`;
-      else if (record.status === 'pending') actions += `<p class="mv-help">Waiting for ${esc(record.receiver)} or an admin to inspect and confirm this transfer.</p>`;
+      if (record.status === 'pending' && (operational() && record.receiver === context().name)) actions += `<form data-form="receive" data-id="${esc(record.id)}" class="mv-followup"><h3>Inspect the handover</h3><p class="mv-help">Choose a condition for every tool. Damaged and missing items will open follow-up reports.</p>${conditionFields(ids(record), 'receive')}<button type="submit" class="btn btn-primary btn-block">Confirm receipt of all inspected tools</button></form>`;
+      else if (record.status === 'pending') actions += `<p class="mv-help">Waiting for ${esc(record.receiver)} to inspect and confirm this transfer.</p>`;
     }
     if (kind === 'repair' && admin() && record.status === 'reported') actions = `<div class="mv-action-row">${button('Start repair', 'start-repair', record.id, 'btn-accent')}</div>`;
     if (kind === 'repair' && admin() && record.status === 'underrepair') actions += `<form data-form="complete-repair" data-id="${esc(record.id)}" class="mv-followup"><h3>Return to service</h3>${siteField('repairDestination', 'Available at project', true, toolById(record.toolId)?.site)}<div class="field"><label for="mv-resolution">Repair completion notes</label><textarea name="notes" id="mv-resolution" required rows="2" maxlength="2000" placeholder="Describe the repair and checks performed"></textarea></div><button class="btn btn-primary" type="submit">Complete repair</button></form>`;
@@ -188,7 +191,11 @@
       const notes = item.querySelector('[data-condition-notes]').value.trim();
       if (!condition) throw new Error('Inspect every selected tool before confirming.');
       if (condition !== 'good' && !notes) throw new Error('Add inspection notes for every damaged or missing tool.');
-      return { toolId: item.dataset.inspection, condition, notes };
+      const tested = item.querySelector('[data-tested]')?.checked;
+      if (form.dataset.form === 'receive' && condition !== 'lost' && !tested) throw new Error('Test each received tool before confirming receipt.');
+      const disposition = condition === 'damaged' ? item.querySelector('[data-disposition]')?.value : condition === 'lost' ? 'declined' : 'accepted';
+      if (form.dataset.form === 'receive' && !disposition) throw new Error('Choose a custody decision for each damaged tool.');
+      return { toolId: item.dataset.inspection, condition, notes, ...(tested !== undefined ? {tested, disposition} : {}) };
     });
   }
 
@@ -314,7 +321,6 @@
       try { await navigator.clipboard.writeText(id); notify('Transfer code copied.'); } catch (_) { notify(`Copy this transfer code: ${id}`); }
     } else if (action === 'camera') await startCamera();
     else if (action === 'stop-camera') await stopCamera();
-    else if (action === 'demo') await switchMode('demo');
     else if (action === 'retry') await mount(current.kind);
   }
 
@@ -335,26 +341,27 @@
   async function change(event) {
     const target = event.target;
     if (target.matches('[data-status]')) { current.status = target.value; renderLists(); }
-    if (target.matches('[data-mode]')) await switchMode(target.value);
     if (target.matches('[name="toolIds"]')) {
       const count = current.root.querySelectorAll('[name="toolIds"]:checked').length;
       current.root.querySelector('[data-selected-count]').textContent = `${count} selected`;
       syncReturnConditions();
     }
-    if (target.matches('[data-condition]')) target.closest('[data-inspection]').querySelector('[data-condition-notes]').required = Boolean(target.value && target.value !== 'good');
-  }
-
-  async function switchMode(nextMode) {
-    const active = current;
-    try {
-      await stopCamera(active);
-      await store().setMode(nextMode);
-      if (current === active) await mount(active.kind);
-    } catch (error) { if (current === active) renderError(error); }
+    if (target.matches('[data-condition]')) {
+      const inspection = target.closest('[data-inspection]');
+      inspection.querySelector('[data-condition-notes]').required = Boolean(target.value && target.value !== 'good');
+      const decision = inspection.querySelector('[data-decision-field]');
+      if (decision) {
+        const damaged = target.value === 'damaged';
+        decision.hidden = !damaged;
+        const select = decision.querySelector('select');
+        select.disabled = !damaged; select.required = damaged;
+        if (!damaged) select.value = '';
+      }
+    }
   }
 
   function renderError(error) {
-    current.root.innerHTML = `<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1></div></div><div class="card card-pad mv-setup" role="alert"><h2>Movement data is unavailable</h2><p>${esc(error?.message || 'The database could not be reached.')}</p><p class="mv-help">Refresh after connecting the database, or explicitly open demo data to explore the workflow in this browser.</p><div class="mv-action-row">${button('Refresh', 'retry', null, 'btn-primary')}${button('Try demo data', 'demo')}</div></div></div>`;
+    current.root.innerHTML = `<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1></div></div><div class="card card-pad mv-setup" role="alert"><h2>Movement data is unavailable</h2><p>${esc(error?.message || 'The database could not be reached.')}</p><p class="mv-help">Check your connection and refresh. Contact your administrator if access is unavailable.</p><div class="mv-action-row">${button('Refresh', 'retry', null, 'btn-primary')}</div></div></div>`;
   }
 
   async function mount(kind) {
