@@ -450,8 +450,8 @@ function setupMasterlistListeners() {
   const btnBulkLocation = document.getElementById('btnBulkLocation');
   const btnBulkCancel = document.getElementById('btnBulkCancel');
   
-  if (btnBulkStatus) { btnBulkStatus.textContent = 'Report an issue'; btnBulkStatus.onclick = () => { window.movementDraft = {kind:'repair',toolIds:selectedAssets.slice(0,1)}; showScreen('repair'); }; }
-  if (btnBulkLocation) { btnBulkLocation.textContent = 'Transfer selected tools'; btnBulkLocation.onclick = () => { window.movementDraft = {kind:'transfer',toolIds:selectedAssets.slice()}; showScreen('transfer'); }; }
+  if (btnBulkStatus) { btnBulkStatus.textContent = 'Review repairs'; btnBulkStatus.onclick = () => showScreen('repair'); }
+  if (btnBulkLocation) { btnBulkLocation.textContent = 'Review transfers'; btnBulkLocation.onclick = () => showScreen('transfer'); }
   if (btnBulkCancel) btnBulkCancel.onclick = clearBulkSelection;
 
   // --- CONNECTING THE BULK MODAL CLOSE BUTTONS ---
@@ -464,34 +464,10 @@ function setupMasterlistListeners() {
   // --- HANDLING THE BULK FORM SUBMIT ---
   const bulkForm = document.getElementById('bulkActionForm');
   if (bulkForm) {
-    bulkForm.onsubmit = async (e) => {
+    bulkForm.onsubmit = (e) => {
       e.preventDefault();
-      
-      let updatePayload = {};
-      
-      if (bulkActionMode === 'status') {
-        const newStatus = document.getElementById('bulkStatusSelect').value;
-        if (!newStatus) return;
-        updatePayload = { status: newStatus };
-      } else if (bulkActionMode === 'location') {
-        const newLocation = document.getElementById('bulkLocationInput').value;
-        if (!newLocation.trim()) return;
-        updatePayload = { site: newLocation.trim() };
-      }
-
-      // Send to Supabase
-      const { error } = await supabaseClient
-        .from('equipment')
-        .update(updatePayload)
-        .in('asset_id', selectedAssets);
-
-      if (error) {
-        alert("Error updating items: " + error.message);
-      } else {
-        closeBulkModal();
-        clearBulkSelection(); 
-        initMasterlist(); 
-      }
+      closeBulkModal();
+      showScreen(bulkActionMode === 'location' ? 'transfer' : 'repair');
     };
   }
   // ----------------------------------------

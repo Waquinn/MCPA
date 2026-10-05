@@ -165,12 +165,16 @@ end $$;
 
 -- RLS plus revocation: old permissive prototype policies cannot OR around this.
 do $$
-declare t text; pol record;
+declare t text; pol record; cols text;
 begin
  foreach t in array array['profiles','equipment','sites','project_history','mcpa_movements','mcpa_movement_assets','mcpa_movement_sites','mcpa_movement_reservations','mcpa_movement_operations','consumables','consumable_requests','consumable_stock_movements'] loop
    if to_regclass('public.'||t) is null then continue;end if;
    execute format('alter table public.%I enable row level security',t);
    execute format('revoke all on public.%I from public,anon,authenticated',t);
+   -- Table revocation alone leaves separately granted column privileges intact.
+   select string_agg(quote_ident(column_name),',') into cols from information_schema.columns
+     where table_schema='public' and table_name=t;
+   execute format('revoke all (%s) on public.%I from public,anon,authenticated',cols,t);
    for pol in select policyname from pg_policies where schemaname='public' and tablename=t loop
      execute format('drop policy %I on public.%I',pol.policyname,t);
    end loop;

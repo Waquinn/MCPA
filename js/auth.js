@@ -18,8 +18,16 @@
     clearApplication();
     const host=document.getElementById('login-screen');
     host.classList.remove('hidden');
-    host.innerHTML=`<section class="login-card"><div class="login-mark">MCPA</div><h1 class="display">${kind==='recovery'?'Set your password':'Welcome back'}</h1><p class="sub">Construction Asset Management<br>and Accountability System</p><div id="auth-feedback" role="status">${esc(message)}</div>${kind==='loading'?'<p class="auth-loading" role="status">Checking your session…</p>':kind==='demo'?`<h2>Offline demonstration</h2><p class="auth-help">Sample identities and browser-only records. This workspace cannot access the live database.</p><div class="auth-demo-choices"><button class="btn btn-secondary" data-demo-role="admin">Admin demonstration</button><button class="btn btn-secondary" data-demo-role="engineer">Engineer demonstration</button><button class="btn btn-secondary" data-demo-role="architect">Architect demonstration</button></div><button class="link-btn" data-auth-back>Back to sign in</button>`:`<form id="auth-form">${kind==='recovery'?'':`<div class="field"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="username" required></div>`}<div class="field"><label for="auth-password">${kind==='recovery'?'New password':'Password'}</label><input id="auth-password" type="password" autocomplete="${kind==='recovery'?'new-password':'current-password'}" ${kind==='recovery'?'minlength="12"':''} required></div><button class="btn btn-primary btn-block" type="submit">${kind==='recovery'?'Save password':'Sign In'}</button></form>${kind==='recovery'?'<button class="link-btn" data-auth-logout>Cancel and sign out</button>':'<button class="link-btn" data-auth-reset>Forgot password?</button><p class="auth-help">Company accounts are issued by your administrator.</p><button class="btn btn-secondary btn-block" data-auth-demo>Try offline demo</button>'}`}</section>`;
+    host.innerHTML=`<section class="login-card"><div class="login-mark">MCPA</div><h1 class="display">${kind==='recovery'?'Set your password':'Welcome back'}</h1><p class="sub">Construction Asset Management<br>and Accountability System</p><div id="auth-feedback" role="status">${esc(message)}</div>${kind==='loading'?'<p class="auth-loading" role="status">Checking your session…</p>':kind==='demo'?`<h2>Offline demonstration</h2><p class="auth-help">Sample identities and browser-only records. This workspace cannot access the live database.</p><div class="auth-demo-choices"><button class="btn btn-secondary" data-demo-role="admin">Admin demonstration</button><button class="btn btn-secondary" data-demo-role="engineer">Engineer demonstration</button><button class="btn btn-secondary" data-demo-role="architect">Architect demonstration</button></div><button class="link-btn" data-auth-back>Back to sign in</button>`:`<form id="auth-form">${kind==='recovery'?'':`<div class="field"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="username" required></div>`}<div class="field"><label for="auth-password">${kind==='recovery'?'New password':'Password'}</label><div class="auth-password-wrap"><input id="auth-password" type="password" autocomplete="${kind==='recovery'?'new-password':'current-password'}" ${kind==='recovery'?'minlength="12"':''} required><button class="auth-password-toggle" type="button" aria-controls="auth-password" aria-label="Show password" data-auth-toggle-password>Show</button></div></div><button class="btn btn-primary btn-block" type="submit">${kind==='recovery'?'Save password':'Sign In'}</button></form>${kind==='recovery'?'<button class="link-btn" data-auth-logout>Cancel and sign out</button>':'<button class="link-btn" data-auth-reset>Forgot password?</button><p class="auth-help">Company accounts are issued by your administrator.</p><button class="btn btn-secondary btn-block" data-auth-demo>Try offline demo</button>'}`}</section>`;
+    // Native form submission handles Enter from either input, including mobile keyboards.
     host.querySelector('form')?.addEventListener('submit',signIn);
+    host.querySelector('[data-auth-toggle-password]')?.addEventListener('click',event=>{
+      const input=host.querySelector('#auth-password');
+      const show=input.type==='password';
+      input.type=show?'text':'password';
+      event.currentTarget.textContent=show?'Hide':'Show';
+      event.currentTarget.setAttribute('aria-label',show?'Hide password':'Show password');
+    });
     host.querySelector('[data-auth-reset]')?.addEventListener('click',resetPassword);
     host.querySelector('[data-auth-demo]')?.addEventListener('click',()=>login('','demo'));
     host.querySelector('[data-auth-back]')?.addEventListener('click',()=>login());
@@ -68,12 +76,12 @@
   }
   async function signIn(event) {
     event?.preventDefault();if(busy)return;busy=true;
-    const button=document.querySelector('#auth-form button');if(button)button.disabled=true;
+    const button=document.querySelector('#auth-form button[type=submit]');if(button)button.disabled=true;
     try {
       if(recovering){const {error}=await client().auth.updateUser({password:document.getElementById('auth-password').value});if(error)throw error;recovering=false;await logout();feedback('Password saved. Sign in with your new password.');return;}
       const {data,error}=await client().auth.signInWithPassword({email:document.getElementById('auth-email').value.trim(),password:document.getElementById('auth-password').value});
       if(error)throw error;
-      document.getElementById('auth-password').value='';await restore(data.session);
+      const passwordInput=document.getElementById('auth-password');if(passwordInput)passwordInput.value='';await restore(data.session);
     } catch(error){feedback(error?.code==='invalid_credentials'?'Incorrect email or password.':error?.code==='email_not_confirmed'?'Confirm your company invitation before signing in.':'Sign in could not be completed. Check your connection and try again.');}
     finally {busy=false;if(button?.isConnected)button.disabled=false;}
   }
@@ -105,7 +113,6 @@
   async function boot(){
     login('','loading');
     let demoRole;try{demoRole=sessionStorage.getItem('mcpa.demo.role');}catch(_){}
-    if(demoRole && ['admin','engineer','architect'].includes(demoRole)){await startDemo(demoRole,true);return;}
     try{
       client().auth.onAuthStateChange((event,session)=>{
         if(demo)return;
@@ -113,6 +120,7 @@
         if(event==='SIGNED_OUT'){++revision;profile=null;sessionUser=null;login('Your session ended. Sign in again.');return;}
         if(event==='INITIAL_SESSION'||event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='USER_UPDATED')setTimeout(()=>restore(session),0);
       });
+      if(demoRole && ['admin','engineer','architect'].includes(demoRole)){await startDemo(demoRole,true);return;}
       const {data,error}=await client().auth.getSession();if(error)throw error;if(!recovering)await restore(data.session);
     }catch(_){login('The sign-in service could not load. Check your connection and refresh. Offline demo remains available.');}
   }

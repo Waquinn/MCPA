@@ -1,6 +1,8 @@
 # MCPA authentication deployment
 
-Status: application code and isolated SQL/browser verification are implemented. **This migration has not been applied to the live project.** Live roles, existing policies, invitations, recovery email delivery and real logins still require project-owner verification.
+For controlled real development accounts, see [TEST-ACCOUNTS.md](TEST-ACCOUNTS.md). Its trusted Node script reuses the profile linkage described below; it does not replace deployment of this migration.
+
+Status (2026-10-05): the project owner reports the preflight and migration completed successfully. Live Admin and Engineer test accounts have now been created and verified through real Supabase password login, profile RPCs and the existing browser login form. Dashboard routing, session restoration, logout and selected role restrictions passed. Invitations, recovery email delivery and live business transaction workflows still require verification.
 
 ## What was inspected
 

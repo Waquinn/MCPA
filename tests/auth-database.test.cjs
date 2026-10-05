@@ -13,6 +13,14 @@ test('authenticated grants, scoped records and movement custody survive role har
   assert.equal((await query(a.handler,'select * from equipment')).rows.length,6);
   await assert.rejects(()=>query(a.sky,'select * from profiles'),/permission denied/);
   await assert.rejects(()=>rpc(a.sky,'mcpa_accounts'),/Admin access/);
+  const account={p_id:a.inactive.id,p_name:a.inactive.name,p_role:'engineer',p_status:'active',p_auth_user_id:a.inactive.authId};
+  await assert.rejects(()=>rpc(a.sky,'mcpa_save_account',account),/Admin access/);
+  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...account,p_id:a.admin.id,p_auth_user_id:a.admin.authId}),/own administrator/);
+  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...account,p_auth_user_id:randomUUID()}),/Auth account first/);
+  assert.equal(await rpc(a.admin,'mcpa_save_account',account),a.inactive.id,'Account activation preserves the historical profile ID');
+  assert.equal((await rpc(a.inactive,'mcpa_my_profile')).account_status,'active');
+  await rpc(a.admin,'mcpa_save_account',{...account,p_status:'inactive'});
+  await assert.rejects(()=>rpc(a.inactive,'mcpa_movement_snapshot'),/active authorized/);
   await assert.rejects(()=>query(a.sky,"update profiles set role='admin'"),/permission denied/);
   await assert.rejects(()=>query(a.admin,"update equipment set current_holder_id=$1",[a.sky.id]),/permission denied/);
   await assert.rejects(()=>query(a.admin,'select mcpa_auth_private.mcpa_movement_action($1,$2,$3)',['createRequest',{},randomUUID()]),/permission denied/);
@@ -48,7 +56,10 @@ test('authenticated grants, scoped records and movement custody survive role har
   await db.query("update profiles set account_status='inactive' where id=$1",[a.sky.id]);
   await assert.rejects(()=>rpc(a.sky,'mcpa_movement_snapshot'),/active authorized/);
   await assert.rejects(()=>act(a.sky,'reportMissing',{toolId:'TOOL-002',notes:'Missing'}),/active authorized/);
+  await db.exec('grant update(current_holder_id) on equipment to authenticated; grant select(auth_user_id) on profiles to authenticated;');
   await db.exec(f.migration);
+  await assert.rejects(()=>query(a.admin,'update equipment set current_holder_id=$1',[a.sky.id]),/permission denied/);
+  await assert.rejects(()=>query(a.admin,'select auth_user_id from profiles'),/permission denied/);
   assert.ok((await rpc(a.admin,'mcpa_movement_snapshot')).activity.length>=7,'Rerun retains audit records');
  }finally{await f.close();}
 });
