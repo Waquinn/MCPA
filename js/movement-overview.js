@@ -55,7 +55,7 @@
     if (!results) return;
     if (screen === 'dashboard') results.innerHTML = window.DashboardView.inventory(data,user,dashboardState(),toolsTable);
     else if (screen === 'activity') results.innerHTML = activityTable(visibleActivity(data));
-    else results.innerHTML = toolsTable(data.tools.filter(t => window.EquipmentTracking.matchesStatus(t, status) && (!site || t.site === site) && (!mine || t.holder === user.name) && [t.id,t.name,t.brand,t.site,t.holder,t.serial].join(' ').toLowerCase().includes(query.toLowerCase())));
+    else results.innerHTML = toolsTable(data.tools.filter(t => window.EquipmentTracking.matchesStatus(t, status) && (!site || t.site === site) && (!mine || (store().mode === 'live' ? t.holderId === user.id : t.holder === user.name)) && [t.id,t.name,t.brand,t.site,t.holder,t.serial].join(' ').toLowerCase().includes(query.toLowerCase())));
   }
   const userRole = () => store().getContext().role;
   function detail(id) {

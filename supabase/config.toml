@@ -1,0 +1,4 @@
+[functions.manage-accounts]
+# The handler verifies every bearer token with Auth.getUser and checks the
+# active Admin profile. Keep the gateway JWT check as an additional boundary.
+verify_jwt = true

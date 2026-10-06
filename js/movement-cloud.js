@@ -99,7 +99,7 @@
       if (mode === 'demo') return window.MovementDemoStore.resolveQr(value);
       const code = String(value || '').trim();
       const actor = context();
-      const addressed = transfer => transfer.receiverId ? transfer.receiverId === actor.id : transfer.receiver === actor.name;
+      const addressed = transfer => transfer.receiverId === actor.id;
       const transfer = api.findTransfer(code);
       if (transfer) {
         if (!addressed(transfer)) throw new Error('Only the named receiver can confirm this handover.');

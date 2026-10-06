@@ -1,32 +1,65 @@
-(function () {
+﻿(function () {
   'use strict';
-  const root=document.getElementById('screen-users');
-  if(!root || !MCPAAuth.canRoute('users') || MCPAAuth.isDemo)return;
-  const esc=MovementOverview.escape, client=EquipmentTracking.client();let records=[],saving=false;
-  root.innerHTML='<div class="page-head"><div><h1 class="display">People & Accountability</h1><p class="sub">Link company profiles to authenticated accounts. Historical custody records are retained.</p></div></div><div class="card card-pad"><p class="account-message">Create or invite a user in Supabase Authentication first, then link their Auth user ID here. Invitations and passwords are handled by Supabase; this page never stores passwords.</p><div id="accounts-feedback" role="status"></div><div id="accounts-list"></div><form id="account-form" class="account-form"><div class="field account-wide"><label for="account-profile">Existing profile</label><select id="account-profile"><option value="">New company profile</option></select></div><div class="field"><label for="account-name">Full name</label><input id="account-name" required maxlength="120"></div><div class="field"><label for="account-role">Authorized role</label><select id="account-role" required><option value="">Choose a role</option>'+Object.entries(MCPAPermissions.labels).map(([key,label])=>`<option value="${key}">${label}</option>`).join('')+'</select></div><div class="field"><label for="account-auth-id">Supabase Auth user ID</label><input id="account-auth-id" placeholder="UUID from Authentication → Users" pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"></div><div class="field"><label for="account-status">Account status</label><select id="account-status"><option value="inactive">Inactive</option><option value="active">Active</option></select></div><div class="account-wide"><button class="btn btn-primary" type="submit">Save account access</button></div></form></div>';
-  const $=selector=>root.querySelector(selector);
-  function message(text){$('#accounts-feedback').textContent=text;}
-  async function load(){
-    const {data,error}=await client.rpc('mcpa_accounts');if(!root.isConnected)return;
-    if(error){message('Account records could not load. Verify your Admin access and database setup.');return;}
-    records=data||[];
-    $('#account-profile').innerHTML='<option value="">New company profile</option>'+records.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
-    $('#accounts-list').innerHTML=`<div class="table-wrap"><table><thead><tr><th>Person</th><th>Role</th><th>Status</th><th>Account link</th></tr></thead><tbody>${records.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(MCPAPermissions.labels[p.role]||'Unconfigured')}</td><td>${esc(p.account_status)}</td><td>${p.auth_user_id?'Linked':'Not linked'}</td></tr>`).join('')}</tbody></table></div>`;
+  const root = document.getElementById('screen-users');
+  if (!root || !MCPAAuth.canRoute('users') || MCPAAuth.isDemo) return;
+  const esc = MovementOverview.escape, client = EquipmentTracking.client();
+  const roles = Object.entries(MCPAPermissions.labels).filter(([role]) => role !== 'admin');
+  const roleOptions = () => roles.map(([role,label]) => `<option value="${role}">${label}</option>`).join('');
+  let records = [], busy = false, invitationId = crypto.randomUUID();
+  root.innerHTML = `<div class="page-head"><div><h1 class="display">People & Accountability</h1><p class="sub">Manage company access and preserve each person’s accountability history.</p></div><button class="btn btn-primary" data-open-invite>Invite User</button></div>
+    <p id="accounts-feedback" role="status" aria-live="polite"></p>
+    <section class="card card-pad"><div class="account-tools"><div class="field"><label for="people-search">Find a person</label><input id="people-search" type="search" placeholder="Name, email or role"></div><button class="btn btn-secondary" data-refresh>Refresh</button></div><div id="accounts-list" aria-busy="true">Loading people…</div></section>
+    <section id="invite-panel" class="card card-pad account-section" hidden><h2>Invite User</h2><p class="account-message">Select an existing person when they already have company records. They’ll receive an email to set their password.</p>
+    <form id="invite-form" class="account-form"><div class="field account-wide"><label for="invite-person">Company person</label><select id="invite-person"><option value="">Create a new company person</option></select></div>
+    <div class="field"><label for="invite-name">Full name</label><input id="invite-name" required maxlength="120" autocomplete="name"></div><div class="field"><label for="invite-email">Email</label><input id="invite-email" type="email" required maxlength="254" autocomplete="email"></div>
+    <div class="field"><label for="invite-role">Authorized role</label><select id="invite-role" required><option value="">Choose a role</option>${roleOptions()}</select></div>
+    <label class="account-wide" id="distinct-person-label" hidden><input id="distinct-person" type="checkbox"> This is a different person who shares an existing person’s name.</label>
+    <div class="account-wide account-tools"><button class="btn btn-primary" type="submit">Send Invitation</button><button class="btn btn-secondary" type="button" data-close-invite>Cancel</button></div></form></section>
+    <section id="edit-panel" class="card card-pad account-section" hidden><h2>Edit account access</h2><p id="edit-person" class="account-message"></p><form id="edit-form" class="account-form"><input id="edit-id" type="hidden"><div class="field"><label for="edit-role">Authorized role</label><select id="edit-role">${roleOptions()}</select></div><div class="field"><label for="edit-status">Account status</label><select id="edit-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><div class="account-wide account-tools"><button class="btn btn-primary" type="submit">Save access</button><button class="btn btn-secondary" type="button" data-close-edit>Cancel</button></div></form></section>
+    <details class="card card-pad account-section" id="recovery-panel"><summary>Advanced / Recovery Account Linking</summary><p class="account-message">For an Auth account that already exists. Verify the person and email in Supabase Authentication before linking. Existing links cannot be reassigned here.</p>
+    <form id="account-form" class="account-form"><div class="field account-wide"><label for="account-profile">Company person</label><select id="account-profile" required><option value="">Choose a person</option></select></div><div class="field"><label for="account-name">Full name</label><input id="account-name" readonly required></div><div class="field"><label for="account-role">Authorized role</label><select id="account-role" required><option value="">Choose a role</option>${roleOptions()}</select></div><div class="field account-wide"><label for="account-auth-id">Supabase Auth user ID</label><input id="account-auth-id" required pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" placeholder="Verified Auth UUID"></div><div class="field"><label for="account-status">Account status</label><select id="account-status"><option value="inactive">Inactive</option><option value="active">Active</option></select></div><div class="account-wide"><button class="btn btn-secondary" type="submit">Link verified account</button></div></form></details>
+    <details class="card card-pad account-section"><summary>Account access history</summary><p class="account-message">Recent changes, with the acting administrator and time.</p><button class="btn btn-secondary" data-audit>Load recent history</button><div id="account-audit"></div></details>`;
+  const $ = selector => root.querySelector(selector);
+  const peoplePanel = root.querySelector('section');
+  root.insertBefore($('#invite-panel'), peoplePanel); root.insertBefore($('#edit-panel'), peoplePanel);
+  function message(value,error=false) { if(root.isConnected){$('#accounts-feedback').textContent=value;$('#accounts-feedback').setAttribute('role',error?'alert':'status');} }
+  function render() {
+    const query=$('#people-search').value.trim().toLowerCase();
+    const people=records.filter(p=>`${p.name} ${p.email||''} ${MCPAPermissions.labels[p.role]||''}`.toLowerCase().includes(query));
+    $('#accounts-list').setAttribute('aria-busy','false');
+    $('#accounts-list').innerHTML=people.length?`<div class="table-wrap" tabindex="0" role="region" aria-label="People and account access; scroll horizontally for all columns"><table><thead><tr><th scope="col">Person</th><th scope="col">Email</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Account</th><th scope="col">Actions</th></tr></thead><tbody>${people.map(p=>`<tr><td>${esc(p.name)}<small class="account-reference">${esc(p.id)}</small></td><td>${esc(p.email||'Not recorded')}</td><td>${esc(MCPAPermissions.labels[p.role]||'Unconfigured')}</td><td>${p.account_status==='active'?'Active':'Inactive'}</td><td>${p.invitation_prepared?'Invitation needs completion':p.invitation_pending?'Invitation Pending':p.auth_user_id?'Linked':'Not linked'}</td><td><div class="account-row-actions">${p.invitation_prepared?`<button class="btn btn-secondary" data-retry="${esc(p.invitation_id)}">Retry invitation</button>`:`<button class="btn btn-secondary" data-edit="${esc(p.id)}">Edit access</button>`}${p.invitation_pending&&p.invitation_id&&p.account_status==='active'?`<button class="btn btn-secondary" data-resend="${esc(p.invitation_id)}">Resend invitation</button>`:''}${!p.auth_user_id&&!p.invitation_id&&p.role!=='admin'?`<button class="btn btn-secondary" data-invite="${esc(p.id)}">Invite</button>`:''}</div></td></tr>`).join('')}</tbody></table></div>`:'<p class="account-message">No people match your search.</p>';
   }
-  $('#account-profile').onchange=()=>{
-    const p=records.find(p=>p.id===$('#account-profile').value);
-    $('#account-name').value=p?.name||'';$('#account-role').value=p?.role||'';$('#account-auth-id').value=p?.auth_user_id||'';$('#account-status').value=p?.account_status||'inactive';
-  };
-  $('#account-form').onsubmit=async event=>{
-    event.preventDefault();if(saving||!event.target.reportValidity())return;
-    if($('#account-status').value==='active'&&!$('#account-auth-id').value){message('Link a Supabase Auth account before activation.');return;}
-    saving=true;const button=event.target.querySelector('button');button.disabled=true;
-    try{
-      const {error}=await client.rpc('mcpa_save_account',{p_id:$('#account-profile').value||null,p_name:$('#account-name').value.trim(),p_role:$('#account-role').value,p_status:$('#account-status').value,p_auth_user_id:$('#account-auth-id').value.trim()||null});
-      if(error)throw error;
-      event.target.reset();await load();message('Account access saved. Existing movement and custody history is unchanged.');
-    }catch(error){message(['22023','42501'].includes(error.code)?error.message:error.code==='23505'?'This Auth account is already linked to a profile.':'Account access could not be saved. Check your connection and the Auth user ID.');}
-    finally{saving=false;button.disabled=false;}
-  };
-  load().catch(()=>message('Account service is unavailable. Refresh and try again.'));
+  async function load(){
+    const {data,error}=await client.rpc('mcpa_accounts');if(error)throw new Error('People could not load. Verify Admin access and the account-management migration, then refresh.');if(!root.isConnected)return;
+    records=data||[];render();
+    const options=records.filter(p=>!p.auth_user_id&&!p.invitation_id&&p.role!=='admin').map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.id)}</option>`).join('');
+    for(const [selector,label] of [['#invite-person','Create a new company person'],['#account-profile','Choose a person']]){const value=$(selector).value;$(selector).innerHTML=`<option value="">${label}</option>${selector==="#account-profile"?'<option value="__new">Create a new company person</option>':''}${options}`;if([...$(selector).options].some(o=>o.value===value))$(selector).value=value;}
+  }
+  async function run(work,success){
+    if(busy)return;busy=true;root.querySelectorAll('button').forEach(b=>b.disabled=true);message('Saving account changes…');
+    try{const result=await work();if(!root.isConnected)return;try{await load();message(result?.message||success);}catch(_){message('The action completed, but the list could not refresh. Refresh before making another change.',true);}}
+    catch(error){message(error.message,true);try{await load();}catch(_){} }
+    finally{busy=false;if(root.isConnected)root.querySelectorAll('button').forEach(b=>b.disabled=false);}
+  }
+  async function invoke(body){const {data,error}=await client.functions.invoke('manage-accounts',{body});if(error){let detail;try{detail=await error.context?.json();}catch(_){}throw new Error(detail?.error||'Account service could not complete the request. Verify Edge Function deployment and refresh; retry the existing invitation.');}return data;}
+  async function save(p,role,status,authId=p.auth_user_id){const {error}=await client.rpc('mcpa_save_account',{p_id:p.id,p_name:p.name,p_role:role,p_status:status,p_auth_user_id:authId||null});if(error)throw new Error(['22023','42501'].includes(error.code)?error.message:error.code==='23505'?'This Auth account is already linked to another person.':'Account changes could not be saved. Refresh and try again.');}
+  function checkDuplicate(){const duplicate=!$('#invite-person').value&&records.some(p=>p.name.trim().toLowerCase()===$('#invite-name').value.trim().toLowerCase());$('#distinct-person-label').hidden=!duplicate;if(!duplicate)$('#distinct-person').checked=false;}
+  function choosePerson(){const p=records.find(p=>p.id===$('#invite-person').value);$('#invite-name').value=p?.name||'';$('#invite-name').readOnly=!!p;$('#invite-role').value=roles.some(([r])=>r===p?.role)?p.role:'';$('#distinct-person').checked=false;checkDuplicate();}
+  function openInvite(id=''){$('#invite-panel').hidden=false;$('#invite-person').value=id;choosePerson();$('#invite-person').focus();}
+  $('#invite-person').onchange=choosePerson;$('#invite-name').oninput=checkDuplicate;$('#people-search').oninput=render;
+  $('#invite-form').oninput=()=>{invitationId=crypto.randomUUID();};
+  $('#invite-form').onsubmit=event=>{event.preventDefault();if(!event.target.reportValidity())return;run(async()=>{const result=await invoke({action:'invite',id:invitationId,profile_id:$('#invite-person').value||null,name:$('#invite-name').value.trim(),email:$('#invite-email').value.trim(),role:$('#invite-role').value,distinct_person:$('#distinct-person').checked});event.target.reset();invitationId=crypto.randomUUID();$('#invite-panel').hidden=true;return result;});};
+  $('#account-profile').onchange=()=>{const p=records.find(p=>p.id===$('#account-profile').value);$('#account-name').value=p?.name||'';$('#account-name').readOnly=!!p;$('#account-role').value=p?.role||'';};
+  $('#account-form').onsubmit=event=>{event.preventDefault();if(!event.target.reportValidity())return;const p=$('#account-profile').value==='__new'?{id:null,name:$('#account-name').value.trim()}:records.find(p=>p.id===$('#account-profile').value);if(p)run(async()=>{await save(p,$('#account-role').value,$('#account-status').value,$('#account-auth-id').value.trim());event.target.reset();},'Account linked. Existing custody and history remain attached to this person.');};
+  $('#edit-form').onsubmit=event=>{event.preventDefault();const p=records.find(p=>p.id===$('#edit-id').value);if(p)run(async()=>{await save(p,$('#edit-role').value,$('#edit-status').value);$('#edit-panel').hidden=true;},'Account access updated.');};
+  root.addEventListener('click',event=>{
+    const button=event.target.closest('button');if(!button||busy)return;
+    if(button.hasAttribute('data-open-invite'))openInvite();if(button.dataset.invite)openInvite(button.dataset.invite);
+    if(button.hasAttribute('data-close-invite'))$('#invite-panel').hidden=true;if(button.hasAttribute('data-close-edit'))$('#edit-panel').hidden=true;
+    if(button.hasAttribute('data-refresh'))load().then(()=>message('People refreshed.')).catch(error=>message(error.message,true));
+    if(button.dataset.retry||button.dataset.resend)run(()=>invoke({action:button.dataset.retry?'retry':'resend',id:button.dataset.retry||button.dataset.resend}));
+    if(button.dataset.edit){const p=records.find(p=>p.id===button.dataset.edit);if(!p)return;$('#edit-panel').hidden=false;$('#edit-id').value=p.id;$('#edit-person').textContent=`${p.name} · ${p.email||'No linked email'}`;$('#edit-role').innerHTML=roleOptions()+(p.role==='admin'?'<option value="admin">Admin</option>':'');$('#edit-role').value=p.role||'';$('#edit-status').value=p.account_status;$('#edit-role').focus();}
+    if(button.hasAttribute('data-audit')){button.disabled=true;client.from('mcpa_account_audit').select('actor_id,profile_id,event,created_at').order('created_at',{ascending:false}).limit(100).then(({data,error})=>{if(!root.isConnected)return;if(error){$('#account-audit').textContent='History could not load. Refresh and try again.';return;}const name=id=>records.find(p=>p.id===id)?.name||id;$('#account-audit').innerHTML=data?.length?`<ol class="account-history">${data.map(row=>`<li><strong>${esc(row.event.replaceAll('_',' '))}</strong> · ${esc(name(row.profile_id))}<br><small>${esc(name(row.actor_id))} · ${esc(new Date(row.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila'}))} (Manila)</small></li>`).join('')}</ol>`:'<p>No account changes recorded yet.</p>';}).catch(()=>{if(root.isConnected)$('#account-audit').textContent='History could not load. Try again.';}).finally(()=>{button.disabled=false;});}
+  });
+  load().catch(error=>{$('#accounts-list').textContent='People are unavailable. Use Refresh to try again.';message(error.message,true);});
 })();

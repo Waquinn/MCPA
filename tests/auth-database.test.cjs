@@ -16,7 +16,7 @@ test('authenticated grants, scoped records and movement custody survive role har
   const account={p_id:a.inactive.id,p_name:a.inactive.name,p_role:'engineer',p_status:'active',p_auth_user_id:a.inactive.authId};
   await assert.rejects(()=>rpc(a.sky,'mcpa_save_account',account),/Admin access/);
   await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...account,p_id:a.admin.id,p_auth_user_id:a.admin.authId}),/own administrator/);
-  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...account,p_auth_user_id:randomUUID()}),/Auth account first/);
+  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...account,p_auth_user_id:randomUUID()}),/cannot be reassigned/);
   assert.equal(await rpc(a.admin,'mcpa_save_account',account),a.inactive.id,'Account activation preserves the historical profile ID');
   assert.equal((await rpc(a.inactive,'mcpa_my_profile')).account_status,'active');
   await rpc(a.admin,'mcpa_save_account',{...account,p_status:'inactive'});

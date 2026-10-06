@@ -38,7 +38,7 @@
     const reserved = new Set((state().requests || []).filter(r => r.status === 'approved').flatMap(ids));
     return tools().filter(tool => {
       if (locked.has(tool.id) || reserved.has(tool.id) || !(tool.qty > 0)) return false;
-      const owns = tool.holder === context().name;
+      const owns = mode() === 'live' ? tool.holderId === context().id : tool.holder === context().name;
       if (kind === 'request') return tool.status === 'available';
       if (kind === 'transfer') return (handler() && tool.status === 'available' && (!tool.holder || tool.holder === '?')) || (tool.status === 'inuse' && owns);
       if (kind === 'repair' || kind === 'missing') return (tool.status === 'inuse' && owns) || (admin() && tool.status === 'available');
@@ -53,6 +53,10 @@
 
   function receiverField() {
     const users = state().users || state().profiles || [];
+    if (store().mode === 'live') {
+      const recipients = users.filter(user => ['engineer','architect'].includes(user.role));
+      return `<div class="field"><label for="mv-receiver">Receiving Engineer / Architect</label><select id="mv-receiver" name="receiverId" required><option value="">Choose a recipient</option>${recipients.map(user => `<option value="${esc(user.id)}">${esc(user.name)} · ${esc(MCPAPermissions.labels[user.role])} · ${esc(user.projects?.join(', ') || 'No assigned project')} · ${esc(user.id)}</option>`).join('')}</select><p class="mv-help">Choose the person and project. The reference distinguishes people who share a name. Only this recipient can confirm receipt.</p></div>`;
+    }
     return `<div class="field"><label for="mv-receiver">Receiving Engineer / Architect</label><input id="mv-receiver" name="receiver" list="mv-receivers" required maxlength="120" placeholder="Choose an existing Engineer / Architect"><datalist id="mv-receivers">${users.filter(user => !user.role || ['engineer', 'engr', 'architect'].includes(user.role.toLowerCase())).map(user => `<option value="${esc(user.name || user.full_name)}">${user.role ? esc(user.role) : 'Role awaiting verification'}</option>`).join('')}</datalist><p class="mv-help">Only the named receiving Engineer or Architect can inspect and confirm receipt.</p></div>`;
   }
 
@@ -160,7 +164,7 @@
     if (kind === 'request' && record.transferId) actions += `<div class="mv-transfer-code"><span>Handover code</span><strong>${esc(record.transferId)}</strong>${button('Open transfer', 'open-transfer', record.transferId)}</div>`;
     if (kind === 'transfer') {
       actions = `<div class="mv-transfer-code"><span>Share this code with ${esc(record.receiver)}</span><strong>${esc(record.code || record.id)}</strong>${button('Copy code', 'copy', record.code || record.id)}<div data-transfer-qr></div></div>`;
-      if (record.status === 'pending' && (operational() && record.receiver === context().name)) actions += `<form data-form="receive" data-id="${esc(record.id)}" class="mv-followup"><h3>Inspect the handover</h3><p class="mv-help">Choose a condition for every tool. Damaged and missing items will open follow-up reports.</p>${conditionFields(ids(record), 'receive')}<button type="submit" class="btn btn-primary btn-block">Confirm receipt of all inspected tools</button></form>`;
+      if (record.status === 'pending' && (operational() && (mode() === 'live' ? record.receiverId === context().id : record.receiver === context().name))) actions += `<form data-form="receive" data-id="${esc(record.id)}" class="mv-followup"><h3>Inspect the handover</h3><p class="mv-help">Choose a condition for every tool. Damaged and missing items will open follow-up reports.</p>${conditionFields(ids(record), 'receive')}<button type="submit" class="btn btn-primary btn-block">Confirm receipt of all inspected tools</button></form>`;
       else if (record.status === 'pending') actions += `<p class="mv-help">Waiting for ${esc(record.receiver)} to inspect and confirm this transfer.</p>`;
     }
     if (kind === 'repair' && admin() && record.status === 'reported') actions = `<div class="mv-action-row">${button('Start repair', 'start-repair', record.id, 'btn-accent')}</div>`;
@@ -254,6 +258,7 @@
         const toolIds = data.getAll('toolIds');
         if (['request', 'transfer', 'return'].includes(kind) && !toolIds.length) throw new Error('Select at least one tool.');
         const payload = { toolIds, destination: value('destination'), receiver: value('receiver'), purpose: value('purpose'), notes: value('notes'), toolId: value('toolId'), neededUntil: value('neededUntil') };
+        if (store().mode === 'live') { delete payload.receiver; if (kind === 'transfer') payload.receiverId = value('receiverId'); }
         if (kind === 'return') payload.conditions = readConditions(form);
         const methods = { request: 'createRequest', transfer: 'createTransfer', return: 'createReturn', repair: 'reportRepair', missing: 'reportMissing' };
         await perform(() => store()[methods[kind]](payload), result => kind === 'transfer' ? `Transfer ${result?.code || result?.id || ''} created. Share the code with the receiver.` : `${TITLES[kind] === 'Missing tools' ? 'Missing report' : { request: 'Request', return: 'Return', repair: 'Repair report' }[kind]} saved successfully.`, { resetCreate: true, showResult: true });

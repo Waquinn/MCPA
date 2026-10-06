@@ -1,5 +1,11 @@
 # MCPA authentication deployment
 
+For the final invitation-based People & Accountability workflow, continue with
+[ACCOUNT-MANAGEMENT-DEPLOYMENT.md](ACCOUNT-MANAGEMENT-DEPLOYMENT.md) after this base
+migration. Its newer migrations replace the manual-link-first UI and name-based
+recipient resolution described below. Do not rerun this older migration after
+those updates without reapplying the newer migrations in order.
+
 For controlled real development accounts, see [TEST-ACCOUNTS.md](TEST-ACCOUNTS.md). Its trusted Node script reuses the profile linkage described below; it does not replace deployment of this migration.
 
 Status (2026-10-05): the project owner reports the preflight and migration completed successfully. Live Admin and Engineer test accounts have now been created and verified through real Supabase password login, profile RPCs and the existing browser login form. Dashboard routing, session restoration, logout and selected role restrictions passed. Invitations, recovery email delivery and live business transaction workflows still require verification.

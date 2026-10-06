@@ -9,7 +9,7 @@
   const empty = text => `<p class="command-empty">${text}</p>`;
   const activeSites = data => data.activeProjects || data.sites.filter(s => s.is_active !== false && !s.archived_at);
   const belongs = (t,p) => t.site_id === p.id || t.siteId === p.id || t.site === p.name;
-  const scoped = (data,user) => data.tools.filter(t => EquipmentTracking.quantity(t)>0 && (['admin','tool_handler'].includes(user.role) || (!!user.name && t.holder === user.name)));
+  const scoped = (data,user) => data.tools.filter(t => EquipmentTracking.quantity(t)>0 && (['admin','tool_handler'].includes(user.role) || (window.MCPAAuth && !window.MCPAAuth.isDemo ? t.holderId === user.id : !!user.name && t.holder === user.name)));
   const condition = t => ['repair','underrepair'].includes(t.status) ? 'repair' : t.status === 'inuse' ? 'deployed' : t.status === 'inoffice' ? 'available' : ['available','missing'].includes(t.status) ? t.status : 'other';
   const match = (t,status) => status === 'repair' ? condition(t)==='repair' : EquipmentTracking.matchesStatus(t,status);
   const groups = [['available','Available'],['deployed','Deployed'],['repair','Repair / under repair'],['missing','Missing'],['other','Other / retired']];
@@ -56,8 +56,8 @@
   }
   function render(data,user,state,header,table,when) {
     const admin=['admin','tool_handler'].includes(user.role), tools=scoped(data,user), totals=EquipmentTracking.tally(tools), projects=activeSites(data);
-    const incoming=data.transfers.filter(t=>t.status==='pending' && (admin || t.receiver===user.name));
-    const requests=data.requests.filter(r=>['pending','approved'].includes(r.status) && (admin || r.requester===user.name));
+    const incoming=data.transfers.filter(t=>t.status==='pending' && (admin || (window.MCPAAuth && !window.MCPAAuth.isDemo ? t.receiverId===user.id : t.receiver===user.name)));
+    const requests=data.requests.filter(r=>['pending','approved'].includes(r.status) && (admin || (window.MCPAAuth && !window.MCPAAuth.isDemo ? r.receiverId===user.id : r.requester===user.name)));
     const repair=units(tools.filter(t=>condition(t)==='repair')), missing=units(tools.filter(t=>condition(t)==='missing'));
     const cards=[[totals.total,'Total Equipment','Tracked equipment units','box','masterlist'],[totals.available,'Available',`${totals.total?Math.round(totals.available/totals.total*100):0}% by location availability`,'inbox','masterlist'],[totals.deployed,'Deployed',totals.deployed?'Equipment in use at project sites':'No assets currently deployed','swap','masterlist'],[projects.length,'Active Projects',`${projects.length} active sites tracked`,'map','sites']];
     const tasks=[[incoming.length,'Transfers awaiting receipt',admin?'Monitor handovers; named receivers confirm custody.':'Inspect equipment before accepting custody.','swap','transfer'],[requests.length,'Open requests',admin?'Review requests and release approved tools.':'Track approval and release by the Admin.','inbox','request'],[repair,'Maintenance alerts',repair?'Equipment requires maintenance or repair.':'No equipment currently requires repair.','wrench','repair'],[missing,'Missing equipment',missing?'Review unresolved missing equipment.':'No equipment currently reported missing.','alert','missing']];

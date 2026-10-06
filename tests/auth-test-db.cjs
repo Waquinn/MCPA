@@ -3,9 +3,10 @@ const path=require('node:path');
 const {randomUUID}=require('node:crypto');
 const {database}=require('./movement-test-db.cjs');
 const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610040001_authenticated_access.sql'),'utf8');
-async function authDatabase(){
+async function authDatabase({accountManagement=true}={}){
   const fixture=await database(),{db,actors,sites}=fixture;
-  await db.exec(`create schema auth;create table auth.users(id uuid primary key);
+  await db.exec(`create role service_role nologin; grant usage on schema public to service_role;
+    create schema auth;create table auth.users(id uuid primary key,email text,invited_at timestamptz,email_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}'::jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;`);
   await db.exec(fs.readFileSync(path.join(__dirname,'../1-admin/modules/consumables/setup.sql'),'utf8'));
   await db.exec(migration);
@@ -14,10 +15,13 @@ async function authDatabase(){
     await db.query('insert into public.profiles(id,name) values($1,$2)',[actors[key].id,actors[key].name]);
   }
   for(const [key,actor] of Object.entries(actors)){
-    actor.authId=randomUUID();await db.query('insert into auth.users values($1)',[actor.authId]);
+    actor.authId=randomUUID();await db.query('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())',[actor.authId,key+'@example.test']);
     await db.query('update profiles set auth_user_id=$1,role=$2,account_status=$3 where id=$4',[actor.authId,actor.role,key==='inactive'?'inactive':'active',actor.id]);
   }
   await db.query('update sites set assigned_engineer_id=$1 where id=$2',[actors.sky.id,sites.casa]);
+  for (const file of accountManagement ? ['202610060001_account_management.sql','202610060002_recipient_identity.sql'] : []) {
+    await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations',file),'utf8'));
+  }
   let queue=Promise.resolve();
   function query(actor,sql,params=[]){
     const run=async()=>{

@@ -70,3 +70,78 @@ node scripts/verify-test-login.browser.cjs
 This explicit live check signs in/out and reads authorized data; it does not load `.env`, use a server key, or modify equipment/project records.
 
 Forgot password already calls Supabase and handles password recovery. Delivery still depends on project SMTP/redirect configuration. These `.test` addresses have no mailbox, so rerun the seed script to reset their passwords.
+
+## Two real Engineers for transfer testing (new workflow)
+
+Complete [ACCOUNT-MANAGEMENT-DEPLOYMENT.md](ACCOUNT-MANAGEMENT-DEPLOYMENT.md) first.
+The account-management changes and live email workflow have not yet been deployed
+or verified merely by adding these files.
+
+Preferred: in People & Accountability, invite **MCPA Transfer Engineer A** and
+**MCPA Transfer Engineer B**, with two real inboxes and role **Engineer**. Each
+recipient opens their invitation, sets a password, and signs in. Select an existing
+company profile instead if that person already has historical records.
+
+For a development project without mailbox delivery, the trusted Node helper can
+create two actual Supabase Auth accounts with confirmed email. It uses the same
+`profiles.auth_user_id` architecture but does not test invitation delivery or create
+Admin-attributed invitation audit events. It makes no equipment/project changes.
+
+Add these **private** values to the root `.env`, alongside `SUPABASE_URL` and
+`SUPABASE_SECRET_KEY`:
+
+```dotenv
+MCPA_ENGINEER_A_EMAIL=engineer.a@mcpa.test
+MCPA_ENGINEER_A_PASSWORD=YOUR-UNIQUE-12-OR-MORE-CHARACTER-PASSWORD
+MCPA_ENGINEER_B_EMAIL=engineer.b@mcpa.test
+MCPA_ENGINEER_B_PASSWORD=ANOTHER-UNIQUE-12-OR-MORE-CHARACTER-PASSWORD
+```
+
+Optional `MCPA_ENGINEER_A_NAME` / `MCPA_ENGINEER_B_NAME` override the names above.
+If linking existing historical people, also set `MCPA_ENGINEER_A_PROFILE_ID` /
+`MCPA_ENGINEER_B_PROFILE_ID` to their verified existing profile UUIDs and supply
+matching names. The helper refuses ambiguous names instead of silently duplicating
+them. New company-person IDs are generated independently of Auth user IDs.
+
+Run one invocation at a time, only against a development project:
+
+```powershell
+npm.cmd ci --prefix scripts
+node scripts/seed-transfer-users.mjs --development
+```
+
+Repeat runs reuse linked active Engineers and **do not reset their passwords**.
+Use Forgot password for real inboxes or the trusted Supabase dashboard for a
+development-only password reset. A provisioning failure may leave an Auth account;
+fix the reported issue and rerun to reconcile the same person. Do not delete
+historical profiles to make the helper pass. Do not use this helper for a person
+whose production invitation is still being processed.
+
+**MCPA Administrator** and **MCPA Test Engineer** are protected from use as these two
+new accounts; their identities and credentials are not changed by this helper.
+
+### Live A → B acceptance test
+
+1. Admin assigns a development project to Engineer A. Choose available test
+   equipment with positive quantity and no current holder.
+2. A requests it. Admin approves/releases. A enters the transfer reference, tests
+   and confirms receipt. Verify A is now the holder; this establishes legitimate
+   initial custody without manually editing the equipment record.
+3. In a separate browser profile/device, sign in as B. Keep Admin in a third session.
+4. A creates a transfer, selecting B by name/role/project. The option value and
+   request payload must contain B's **profile UUID**. Copy the generated transfer
+   reference or display its QR.
+5. Before B receives, Admin verifies A still holds the equipment and the transfer
+   is pending. A or another Engineer must not be able to confirm B's receipt.
+6. B enters/scans the reference, inspects every tool, marks received tools tested,
+   and confirms. The holder changes to B only after this succeeds.
+7. Admin checks the completed transfer, holder UUID and movement history. Refresh
+   all sessions and confirm the saved state persists. A second receipt attempt
+   must not change custody again.
+8. Repeat with two identical display names, different profile IDs and projects;
+   then with an inactive B. The first must select the intended person correctly;
+   the second must reject receipt without changing custody.
+
+These tests change real custody. Use designated development equipment and restore
+it through the normal inspected return workflow when finished. No live test users
+or transfers were created as part of the local implementation.

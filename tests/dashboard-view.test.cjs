@@ -18,7 +18,7 @@ function setup(){
   const state={query:'',status:'',site:'',condition:''};
   const view=context.window.DashboardView;
   const render=(user={role:'admin'},input=data)=>view.render(input,user,state,()=>'',tools=>tools.map(t=>t.id).join(','),date=>date);
-  return {data,state,view,render};
+  return {data,state,view,render,context};
 }
 test('dashboard preserves quantity tallies and Engineer custody scope; no invented activity',()=>{
   const {render}=setup();
@@ -57,4 +57,16 @@ test('untrusted project and activity text is escaped',()=>{
   const html=render();
   assert.doesNotMatch(html,/<img src=x|<script>|<svg onload/);
   assert.match(html,/&lt;img/);
+});
+
+
+test('live dashboard custody and incoming transfers distinguish duplicate display names',()=>{
+  const {data,state,view,render,context}=setup();
+  context.window.MCPAAuth={isDemo:false};
+  data.tools[0].holderId='person-a';data.tools[2].holderId='person-b';
+  data.transfers=[{id:'TRF-OTHER',status:'pending',receiver:'Engineer',receiverId:'person-b',toolIds:['C']}];
+  const html=render({id:'person-a',name:'Engineer',role:'engineer'});
+  assert.match(html,/<span class="num">3<\/span>/);
+  const inventory=view.inventory(data,{id:'person-a',name:'Engineer',role:'engineer'},state,rows=>rows.map(t=>t.id).join(','));
+  assert.ok(inventory.startsWith('A<'));
 });

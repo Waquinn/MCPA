@@ -4,5 +4,5 @@
   "type": "module",
   "engines": { "node": ">=22" },
   "dependencies": { "@supabase/supabase-js": "^2.0.0" },
-  "scripts": { "test": "node --test seed-test-users.test.mjs" }
+  "scripts": { "test": "node --test seed-test-users.test.mjs seed-transfer-users.test.mjs" }
 }
