@@ -6,6 +6,7 @@ const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpd
 let fixture,chrome,socket;const errors=[],calls=[];
 const sdk=`window.supabase={createClient(){let listener;const session=()=>{const key=localStorage.getItem('fixture.account');return key?{user:{id:key},access_token:key}:null};const request=q=>fetch('/__db',{method:'POST',headers:{'Authorization':session()?.access_token||''},body:JSON.stringify(q)}).then(r=>r.json());window.__authEvent=event=>listener?.(event,session());window.__expire=()=>{localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null)};return {
  auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange(fn){listener=fn;return {data:{subscription:{unsubscribe(){}}}}},async signInWithPassword({email,password}){const key=email.split('@')[0];if(!['admin','sky','pau','architect','secretary','handler','inactive','missing'].includes(key)||password!=='test-password')return {error:{code:'invalid_credentials'}};localStorage.setItem('fixture.account',key);listener?.('SIGNED_IN',session());return {data:{session:session()}}},async signOut(){localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null);return {error:null}},resetPasswordForEmail:async()=>({error:null}),updateUser:async values=>{window.__savedPassword=values.password;return {error:null}} },
+ functions:{invoke:async(name,{body})=>{if(body.action==='capabilities')return {data:window.__accountCapabilities||{invitations_enabled:true,development_enabled:true,pending_development_accounts:[]}};window.__accountRequest={name,body};return window.__developmentFailure?{error:{context:{json:async()=>({error:'Creation interrupted. Retry the same test account.'})}}}:{data:{message:body.action==='invite'?'Invitation sent.':'Test account created.'}};}},
  rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
 }}};`;
 const server=http.createServer(async(req,res)=>{
@@ -90,11 +91,36 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));await shot('accounts-mobile');
  await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
 
- await evaluate("EquipmentTracking.client().functions={invoke:async(name,{body})=>{window.__inviteRequest={name,body};return {data:{message:'Invitation sent.'}}}}");
  await fill('#invite-name','New Engineer');await fill('#invite-email','new@example.test');await fill('#invite-role','engineer');await submit('#invite-form');
  await wait("document.querySelector('#accounts-feedback')?.textContent==='Invitation sent.'");
- const inviteRequest=await evaluate('window.__inviteRequest');assert.equal(inviteRequest.name,'manage-accounts');assert.equal(inviteRequest.body.role,'engineer');assert.equal(inviteRequest.body.profile_id,null);assert.equal(inviteRequest.body.email,'new@example.test');
+ const inviteRequest=await evaluate('window.__accountRequest');assert.equal(inviteRequest.name,'manage-accounts');assert.equal(inviteRequest.body.role,'engineer');assert.equal(inviteRequest.body.profile_id,null);assert.equal(inviteRequest.body.email,'new@example.test');
  assert.equal(await evaluate("document.querySelector('#invite-panel').hidden"),true);
+ await wait("!document.querySelector('[data-refresh]').disabled");
+ await evaluate("window.__accountCapabilities={invitations_enabled:false,development_enabled:true,pending_development_accounts:[]}");
+ await click('[data-refresh]');await wait("document.querySelector('#account-availability').textContent.includes('not yet configured')");
+ assert.equal(await evaluate("document.querySelector('[data-open-invite]').disabled"),true);
+ assert.deepEqual(await evaluate("[...document.querySelector('#development-role').options].map(o=>o.value)"),['engineer','architect']);
+ await shot('development-accounts-desktop');
+ await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+ assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));await shot('development-accounts-mobile');
+ await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+ await fill('#development-name','Development Engineer A');await fill('#development-email','deva@example.test');
+ await fill('#development-password','Local-browser-fixture-2026!');
+ await evaluate('window.__developmentFailure=true');await submit('#development-form');
+ await wait("document.querySelector('#accounts-feedback').textContent.includes('Creation interrupted')");
+ assert.equal(await evaluate("document.querySelector('#development-password').value"),'');
+ assert.equal(await evaluate("document.querySelector('#development-name').value"),'Development Engineer A');
+ const failedRequest=await evaluate('window.__accountRequest.body');
+ await wait("!document.querySelector('#development-form button').disabled");
+ await evaluate('window.__developmentFailure=false');await fill('#development-password','Local-browser-fixture-2026!');await submit('#development-form');
+ await wait("document.querySelector('#accounts-feedback').textContent==='Test account created.'");
+ const developmentRequest=await evaluate('window.__accountRequest');
+ assert.equal(developmentRequest.name,'manage-accounts');assert.equal(developmentRequest.body.action,'createDevelopmentAccount');
+ assert.equal(developmentRequest.body.role,'engineer');assert.equal(developmentRequest.body.id,failedRequest.id,'Retry keeps the request identity');
+ assert.equal(await evaluate("document.querySelector('#development-password').value"),'');
+ assert.equal(await evaluate("JSON.stringify({...localStorage,...sessionStorage}).includes('Local-browser-fixture')"),false);
+ assert.equal(await evaluate("document.querySelector('[data-open-invite]').disabled"),true,'Completing development creation does not enable invitations');
+ await wait("!document.querySelector('[data-audit]').disabled");
  await click('[data-audit]');await wait("document.querySelector('#account-audit').textContent.length>0");
  await go('dashboard');await wait("document.querySelector('.admin-review')");await evaluate('toggleTheme()');await shot('admin-dark');
  await logout();assert.equal(await evaluate("MovementStore.getState().tools.length"),0);

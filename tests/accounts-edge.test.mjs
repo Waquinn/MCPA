@@ -8,7 +8,7 @@ function fixture({role='admin',status='active',invalidToken=false,mailError=fals
  const calls=[],id=randomUUID(),userId=randomUUID(),profileId=randomUUID();
  const job={id,email:'engineer@example.test',name:'Engineer',role:'engineer',profile_id:profileId,state:'prepared',lease_id:randomUUID(),confirmed,auth_user_id:confirmed?userId:null};
  const admin={auth:{getUser:async token=>{calls.push(['getUser',token]);return invalidToken?{error:{}}:{data:{user:{id:userId}}};},admin:{inviteUserByEmail:async(email,options)=>{calls.push(['invite',email,options]);return mailError?{error:{status:429}}:{data:{user:{id:userId}}};}}},from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:profileId,role,account_status:status}})})})}),rpc:async(name,args)=>{calls.push([name,args]);return finishError&&args.p_action==='finish'?{error:{code:'42501',message:'Active Admin access required.'}}:{data:job};}};
- const handler=createHandler({admin,appUrl:'https://mcpa.example/index.html'});
+ const handler=createHandler({admin,appUrl:'https://mcpa.example/index.html',invitationsEnabled:true});
  const request=(body,headers={authorization:'Bearer valid'},method='POST')=>handler(new Request('https://edge.example',{method,headers,body:method==='POST'?JSON.stringify(body):undefined}));
  return {request,calls,job,input:{action:'invite',id,name:'Engineer',email:job.email,role:'engineer'}};
 }
@@ -41,7 +41,7 @@ test('handler and PostgreSQL reconcile an accepted invitation after interrupted 
  try{
   const personId=randomUUID();await db.query('insert into profiles(id,name) values($1,$2)',[personId,'Existing Historical Person']);
   const body={action:'invite',id:randomUUID(),profile_id:personId,name:'Existing Historical Person',email:'historical@example.test',role:'engineer'};
-  const handle=createHandler({admin,appUrl:'https://mcpa.example/index.html'});
+  const handle=createHandler({admin,appUrl:'https://mcpa.example/index.html',invitationsEnabled:true});
   const send=()=>handle(new Request('https://edge.example',{method:'POST',headers:{authorization:'Bearer test'},body:JSON.stringify(body)}));
   assert.equal((await send()).status,503);
   assert.equal((await db.query('select auth_user_id from profiles where id=$1',[personId])).rows[0].auth_user_id,null);

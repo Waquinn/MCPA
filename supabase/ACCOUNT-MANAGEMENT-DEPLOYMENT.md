@@ -1,10 +1,13 @@
 # People & Accountability deployment
 
 Local implementation prepared on 2026-10-06. Live progress is recorded only where
-the owner has supplied verification results. Edge Functions/SMTP remain unverified.
+the owner has supplied verification results. The owner confirmed `manage-accounts`
+deployed successfully; authenticated runtime behavior remains unverified.
+The owner confirmed custom SMTP is disabled and domain purchase is out of scope.
+Use the free development account path below; SMTP is not a development prerequisite.
 Stop at each gate; do not publish the new frontend before the backend is ready.
 
-## Current manual gate — confirm the deployed login URL
+## Current manual gate — confirm GitHub Pages publishing source
 
 Owner-provided live results confirm both prerequisite migrations succeeded:
 
@@ -33,12 +36,33 @@ The owner's `Account Management.csv` confirms account-management deployment:
 The owner's `Supabase Snippet Untitled query (2).csv` confirms the recipient
 migration is installed with all definition and permission checks below matching.
 
-**Next manual action only:** provide the exact HTTPS URL used to open the deployed
-MCPA login page. If the application is only running locally, report that instead.
-The repository does not establish a deployed login URL. Confirm it before changing
-Auth URL configuration or setting `MCPA_APP_URL`.
+The owner confirmed GitHub Pages at `https://waquinn.github.io/MCPA/` and saved
+the Auth URL values in Gate 3. The production invitation implementation is retained.
 
-This updates the movement functions to select transfer recipients by profile UUID,
+The owner's `Supabase Snippet Untitled query (3).csv` confirms the development
+account migration: RLS enabled, all browser table/column/RPC access false,
+`service_role_execute` and `invitation_rpc_service_only` true, and the existing
+Admin and Engineer identities, Auth links, roles and active status unchanged.
+No migration rerun is needed. This verification does not establish live test users.
+
+The owner confirmed saving `MCPA_SUPABASE_SECRET_KEY`, `MCPA_APP_URL`,
+`MCPA_ENABLE_DEVELOPMENT_ACCOUNTS=true` and `MCPA_EMAIL_INVITATIONS_ENABLED=false`.
+`MCPA_DEV_ORIGINS` remains unset. No secret values were read or printed by the agent.
+Runtime access to these values is not yet verified.
+
+The owner confirmed successful CLI login.
+
+The owner supplied the successful deployment output for `manage-accounts` on
+project `zpqxlmiqwevhlstjirei`, including both `index.ts` and `handler.mjs` uploads.
+Deployment is confirmed; runtime authorization and capabilities are not yet tested.
+
+**Next manual action only:** open the GitHub repository's Settings → Pages and
+report the publishing Source and branch/folder when shown. The local branch is
+`Updated-MCPARole` and there is no checked-in `.github` workflow establishing the
+Pages publishing target. Confirm that target before giving publish commands.
+Frontend publication and live test-account creation remain pending.
+
+The earlier recipient migration updates the movement functions to select recipients by profile UUID,
 bind requests to the signed-in person's profile ID, and include project context
 in the recipient list. It preserves the active-account/role checks, named-recipient
 receipt check, pending-state and unchanged-custody checks, and mandatory inspection
@@ -62,8 +86,9 @@ Confirmed from the supplied recipient verification:
 
 These definition/permission checks confirm installation; they do not replace the
 later live two-Engineer transfer test. Both account-management and recipient
-migrations are now confirmed from owner-provided results. Edge Function deployment
-and live invitation testing remain on hold pending the remaining configuration gates.
+migrations and Edge Function deployment are now confirmed from owner-provided
+results. Real Engineer A/B account creation and live transfer validation remain
+pending until the updated frontend is published and runtime checks pass.
 
 ## Gate 1 — read-only live preflight
 
@@ -116,17 +141,23 @@ The old frontend cannot create transfers once migration 2 requires `receiverId`.
 Schedule the frontend update with backend deployment and avoid active transfers
 during that short release window. Existing pending receipts remain supported.
 
-## Gate 3 — Auth URL and email configuration
+## Gate 3 — Auth URLs confirmed; email delivery deferred
 
-Choose the actual HTTPS login URL, for example `https://YOUR-HOST/index.html`.
-In Authentication → URL Configuration:
+The owner saved these values in Authentication → URL Configuration:
 
-- Set Site URL to that login URL.
-- Add that exact URL and `https://YOUR-HOST/index.html?account_setup=invite` to Redirect URLs.
-- Add the actual second portal login URL only if it is used.
+- Site URL: `https://waquinn.github.io/MCPA/`
+- Redirect URL: `https://waquinn.github.io/MCPA/`
+- Redirect URL: `https://waquinn.github.io/MCPA/?account_setup=invite`
+- Redirect URL: `https://waquinn.github.io/MCPA/index.html` (password recovery).
+- Retain existing exact local-development entries; confirm host/port before adding any.
 
-Keep public signup disabled. Configure a verified SMTP sender under Auth email
-settings. The default email service has recipient/rate restrictions; use real
+Keep public signup disabled. Development accounts use server-side Auth Admin
+`createUser` with `email_confirm: true`, with no invitation or confirmation email.
+That confirms only these explicitly created test accounts; global email confirmation
+and public signup settings are not relaxed.
+
+For future production invitations, configure a verified SMTP sender under Auth
+email settings. The default email service has recipient/rate restrictions; use real
 mailboxes for live invitation validation. Keep the invitation/recovery templates'
 `{{ .ConfirmationURL }}` links (the current frontend handles Supabase's session
 fragment redirect). A custom `token_hash` template needs its own callback handler
@@ -139,16 +170,27 @@ The function uses only these server environment variables:
 
 - `SUPABASE_URL`: supplied by Supabase's hosted Edge runtime.
 - `MCPA_SUPABASE_SECRET_KEY`: the existing project's server secret (`sb_secret_...`).
-- `MCPA_APP_URL`: the exact HTTPS login URL from Gate 3, without a query or fragment.
+- `MCPA_APP_URL`: `https://waquinn.github.io/MCPA/` (preserve the trailing slash).
+- `MCPA_ENABLE_DEVELOPMENT_ACCOUNTS`: `true` for the current development deployment.
+  Defaults to disabled unless exactly `true`. Set `false` to disable creation later.
+- `MCPA_EMAIL_INVITATIONS_ENABLED`: `false` until SMTP and templates are configured.
+  This is an operator-controlled readiness flag, not automatic SMTP discovery.
+  Set `true` only when email delivery is ready; no People & Accountability redesign
+  is required. Existing invitation RPCs and authorization are unchanged.
+- Optional `MCPA_DEV_ORIGINS`: comma-separated exact localhost/127.0.0.1 origins
+  with their actual ports, only when local browser testing is needed. Omit for now.
+  Only loopback origins are accepted and only when development creation is enabled.
 
-Set the last two in the Dashboard's Edge Functions → Secrets. Never put them in
+Set the MCPA values in the Dashboard's Edge Functions → Secrets. Never put secrets in
 frontend JS or send the secret through chat. The chosen app URL also determines
-the single allowed browser origin and the invitation redirect.
+the GitHub Pages browser origin and the invitation redirect. Browser capabilities
+are returned only after verifying an active Admin; they contain flags and pending
+job summaries, never credentials. The UI fails closed if that request cannot load.
 
 With Supabase CLI installed and authenticated, deploy from the repository root:
 
 ```powershell
-supabase functions deploy manage-accounts --project-ref zpqxlmiqwevhlstjirei
+npx.cmd supabase functions deploy manage-accounts --project-ref zpqxlmiqwevhlstjirei --use-api
 ```
 
 Deploy both files in `supabase/functions/manage-accounts/`. The function verifies
@@ -164,15 +206,26 @@ Publish the updated static assets using the existing hosting workflow. Do not
 serve `.env`, `scripts`, `.git`, `.agents`, tests or private deployment files.
 
 1. Sign in as the existing Admin. Verify the existing Admin and Test Engineer IDs.
-2. Invite a new Engineer using a real inbox. Verify email receipt, password setup,
+2. Confirm invitations show "not yet configured" and the invitation controls are
+   disabled. Open **Development / Testing Only**. Create **MCPA Development Engineer A**
+   and **MCPA Development Engineer B** as documented in `TEST-ACCOUNTS.md`. Use
+   private, distinct temporary passwords and keep them privately. These are real
+   Auth accounts with active profiles; no email is sent and no Offline Demo is used.
+3. Check login, refresh, logout, Admin-only creation, role restrictions and audit
+   history. Follow the live A → B custody test in `TEST-ACCOUNTS.md`.
+4. Deactivate test accounts using Edit access when done. Disabling the creation
+   flag does not deactivate existing accounts; historical records must be preserved.
+
+After SMTP is configured and the invitation flag is enabled, additionally:
+
+1. Invite a new Engineer using a real inbox. Verify email receipt, password setup,
    normal login, refresh, logout and password recovery.
-3. Invite an existing unlinked historical person. Confirm the same profile ID and
+2. Invite an existing unlinked historical person. Confirm the same profile ID and
    historical custody references remain. Repeat with two people sharing a name.
-4. Resend an unaccepted invitation after at least one minute. The label is based on
+3. Resend an unaccepted invitation after at least one minute. The label is based on
    Auth's `invited_at` and `email_confirmed_at`, not inferred from profile status.
-5. Test inactive-account denial, non-Admin function rejection, role edits, and audit
+4. Test inactive-account denial, non-Admin function rejection, role edits, and audit
    visibility. A retained Auth session alone must not permit business RPCs.
-6. Follow the two-Engineer custody test in `TEST-ACCOUNTS.md` using test equipment.
 
 The local suites simulate Auth/SMTP, execute SQL/RLS with PGlite, and run browser
 checks. They do not prove deployed Edge runtime behavior or real email delivery.
@@ -189,6 +242,22 @@ reload, recovery, expired callbacks, all five roles and inspected receipt. Handl
 integration tests cover email acceptance followed by interrupted profile linking.
 Chrome's debugging interface may require running outside the filesystem sandbox;
 these tests block external browser requests and do not use the root `.env`.
+
+## Interrupted development account creation
+
+Development jobs reserve name/email/role without storing passwords or creating
+spare company profiles. Auth users receive immutable-to-user `app_metadata` job
+markers. After Auth creation succeeds, the SQL finish step verifies the marker,
+email and confirmed status before atomically creating one independent profile,
+linking it and recording the acting Admin in the audit log.
+
+If the request fails or the connection drops, retry the same details and original
+password. Pending jobs remain visible after refresh. Auth creation that already
+succeeded is reconciled without changing that password or sending email. Another
+person's existing email, invitation or profile cannot be adopted. Unknown failures
+return sanitized messages, and passwords are cleared from the form after submission.
+They are never stored in application tables, browser storage or returned responses.
+Accounts are temporary by intended use, not automatic expiry; deactivate after testing.
 
 ## Interrupted invitations and recovery
 

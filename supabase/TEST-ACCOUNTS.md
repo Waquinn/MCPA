@@ -77,12 +77,45 @@ Complete [ACCOUNT-MANAGEMENT-DEPLOYMENT.md](ACCOUNT-MANAGEMENT-DEPLOYMENT.md) fi
 The account-management changes and live email workflow have not yet been deployed
 or verified merely by adding these files.
 
-Preferred: in People & Accountability, invite **MCPA Transfer Engineer A** and
+### Current free workflow — authenticated Admin and Edge Function
+
+Custom SMTP is not configured. After the deployment gates are completed, sign in
+as the existing Admin at `https://waquinn.github.io/MCPA/` and open People &
+Accountability → **Development / Testing Only**. Create these two accounts one at
+a time, choosing a different private password of 12–128 characters for each:
+
+| Full name | Email | Role |
+|---|---|---|
+| MCPA Development Engineer A | development.engineer.a@mcpa.test | Engineer |
+| MCPA Development Engineer B | development.engineer.b@mcpa.test | Engineer |
+
+These reserved test emails do not have inboxes; no email is sent. Save the passwords
+privately and sign in through the normal login form in separate browser profiles.
+The Edge Function uses Auth Admin `createUser`, confirms these test emails, then
+links independent company profiles with Admin-attributed audit events. The browser
+does not receive a server key. Allowed roles are Engineer and Architect only.
+
+If creation is interrupted, retry the same details and original password. It
+reuses the Auth user and does not reset a password. Do not use existing production
+identities or overwrite an existing test account to make creation pass. The UI
+retains production invitations but marks them unavailable until email is configured.
+
+Complete the live A → B test below. Keep the original Admin and Test Engineer
+unchanged. Deactivate these temporary accounts through Edit access when finished;
+do not delete their profiles or history. Creation does not assign projects or custody.
+
+These two live accounts have **not yet been created** by the local implementation.
+
+### Future production invitations
+
+With SMTP configured: in People & Accountability, invite **MCPA Transfer Engineer A** and
 **MCPA Transfer Engineer B**, with two real inboxes and role **Engineer**. Each
 recipient opens their invitation, sets a password, and signs in. Select an existing
 company profile instead if that person already has historical records.
 
-For a development project without mailbox delivery, the trusted Node helper can
+### Optional operator-only Node helper (not the current UI deployment path)
+
+For a separate development project without mailbox delivery, the trusted Node helper can
 create two actual Supabase Auth accounts with confirmed email. It uses the same
 `profiles.auth_user_id` architecture but does not test invitation delivery or create
 Admin-attributed invitation audit events. It makes no equipment/project changes.

@@ -6,7 +6,7 @@ const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/2026
 async function authDatabase({accountManagement=true}={}){
   const fixture=await database(),{db,actors,sites}=fixture;
   await db.exec(`create role service_role nologin; grant usage on schema public to service_role;
-    create schema auth;create table auth.users(id uuid primary key,email text,invited_at timestamptz,email_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}'::jsonb);
+    create schema auth;create table auth.users(id uuid primary key,email text,invited_at timestamptz,email_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}'::jsonb,raw_app_meta_data jsonb default '{}'::jsonb);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;`);
   await db.exec(fs.readFileSync(path.join(__dirname,'../1-admin/modules/consumables/setup.sql'),'utf8'));
   await db.exec(migration);
@@ -19,7 +19,7 @@ async function authDatabase({accountManagement=true}={}){
     await db.query('update profiles set auth_user_id=$1,role=$2,account_status=$3 where id=$4',[actor.authId,actor.role,key==='inactive'?'inactive':'active',actor.id]);
   }
   await db.query('update sites set assigned_engineer_id=$1 where id=$2',[actors.sky.id,sites.casa]);
-  for (const file of accountManagement ? ['202610060001_account_management.sql','202610060002_recipient_identity.sql'] : []) {
+  for (const file of accountManagement ? ['202610060001_account_management.sql','202610060002_recipient_identity.sql','202610060003_development_accounts.sql'] : []) {
     await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations',file),'utf8'));
   }
   let queue=Promise.resolve();
