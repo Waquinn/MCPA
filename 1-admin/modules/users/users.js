@@ -21,7 +21,7 @@
     <form id="development-form" class="account-form">
     <div class="field"><label for="development-name">Full name</label><input id="development-name" required maxlength="120" autocomplete="off"></div>
     <div class="field"><label for="development-email">Email</label><input id="development-email" type="email" required maxlength="254" autocomplete="off"></div>
-    <div class="field"><label for="development-password">Temporary password</label><input id="development-password" type="password" required minlength="12" maxlength="128" autocomplete="new-password" aria-describedby="development-password-help"><small id="development-password-help">Use 12–128 characters. Keep it privately; it will not be displayed again.</small></div>
+    <div class="field"><label for="development-password">Temporary password</label><div class="auth-password-wrap account-password-wrap"><input id="development-password" type="password" required minlength="12" maxlength="128" autocomplete="new-password" aria-describedby="development-password-help"><button id="development-password-toggle" class="auth-password-toggle account-password-toggle" type="button" aria-controls="development-password" aria-label="Show password" title="Show password"><span aria-hidden="true">${icon('eye')}</span></button></div><small id="development-password-help">Use 12–128 characters. Keep it privately; it will not be displayed again.</small></div>
     <div class="field"><label for="development-role">Role</label><select id="development-role" required><option value="engineer">Engineer</option><option value="architect">Architect</option></select></div>
     <div class="account-wide"><button class="btn btn-primary" type="submit">Create test account</button></div></form>
     <div id="development-pending"></div></section>
@@ -76,10 +76,25 @@
   $('#invite-person').onchange=choosePerson;$('#invite-name').oninput=checkDuplicate;$('#people-search').oninput=render;
   $('#invite-form').oninput=()=>{invitationId=crypto.randomUUID();};
   $('#invite-form').onsubmit=event=>{event.preventDefault();if(!event.target.reportValidity())return;run(async()=>{const result=await invoke({action:'invite',id:invitationId,profile_id:$('#invite-person').value||null,name:$('#invite-name').value.trim(),email:$('#invite-email').value.trim(),role:$('#invite-role').value,distinct_person:$('#distinct-person').checked});event.target.reset();invitationId=crypto.randomUUID();$('#invite-panel').hidden=true;return result;});};
+  function setDevelopmentPasswordVisible(visible){
+    const input=$('#development-password'),button=$('#development-password-toggle');
+    const selection=document.activeElement===input?[input.selectionStart,input.selectionEnd,input.selectionDirection]:null;
+    input.type=visible?'text':'password';
+    button.setAttribute('aria-label',visible?'Hide password':'Show password');
+    button.title=visible?'Hide password':'Show password';
+    button.innerHTML=`<span aria-hidden="true">${icon(visible?'eyeOff':'eye')}</span>`;
+    if(selection)input.setSelectionRange(...selection);
+  }
+  function clearDevelopmentPassword(){$('#development-password').value='';setDevelopmentPasswordVisible(false);}
+  $('#development-password-toggle').onpointerdown=event=>{
+    if(event.button===0&&document.activeElement===$('#development-password'))event.preventDefault();
+  };
+  $('#development-password-toggle').onclick=()=>setDevelopmentPasswordVisible($('#development-password').type==='password');
+  $('#development-form').onreset=()=>setDevelopmentPasswordVisible(false);
   $('#development-form').oninput=event=>{if(event.target.id!=='development-password')developmentId=crypto.randomUUID();};
   $('#development-form').onsubmit=event=>{event.preventDefault();if(!capabilities?.development_enabled||!event.target.reportValidity())return;run(async()=>{
     try{const result=await invoke({action:'createDevelopmentAccount',id:developmentId,name:$('#development-name').value.trim(),email:$('#development-email').value.trim(),password:$('#development-password').value,role:$('#development-role').value});event.target.reset();developmentId=crypto.randomUUID();return result;}
-    finally{$('#development-password').value='';}
+    finally{clearDevelopmentPassword();}
   });};
   $('#account-profile').onchange=()=>{const p=records.find(p=>p.id===$('#account-profile').value);$('#account-name').value=p?.name||'';$('#account-name').readOnly=!!p;$('#account-role').value=p?.role||'';};
   $('#account-form').onsubmit=event=>{event.preventDefault();if(!event.target.reportValidity())return;const p=$('#account-profile').value==='__new'?{id:null,name:$('#account-name').value.trim()}:records.find(p=>p.id===$('#account-profile').value);if(p)run(async()=>{await save(p,$('#account-role').value,$('#account-status').value,$('#account-auth-id').value.trim());event.target.reset();},'Account linked. Existing custody and history remain attached to this person.');};
@@ -89,7 +104,7 @@
     if(button.hasAttribute('data-open-invite'))openInvite();if(button.dataset.invite)openInvite(button.dataset.invite);
     if(button.hasAttribute('data-close-invite'))$('#invite-panel').hidden=true;if(button.hasAttribute('data-close-edit'))$('#edit-panel').hidden=true;
     if(button.hasAttribute('data-refresh')){load().then(()=>message('People refreshed.')).catch(error=>message(error.message,true));loadCapabilities();}
-    if(button.dataset.developmentRetry){const job=capabilities?.pending_development_accounts?.find(job=>job.id===button.dataset.developmentRetry);if(job){developmentId=job.id;$('#development-name').value=job.name;$('#development-email').value=job.email;$('#development-role').value=job.role;$('#development-password').value='';$('#development-password').focus();}}
+    if(button.dataset.developmentRetry){const job=capabilities?.pending_development_accounts?.find(job=>job.id===button.dataset.developmentRetry);if(job){developmentId=job.id;$('#development-name').value=job.name;$('#development-email').value=job.email;$('#development-role').value=job.role;clearDevelopmentPassword();$('#development-password').focus();}}
     if(button.dataset.retry||button.dataset.resend)run(()=>invoke({action:button.dataset.retry?'retry':'resend',id:button.dataset.retry||button.dataset.resend}));
     if(button.dataset.edit){const p=records.find(p=>p.id===button.dataset.edit);if(!p)return;$('#edit-panel').hidden=false;$('#edit-id').value=p.id;$('#edit-person').textContent=`${p.name} · ${p.email||'No linked email'}`;$('#edit-role').innerHTML=roleOptions()+(p.role==='admin'?'<option value="admin">Admin</option>':'');$('#edit-role').value=p.role||'';$('#edit-status').value=p.account_status;$('#edit-role').focus();}
     if(button.hasAttribute('data-audit')){button.disabled=true;client.from('mcpa_account_audit').select('actor_id,profile_id,event,created_at').order('created_at',{ascending:false}).limit(100).then(({data,error})=>{if(!root.isConnected)return;if(error){$('#account-audit').textContent='History could not load. Refresh and try again.';return;}const name=id=>records.find(p=>p.id===id)?.name||id;$('#account-audit').innerHTML=data?.length?`<ol class="account-history">${data.map(row=>`<li><strong>${esc(row.event.replaceAll('_',' '))}</strong> · ${esc(name(row.profile_id))}<br><small>${esc(name(row.actor_id))} · ${esc(new Date(row.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila'}))} (Manila)</small></li>`).join('')}</ol>`:'<p>No account changes recorded yet.</p>';}).catch(()=>{if(root.isConnected)$('#account-audit').textContent='History could not load. Try again.';}).finally(()=>{button.disabled=false;});}
