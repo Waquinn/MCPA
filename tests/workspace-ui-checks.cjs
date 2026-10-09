@@ -63,10 +63,11 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
    await evaluate("document.querySelector('.theme-toggle').click();document.querySelector('.theme-toggle').click()");
    assert.equal(await evaluate('window.__transitionCount'),beforeRepeatedClicks,'Repeated clicks do not overlap reveals');
    await evaluate('window.__revealAnimation.currentTime=220');
-   if(width===393 && dark)await shot('theme-reveal-mobile',true);
+   if([393,1440].includes(width))await shot('theme-reveal-'+(width===393?'mobile':'desktop')+'-'+(dark?'dark':'light'),true);
    await evaluate('window.__revealAnimation.play();window.__lastTransition.finished');
    await wait("!document.documentElement.classList.contains('theme-transition')");
    await assertCleanup();
+   assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'Reveal preserves viewport width');
    assert.equal(await evaluate("document.body.classList.contains('dark')"),dark);
    assert.equal(await evaluate("localStorage.getItem('mcpa.theme')"),dark?'dark':'light');
    assert.equal(await evaluate("document.querySelector('.theme-toggle').getAttribute('aria-label')"),dark?'Switch to light mode':'Switch to night mode');
@@ -113,6 +114,38 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
   await assertCleanup();assert.equal(await evaluate("document.body.classList.contains('dark')"),dark);
  }
  await go('request');await wait("document.querySelector('[data-list]')");
+ // Keyboard activation must use the same sticky control and viewport origin,
+ // preserve scroll/focus, and leave the control exposed to pointer input.
+ await command('Emulation.setDeviceMetricsOverride',{width:393,height:852,deviceScaleFactor:1,mobile:true});
+ await evaluate("window.scrollTo(0,document.documentElement.scrollHeight);document.querySelector('.theme-toggle').focus({preventScroll:true})");
+ const scrolled=await evaluate('scrollY');assert.ok(scrolled>0,'Exercise a genuinely scrolled page');
+ for(const dark of [true,false]){
+  const center=await evaluate("(()=>{const r=document.querySelector('.theme-toggle').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
+  await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
+  await command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+  await evaluate('window.__revealInspection');
+  const origin=await evaluate('window.__transitionOrigin');
+  assert.equal(origin.x,center.x);assert.equal(origin.y,center.y);
+  await evaluate('window.__revealAnimation.play();window.__lastTransition.finished');
+  await assertCleanup();
+  assert.equal(await evaluate('scrollY'),scrolled,'Theme does not scroll the page');
+  assert.equal(await evaluate("document.activeElement.matches('.theme-toggle')"),true,'Keyboard focus stays on the control');
+  assert.equal(await evaluate("document.body.classList.contains('dark')"),dark);
+  assert.ok(await evaluate(`Boolean(document.elementFromPoint(${center.x},${center.y})?.closest('.theme-toggle'))`),'No stale transition layer blocks the control');
+ }
+ // Interrupt a held native reveal, then prove the next toggle remains usable.
+ for(const interruption of ['motion','resize','skip','complete']){
+  const dark=await evaluate("!document.body.classList.contains('dark')");
+  await click('.theme-toggle');await evaluate('window.__revealInspection');
+  if(interruption==='motion')await command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
+  else if(interruption==='resize')await command('Emulation.setDeviceMetricsOverride',{width:1024,height:852,deviceScaleFactor:1,mobile:false});
+  else if(interruption==='skip')await evaluate('window.__lastTransition.skipTransition()');
+  else await evaluate('window.__revealAnimation.play()');
+  await evaluate('window.__lastTransition.finished');await assertCleanup();
+  assert.equal(await evaluate("document.body.classList.contains('dark')"),dark,'Interrupted reveal keeps the selected theme');
+  assert.equal(await evaluate("localStorage.getItem('mcpa.theme')"),dark?'dark':'light');
+  if(interruption==='motion')await command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
+ }
  const before=await evaluate('window.__transitionCount');
  await command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
  await click('.theme-toggle');assert.equal(await evaluate('window.__transitionCount'),before);
@@ -148,9 +181,15 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
    await assertCleanup();
    await go('activity');await wait("document.querySelector('#overview-results')");await go('request');
    assert.equal(await evaluate('window.__initialThemeTransitionCount'),0,'Screen changes have no theme reveal');
+   const otherEntry=await evaluate("location.origin+(location.pathname.includes('/2-engr/')?'/index.html':'/2-engr/index.html')+'#request'");
+   await command('Page.navigate',{url:otherEntry});await wait("document.querySelector('#screen-request.active [data-list]')");
+   assert.equal(await evaluate("document.body.classList.contains('dark')"),dark,'Both entry pages restore the same saved theme');
+   assert.equal(await evaluate("document.querySelector('.theme-toggle').getAttribute('aria-label')"),dark?'Switch to light mode':'Switch to night mode');
+   assert.equal(await evaluate('window.__initialThemeTransitionCount'),0,'Neither entry page animates on load');
+   await assertCleanup();
   }
  }finally{await command('Page.removeScriptToEvaluateOnNewDocument',{identifier});}
- console.log('PASS Header at 375/393/430/768/1024/1440: both real theme reveals, origin/radius, final colors, 550ms easing, rapid clicks, cleanup, both saved preferences, unsupported/throw/rejected-update fallback, reduced motion, search/filtering, close/Escape, account and activity access');
+ console.log('PASS Header at 375/393/430/768/1024/1440: both real theme reveals, origin/radius, final colors, 550ms easing, rapid clicks, cleanup, scrolled keyboard activation/focus, motion/resize/skipped interruption recovery, both saved preferences, unsupported/throw/rejected-update fallback, reduced motion, search/filtering, close/Escape, account and activity access');
 };
 
 exports.sync=async({fixture,evaluate,command,wait,fill,go,login,logout,calls})=>{

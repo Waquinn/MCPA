@@ -59,13 +59,27 @@ input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:1}
 .sidebar-foot .icon-btn{color:var(--text-secondary)}
 .theme-toggle{min-height:36px;border-radius:6px}
 /* Reveal the actual destination theme; these layers exist only during a toggle. */
-html.theme-transition body,html.theme-transition body *,html.theme-transition body *::before,html.theme-transition body *::after{transition:none!important}
-html.theme-transition::view-transition-group(root){animation-duration:550ms}
-html.theme-transition::view-transition-old(root),html.theme-transition::view-transition-new(root){mix-blend-mode:normal}
+html.theme-transition body,
+html.theme-transition body *,
+html.theme-transition body *::before,
+html.theme-transition body *::after{transition:none!important}
+html.theme-transition::view-transition-group(root){animation:none}
+html.theme-transition::view-transition-image-pair(root){isolation:isolate}
+html.theme-transition::view-transition-old(root),
+html.theme-transition::view-transition-new(root){mix-blend-mode:normal}
 html.theme-transition::view-transition-old(root){animation:none;z-index:1}
-html.theme-transition::view-transition-new(root){z-index:2;animation:theme-reveal 550ms cubic-bezier(.76,0,.24,1) both}
-@keyframes theme-reveal{from{clip-path:circle(0 at var(--theme-x) var(--theme-y))}to{clip-path:circle(var(--theme-radius) at var(--theme-x) var(--theme-y))}}
-@media(prefers-reduced-motion:reduce){body{transition:none}html.theme-transition::view-transition-new(root){animation:none}}
+html.theme-transition::view-transition-new(root){
+  z-index:2;
+  animation:theme-reveal 550ms cubic-bezier(.76,0,.24,1) both;
+}
+@keyframes theme-reveal{
+  from{clip-path:circle(0px at var(--theme-x) var(--theme-y))}
+  to{clip-path:circle(var(--theme-radius) at var(--theme-x) var(--theme-y))}
+}
+@media(prefers-reduced-motion:reduce){
+  body{transition:none}
+  html.theme-transition::view-transition-new(root){animation:none}
+}
 .mobile-search-toggle,.mobile-search-close{display:none}
 .sync-warning{font-size:13px;line-height:1.5;color:var(--warning);margin-block:8px 16px}
 .sync-warning:empty,.inventory-sync:empty{display:none}

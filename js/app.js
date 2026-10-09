@@ -156,19 +156,34 @@ function applyTheme(dark, persist = true){
 async function toggleTheme(button = document.querySelector('.theme-toggle')){
   if(themeTransitionRunning) return;
   const dark = !document.body.classList.contains('dark');
-  if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){ applyTheme(dark); return; }
-  const rect = button.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
-  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  if(typeof document.startViewTransition !== 'function' || reducedMotion.matches){ applyTheme(dark); return; }
+
+  // Viewport coordinates stay correct when the page is scrolled.
+  const rect = button.getBoundingClientRect();
+  const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+  // Extend just past the farthest corner to cover the antialiased circle edge.
+  const radius = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))) + 1;
   const root = document.documentElement;
-  root.style.setProperty('--theme-x', x + 'px'); root.style.setProperty('--theme-y', y + 'px');
-  root.style.setProperty('--theme-radius', radius + 'px'); root.classList.add('theme-transition');
+  root.style.setProperty('--theme-x', x + 'px');
+  root.style.setProperty('--theme-y', y + 'px');
+  root.style.setProperty('--theme-radius', radius + 'px');
+  root.classList.add('theme-transition');
   themeTransitionRunning = true;
+  let transition;
+  const stopReveal = () => transition.skipTransition();
   try {
-    const transition = document.startViewTransition(() => applyTheme(dark));
+    transition = document.startViewTransition(() => applyTheme(dark));
+    // A skipped reveal can reject ready; a failed update can reject both promises.
     transition.ready.catch(() => {});
+    transition.updateCallbackDone.catch(() => {});
+    reducedMotion.addEventListener('change', stopReveal);
+    window.addEventListener('resize', stopReveal, {once: true});
     await transition.finished;
   } catch (_) { applyTheme(dark); }
   finally {
+    reducedMotion.removeEventListener('change', stopReveal);
+    window.removeEventListener('resize', stopReveal);
     root.classList.remove('theme-transition');
     ['--theme-x','--theme-y','--theme-radius'].forEach(name => root.style.removeProperty(name));
     themeTransitionRunning = false;
