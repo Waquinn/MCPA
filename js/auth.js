@@ -61,17 +61,18 @@
     document.querySelector('.topbar-actions > .avatar')?.classList.add('hidden');
     menu.innerHTML=`<summary aria-label="Account menu"><span class="account-name">${esc(name)}</span><span>${esc(label)}${demo?' · Demo':''}</span></summary><div class="account-dropdown"><button data-account-profile>My Account</button><button data-account-theme>Change theme</button><button data-account-logout>${demo?'Exit demo':'Log Out'}</button></div>`;
     menu.querySelector('[data-account-profile]').onclick=()=>{menu.open=false;showScreen('settings');};
-    menu.querySelector('[data-account-theme]').onclick=()=>toggleTheme();
+    menu.querySelector('[data-account-theme]').onclick=event=>toggleTheme(event.currentTarget);
     menu.querySelector('[data-account-logout]').onclick=logout;
     document.querySelector('.bell-wrap')?.classList.toggle('hidden',!canRoute('activity'));
     document.querySelector('.search-wrap')?.classList.toggle('hidden',!canRoute('masterlist'));
+    document.getElementById('mobile-search-toggle')?.classList.toggle('hidden',!canRoute('masterlist'));
   }
   function enter() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     accountUI(); buildNav();
     const requested=location.hash.slice(1);
-    showScreen(requested in SCREEN_MODULE ? requested : MCPAPermissions.home(profile.role));
+    showScreen(window.MCPAMovementLinks.parse(requested).screen in SCREEN_MODULE ? requested : MCPAPermissions.home(profile.role));
   }
   async function restore(session) {
     if(demo || recovering) return;

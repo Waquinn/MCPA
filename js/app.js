@@ -53,6 +53,7 @@ function loadModule(screenId, callback){
   window.TrackingView?.dispose();
   window.MCPAProjects?.dispose();
   window.AdminEquipment?.dispose();
+  window.MCPAAccounts?.dispose();
   const relative = location.pathname.includes('/2-engr/') ? '../' : '';
   const user = window.MCPAAuth.profile;
   const operational = MCPAPermissions.operational(user.role);
@@ -116,6 +117,7 @@ function resetApplication(){
   ++moduleRequest; moduleAbort?.abort(); currentModule=null; clearTimeout(searchTimer);
   window.MovementUI?.dispose(); window.MovementOverview?.dispose(); window.TrackingView?.dispose();
   window.MCPAProjects?.dispose(); window.AdminEquipment?.dispose();
+  window.MCPAAccounts?.dispose(); closeMobileSearch(false);
   window.mcpaSearch='';
   window.movementDraft=null;
   if (typeof equipmentList !== 'undefined') equipmentList=[];
@@ -124,11 +126,36 @@ function resetApplication(){
 /* ============================================================
    GLOBAL EVENT HANDLING
    ============================================================ */
-function toggleTheme(){
-  document.body.classList.toggle('dark');
-  const dark = document.body.classList.contains('dark');
+let themeTransitionRunning = false;
+function applyTheme(dark, persist = true){
+  document.body.classList.toggle('dark', dark);
   document.getElementById('theme-label').textContent = dark ? 'Light mode' : 'Night mode';
-  try { localStorage.setItem('mcpa.theme', dark ? 'dark' : 'light'); } catch (_) {}
+  const button = document.querySelector('.theme-toggle');
+  button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to night mode');
+  button.title = button.getAttribute('aria-label');
+  document.getElementById('theme-icon').innerHTML = ICONS[dark ? 'sun' : 'moon'];
+  if(persist) try { localStorage.setItem('mcpa.theme', dark ? 'dark' : 'light'); } catch (_) {}
+}
+async function toggleTheme(button = document.querySelector('.theme-toggle')){
+  if(themeTransitionRunning) return;
+  const dark = !document.body.classList.contains('dark');
+  if(!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches){ applyTheme(dark); return; }
+  const rect = button.getBoundingClientRect(), x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  const root = document.documentElement;
+  root.style.setProperty('--theme-x', x + 'px'); root.style.setProperty('--theme-y', y + 'px');
+  root.style.setProperty('--theme-radius', radius + 'px'); root.classList.add('theme-transition');
+  themeTransitionRunning = true;
+  try {
+    const transition = document.startViewTransition(() => applyTheme(dark));
+    transition.ready.catch(() => {});
+    await transition.finished;
+  } catch (_) { applyTheme(dark); }
+  finally {
+    root.classList.remove('theme-transition');
+    ['--theme-x','--theme-y','--theme-radius'].forEach(name => root.style.removeProperty(name));
+    themeTransitionRunning = false;
+  }
 }
 
 let searchTimer;
@@ -139,14 +166,59 @@ function globalSearch(q){
     const input = document.getElementById('movement-inventory-search') || document.getElementById('searchEquipment');
     if(input){ input.value = q; input.dispatchEvent(new Event('input', {bubbles: true})); }
     if (typeof filterAndResetPage === 'function' && document.getElementById('equipmentTableBody')) filterAndResetPage();
-  }), 180);
+  }, {keepSearch:true}), 180);
 }
 
+const compactSearch = matchMedia('(max-width: 900px)');
+function closeMobileSearch(restoreFocus = true, cancelPending = true){
+  const panel = document.getElementById('global-search-panel'), button = document.getElementById('mobile-search-toggle');
+  const wasOpen = panel?.classList.contains('is-open');
+  panel?.classList.remove('is-open'); button?.setAttribute('aria-expanded','false');
+  if(cancelPending) clearTimeout(searchTimer);
+  if(wasOpen && restoreFocus && compactSearch.matches) button?.focus();
+}
+function openMobileSearch(){
+  if(!window.MCPAAuth?.canRoute('masterlist')) return;
+  const panel = document.getElementById('global-search-panel');
+  if(panel.classList.contains('is-open')) { closeMobileSearch(); return; }
+  document.getElementById('account-menu')?.removeAttribute('open');
+  document.getElementById('sidebar')?.classList.remove('open');
+  panel.classList.add('is-open'); document.getElementById('mobile-search-toggle').setAttribute('aria-expanded','true');
+  document.getElementById('global-search-input').focus();
+}
+function updateSearchLayout(){
+  const input = document.getElementById('global-search-input');
+  const restore = document.activeElement === document.getElementById('mobile-search-toggle');
+  closeMobileSearch(false);
+  input.placeholder = compactSearch.matches ? 'Search equipment or ID…' : 'Search tool ID, equipment, serial, project, or holder…';
+  if(!compactSearch.matches && restore) input.focus();
+}
+compactSearch.addEventListener('change', updateSearchLayout); updateSearchLayout();
+document.getElementById('global-search-panel').addEventListener('keydown', event => {
+  if(event.key === 'Escape'){ event.preventDefault(); closeMobileSearch(); }
+  if(event.key === 'Enter' && event.target.id === 'global-search-input' && compactSearch.matches){
+    event.preventDefault(); globalSearch(event.target.value); closeMobileSearch(true, false);
+  }
+});
+document.addEventListener('click', event => {
+  if(event.target.closest('.mobile-menu-btn,.bell-wrap,#account-menu summary')) closeMobileSearch(false);
+});
+
 function logout(){ return window.MCPAAuth?.logout(); }
-try { if (localStorage.getItem('mcpa.theme') === 'dark') { document.body.classList.add('dark'); document.getElementById('theme-label').textContent = 'Light mode'; } } catch (_) {}
+applyTheme(document.body.classList.contains('dark'), false);
 window.addEventListener('hashchange', () => {
-  const id = location.hash.slice(1);
-  if (SCREEN_MODULE[id] && !document.getElementById('app-shell').classList.contains('hidden')) showScreen(id);
+  const route = location.hash.slice(1);
+  const {screen} = window.MCPAMovementLinks.parse(route);
+  if (SCREEN_MODULE[screen] && !document.getElementById('app-shell').classList.contains('hidden')) showScreen(route);
+});
+
+document.addEventListener('click', event => {
+  const link = event.target.closest('a[data-movement-link]');
+  if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  // History links can also appear inside the existing equipment detail dialog.
+  document.querySelectorAll('.overview-dialog[open]').forEach(dialog => dialog.close());
+  showScreen(link.hash.slice(1));
 });
 
 // Close sidebar on mobile when clicking outside of it

@@ -72,17 +72,49 @@ function setActiveNav(id){
    Loads the owning module (see js/app.js) if it isn't already
    in the DOM, then activates the requested screen within it.
    ============================================================ */
-function showScreen(id, afterActivate){
+// Existing activity already carries an action and stable entityId. Resolve its
+// record type from the snapshot, never from human-readable notification text.
+window.MCPAMovementLinks = {
+  collections: {request:'requests', transfer:'transfers', return:'returns', repair:'repairs', missing:'missing'},
+  href(event, snapshot) {
+    if (typeof event.entityId !== 'string' || !event.entityId || event.entityId.length > 120) return '';
+    const known = Object.entries(this.collections).find(([,collection]) => snapshot[collection]?.some(record => record.id === event.entityId));
+    const actions = {
+      createRequest:'request', approveRequest:'request', rejectRequest:'request',
+      releaseRequest:'transfer', createTransfer:'transfer', receiveTransfer:'transfer',
+      createReturn:'return', reportRepair:'repair', startRepair:'repair', completeRepair:'repair',
+      reportMissing:'missing', recoverMissing:'missing',
+      request_created:'request', request_approved:'request', request_rejected:'request',
+      transfer_created:'transfer', transfer_received:'transfer', return_created:'return',
+      repair_reported:'repair', repair_started:'repair', repair_completed:'repair',
+      missing_reported:'missing', missing_recovered:'missing'
+    };
+    const kind = known?.[0] || (Object.hasOwn(actions, event.action) ? actions[event.action] : '');
+    return kind ? '#' + kind + '?record=' + encodeURIComponent(event.entityId) : '';
+  },
+  parse(value) {
+    const [screen, query = ''] = String(value).replace(/^#/, '').split('?');
+    const record = new URLSearchParams(query).get('record');
+    return {screen, record: Object.hasOwn(this.collections, screen) && record && record.length <= 120 ? record : ''};
+  }
+};
+
+function showScreen(route, afterActivate, options){
+  const {screen:id, record} = window.MCPAMovementLinks.parse(route);
   if (!window.MCPAAuth?.canRoute(id)) { if (window.MCPAAuth?.profile) { resetApplication(); MCPAAuth.deny(); } return; }
+  if(!options?.keepSearch) window.closeMobileSearch?.(false);
   loadModule(id, function(){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     const target = document.getElementById('screen-'+id);
     if(target) target.classList.add('active');
-    if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    const hash = '#' + id + (record ? '?record=' + encodeURIComponent(record) : '');
+    if (location.hash !== hash) history.replaceState(null, '', hash);
+    document.getElementById('sidebar')?.classList.remove('open');
     setActiveNav(id);
     document.getElementById('content').scrollTop = 0;
     window.scrollTo(0,0);
     if(afterActivate) afterActivate();
+    if(record) void window.MovementUI?.openRecord(id, record);
   });
 }
 

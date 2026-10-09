@@ -40,9 +40,11 @@
       if (!data || !Array.isArray(data.tools) || !Array.isArray(data.requests)) throw new Error('The movement database returned an invalid snapshot. Refresh after checking the setup.');
       // Ignore a live response after the user has switched to demo mode.
       if (mode !== 'live' || requestRevision !== revision) return clone(state);
-      state = {...empty(), ...data}; ready = true; stale = false;
+      const next = {...empty(), ...data};
+      const changed = JSON.stringify(next) !== JSON.stringify(state);
+      state = next; ready = true; stale = false;
       TOOLS.splice(0, TOOLS.length, ...clone(state.tools));
-      notify();
+      if (changed) notify();
       return clone(state);
     })();
     try { return await loading; } finally { if (requestRevision === revision) loading = null; }
@@ -66,7 +68,9 @@
       const {data, error} = await client().rpc('mcpa_movement_action', {p_action: action, p_payload: values, p_operation_id: pending.get(key)});
       if (requestRevision !== revision) throw new Error('Your session changed. Check the saved records after signing in again.');
       if (error) throw explain(error);
-      try { await refresh(); }
+      // A background read may have started before this write. Finish it first,
+      // then fetch the committed result instead of reusing its older snapshot.
+      try { if (loading) await loading.catch(() => {}); await refresh(); }
       catch (error) { if (requestRevision === revision) stale = true; throw new Error('Saved successfully, but the updated records could not load. Refresh before continuing. ' + error.message); }
       if (requestRevision !== revision) throw new Error('Your session changed. Check the saved records after signing in again.');
       pending.delete(key);
@@ -124,6 +128,6 @@
     api[action] = (id, values = {}) => mutate(action, {values: {id, ...values}, args: [id, values]});
   });
   window.MovementStore = api;
-  // Live records refresh when returning to a tab; form controls are not replaced.
-  window.addEventListener('focus', () => { if (ready && !saving && mode === 'live') refresh().catch(() => {}); });
+  // Active modules own focus/reconnect/polling through EquipmentTracking.watch.
+  // Keeping a second global focus reader here would fetch the same snapshot twice.
 })();

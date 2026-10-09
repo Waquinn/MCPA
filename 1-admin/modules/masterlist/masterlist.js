@@ -28,7 +28,7 @@ async function initMasterlist() {
   catch (error) {
     console.error("Error fetching equipment:", error.message);
     if (tbody.isConnected) document.getElementById('inventory-sync').textContent = 'Equipment could not load. Retrying automatically.';
-    return;
+    throw error;
   }
 
   const [siteResult, holderResult] = await Promise.all([
@@ -63,7 +63,7 @@ async function initMasterlist() {
   populateFilters();
   renderTable();
   if (!tbody.dataset.listeners) { setupMasterlistListeners(); tbody.dataset.listeners = 'true'; }
-  document.getElementById('inventory-sync').textContent = 'Updates automatically';
+  document.getElementById('inventory-sync').textContent = '';
 }
 
 function populateFilters() {

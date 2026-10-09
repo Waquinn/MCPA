@@ -4,7 +4,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {spawn}=require('node:child_process'),{once}=require('node:events'),{authDatabase}=require('./auth-test-db.cjs');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'mcpa-auth-'));
 let fixture,chrome,socket,passwordLogged=false;const errors=[],calls=[];
-const sdk=`window.supabase={createClient(){let listener;const session=()=>{const key=localStorage.getItem('fixture.account');return key?{user:{id:key},access_token:key}:null};const request=q=>fetch('/__db',{method:'POST',headers:{'Authorization':session()?.access_token||''},body:JSON.stringify(q)}).then(r=>r.json());window.__authEvent=event=>listener?.(event,session());window.__expire=()=>{localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null)};return {
+const sdk=`window.__syncTimers=new Map();const realInterval=window.setInterval,realClear=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=realInterval(fn,ms,...args);if(ms===30000)__syncTimers.set(id,fn);return id;};window.clearInterval=id=>{__syncTimers.delete(id);realClear(id);};window.__tickSync=()=>__syncTimers.forEach(fn=>fn());window.__channels=new Set();
+window.supabase={createClient(){let listener;const session=()=>{const key=localStorage.getItem('fixture.account');return key?{user:{id:key},access_token:key}:null};const request=q=>window.__failReads&&q.rpc==='mcpa_movement_snapshot'?Promise.resolve({error:{code:'TEST'}}):fetch('/__db',{method:'POST',headers:{'Authorization':session()?.access_token||''},body:JSON.stringify(q)}).then(r=>r.json());window.__authEvent=event=>listener?.(event,session());window.__expire=()=>{localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null)};return {
+ channel(){const c={tables:[],on(_type,filter,fn){this.tables.push(filter.table);this.notify=fn;return this},subscribe(){return this}};__channels.add(c);return c;},removeChannel(c){__channels.delete(c);return Promise.resolve();},
  auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange(fn){listener=fn;return {data:{subscription:{unsubscribe(){}}}}},async signInWithPassword({email,password}){const key=email.split('@')[0];if(!['admin','sky','pau','architect','secretary','handler','inactive','missing'].includes(key)||password!=='test-password')return {error:{code:'invalid_credentials'}};localStorage.setItem('fixture.account',key);listener?.('SIGNED_IN',session());return {data:{session:session()}}},async signOut(){localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null);return {error:null}},resetPasswordForEmail:async()=>({error:null}),updateUser:async values=>{window.__savedPassword=values.password;return {error:null}} },
  functions:{invoke:async(name,{body})=>{if(body.action==='capabilities')return {data:window.__accountCapabilities||{invitations_enabled:true,development_enabled:true,pending_development_accounts:[]}};window.__accountRequest={name,body};return window.__developmentFailure?{error:{context:{json:async()=>({error:'Creation interrupted. Retry the same test account.'})}}}:{data:{message:body.action==='invite'?'Invitation sent.':'Test account created.'}};}},
  rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
@@ -32,7 +34,9 @@ const server=http.createServer(async(req,res)=>{
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
- fixture=await authDatabase();fixture.actors.missing={authId:require('node:crypto').randomUUID()};server.listen(0,'127.0.0.1');await once(server,'listening');
+ fixture=await authDatabase();fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
+ server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
  let port;for(let i=0;i<100;i++){const p=path.join(profile,'DevToolsActivePort');if(fs.existsSync(p)){port=fs.readFileSync(p,'utf8').split('\n')[0];break;}await pause(100);}assert.ok(port);
  const targets=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();socket=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await once(socket,'open');
@@ -46,7 +50,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  const go=async route=>{await evaluate(`showScreen(${JSON.stringify(route)})`);await wait(`document.querySelector('#screen-${route}.active')`);};
  const login=async(key,password='test-password')=>{await wait("document.querySelector('#auth-email')");await fill('#auth-email',key+'@example.test');await fill('#auth-password',password);await submit('#auth-form');};
  const logout=async()=>{await evaluate('MCPAAuth.logout()');await wait("document.querySelector('#auth-email')");};
- const shot=async name=>{if(process.env.MCPA_SKIP_SCREENSHOTS==='1')return;await pause(300);const {data}=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});fs.writeFileSync(path.join(profile,name+'.png'),Buffer.from(data,'base64'));console.log('SCREENSHOT '+path.join(profile,name+'.png'));};
+ const shot=async (name,viewport=false)=>{if(process.env.MCPA_SKIP_SCREENSHOTS==='1')return;await pause(300);const {data}=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:!viewport});fs.writeFileSync(path.join(profile,name+'.png'),Buffer.from(data,'base64'));console.log('SCREENSHOT '+path.join(profile,name+'.png'));};
  await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  const base=`http://127.0.0.1:${server.address().port}`;
  await command('Page.navigate',{url:base+'/2-engr/index.html#users'});await wait("document.querySelector('#auth-email')");
@@ -76,6 +80,8 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ await require('./workspace-ui-checks.cjs').header({evaluate,command,wait,click,fill,go,shot});
+ await go('dashboard');await wait("document.querySelector('.admin-review')");
  assert.ok(await evaluate("!document.querySelector('#movement-profile') && !document.body.innerText.includes('Open Engineer') && !document.querySelector('.dashboard-toolbar .overview-actions')"));
  await command('Page.reload');await wait("document.querySelector('.admin-review')");
  await go('request');await wait("document.querySelector('[data-list]')");assert.ok(await evaluate("!document.querySelector('[data-form=create]')"));
@@ -95,9 +101,9 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await wait("document.querySelector('#accounts-feedback')?.textContent==='Invitation sent.'");
  const inviteRequest=await evaluate('window.__accountRequest');assert.equal(inviteRequest.name,'manage-accounts');assert.equal(inviteRequest.body.role,'engineer');assert.equal(inviteRequest.body.profile_id,null);assert.equal(inviteRequest.body.email,'new@example.test');
  assert.equal(await evaluate("document.querySelector('#invite-panel').hidden"),true);
- await wait("!document.querySelector('[data-refresh]').disabled");
+ await wait("!document.querySelector('#development-form button[type=submit]').disabled");
  await evaluate("window.__accountCapabilities={invitations_enabled:false,development_enabled:true,pending_development_accounts:[]}");
- await click('[data-refresh]');await wait("document.querySelector('#account-availability').textContent.includes('not yet configured')");
+ await evaluate('window.dispatchEvent(new Event("focus"))');await wait("document.querySelector('#account-availability').textContent.includes('not yet configured')");
  assert.equal(await evaluate("document.querySelector('[data-open-invite]').disabled"),true);
  assert.deepEqual(await evaluate("[...document.querySelector('#development-role').options].map(o=>o.value)"),['engineer','architect']);
  assert.equal(await evaluate("document.querySelector('#development-password').type"),'password');
@@ -158,10 +164,70 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('sky');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");
  await evaluate("showScreen('users')");await wait("document.querySelector('#content').textContent.includes('Access restricted')");
  await go('request');await wait("document.querySelector('[data-form=create]')");
+ const key=async(key,code,windowsVirtualKeyCode)=>{
+  await command('Input.dispatchKeyEvent',{type:'keyDown',key,code,windowsVirtualKeyCode});
+  await command('Input.dispatchKeyEvent',{type:'keyUp',key,code,windowsVirtualKeyCode});
+ };
+ for(const width of [375,390,430,768,1440]) {
+  await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<900});
+  await command('Emulation.setTouchEmulationEnabled',{enabled:width<900});
+  await pause(200);
+  const control=await evaluate(`(()=>{const s=document.querySelector('#mv-destination');s.scrollIntoView({block:'center'});const r=s.getBoundingClientRect();return {tag:s.tagName,disabled:s.disabled,x:r.x+r.width/2,y:r.y+r.height/2,left:r.left,right:r.right,height:r.height,font:parseFloat(getComputedStyle(s).fontSize),options:[...s.options].map(o=>o.value),top:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===s};})()`);
+  assert.equal(control.tag,'SELECT');assert.equal(control.disabled,false);assert.equal(control.top,true);
+  assert.ok(control.left>=0 && control.right<=width && control.height>=44);
+  if(width<=768)assert.ok(control.font>=16);
+  assert.ok(control.options.includes('MCPA Development Transfer Test'));
+  assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));
+  if(width<900){
+   await command('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:control.x,y:control.y}]});
+   await command('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  }else{await evaluate("document.querySelector('#mv-destination').focus()");}
+  await key('End','End',35);await key('Enter','Enter',13);
+  assert.equal(await evaluate("document.querySelector('#mv-destination').value"),'MCPA Development Transfer Test');
+  if([375,1440].includes(width))await shot('project-select-'+width);
+ }
+ await command('Emulation.setTouchEmulationEnabled',{enabled:false});
+ console.log('PASS Native project select: touch hit targets, keyboard selection, all options and viewport fit at 375/390/430/768/1440');
  await click('[name="toolIds"][value="TOOL-001"]');await fill('[name=destination]','Casa Buena');await fill('[name=purpose]','Structural works');await submit('[data-form=create]');
  await wait("document.querySelector('[data-list]').textContent.includes('Pending review')");
  const request=await evaluate('MovementStore.getState().requests[0]');
  await logout();await login('admin');await wait("document.querySelector('.admin-review')");
+ const beforeNavigation=await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot');
+ const writeCount=calls.filter(c=>c.rpc==='mcpa_movement_action').length;
+ for(const width of [375,390,430,768,1440]) {
+  await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<900});
+  await command('Emulation.setTouchEmulationEnabled',{enabled:width<900});
+  await go('activity');await wait("document.querySelector('a[data-movement-link]')");
+  assert.equal(await evaluate("document.querySelector('a[data-movement-link]').getAttribute('href')"),'#request?record='+request.id);
+  if([375,1440].includes(width))await shot('activity-links-'+width);
+  if(width===1440)await enter('a[data-movement-link]');
+  else{
+   const point=await evaluate("(()=>{const row=document.querySelector('.activity-linked-row');row.scrollIntoView({block:'center'});const r=row.querySelector('td').getBoundingClientRect();const x=r.left+12,y=r.top+12;return {x,y,linked:!!document.elementFromPoint(x,y)?.closest('a[data-movement-link]')};})()");
+   assert.ok(point.linked,'The first cell, outside the link text, is tappable');
+   await command('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:point.x,y:point.y}]});
+   await command('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  }
+  await wait("document.querySelector('#screen-request.active [data-detail]:not([hidden])')?.textContent.includes('Pending review') && document.activeElement.matches('[data-detail]')");
+  assert.equal(await evaluate('location.hash'),'#request?record='+request.id);
+  assert.ok(await evaluate("document.querySelector('.mv-selected-row').textContent.includes("+JSON.stringify(request.id)+") && !document.querySelector('dialog[open]') && !document.querySelector('#sidebar.open')"));
+  if([375,1440].includes(width)){
+   await shot('targeted-request-'+width);
+   await command('Page.reload');
+   await wait("document.querySelector('#screen-request.active [data-detail]:not([hidden])')?.textContent.includes('Pending review') && document.activeElement.matches('[data-detail]')");
+  }
+ }
+ await command('Emulation.setTouchEmulationEnabled',{enabled:false});
+ await go('dashboard');await wait("document.querySelector('.asset-timeline a[data-movement-link]')");
+ await enter('.asset-timeline a[data-movement-link]');
+ await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes('Pending review')");
+ await evaluate("location.hash='#request?record=does-not-exist'");
+ await wait("document.querySelector('[data-notice]')?.textContent.includes('unavailable')");
+ assert.ok(await evaluate("document.querySelector('[data-detail]').hidden"));
+ await evaluate("location.hash="+JSON.stringify('#request?record='+request.id));
+ await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes('Pending review')");
+ assert.deepEqual(await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot'),beforeNavigation,'Opening notification targets preserves requests, custody and activity');
+ assert.equal(calls.filter(c=>c.rpc==='mcpa_movement_action').length,writeCount,'Navigation only reads data');
+ console.log('PASS Activity/dashboard links, full-row touch, keyboard, deep-link refresh, missing record and unchanged pending request at all five widths');
  await go('request');await wait("document.querySelector('[data-action=view]')");await click('[data-action=view]');await click('[data-action=approve]');await wait("document.querySelector('[data-action=release]')");await click('[data-action=release]');await wait("MovementStore.getState().transfers.length===1");
  const transfer=await evaluate('MovementStore.getState().transfers[0]');assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='TOOL-001').holder"),'');
  await logout();await login('sky');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await go('transfer');await wait("document.querySelector('[data-form=lookup]')");await fill('[name=code]',transfer.code);await submit('[data-form=lookup]');await wait("document.querySelector('[data-form=receive]')");await fill('[data-condition]','good');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Test each')");await click('[data-tested]');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Receipt confirmed')");
@@ -181,6 +247,9 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='GRD-002').holder"),'\u2014');assert.equal(calls.length,before,'Damaged demo receipt stays offline');
  await logout();await login('admin');await wait("document.querySelector('.admin-review')");await evaluate('__expire()');await wait("document.querySelector('#auth-email')");assert.equal(await evaluate('MovementStore.getState().tools.length'),0,'Auth events remain connected after restoring and exiting demo');
 
+ await login('sky');await wait("MCPAAuth.profile?.role==='engineer'");
+ await logout();
+ await require('./workspace-ui-checks.cjs').sync({fixture,evaluate,command,wait,fill,go,login,logout,calls});
  await login('sky');await wait("MCPAAuth.profile?.role==='engineer'");
  const beforeSetup=calls.length;
  await evaluate("sessionStorage.setItem('mcpa.demo.role','engineer')");

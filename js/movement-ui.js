@@ -48,7 +48,7 @@
 
   function siteField(name, label, required, value) {
     const sites = [...new Set([...(state().sites || []).map(site => typeof site === 'string' ? site : site.name), ...tools().map(tool => tool.site)].filter(Boolean))];
-    return `<div class="field"><label for="mv-${esc(name)}">${esc(label)}</label><input id="mv-${esc(name)}" name="${esc(name)}" list="mv-sites-${esc(name)}" value="${esc(sites.includes(value) ? value : '')}" maxlength="120" ${required ? 'required' : ''} placeholder="Choose an existing project"><datalist id="mv-sites-${esc(name)}">${sites.map(site => `<option value="${esc(site)}"></option>`).join('')}</datalist></div>`;
+    return `<div class="field"><label for="mv-${esc(name)}">${esc(label)}</label><select id="mv-${esc(name)}" name="${esc(name)}" ${required ? 'required' : ''}><option value="">Choose an existing project</option>${sites.map(site => `<option value="${esc(site)}"${site === value ? ' selected' : ''}>${esc(site)}</option>`).join('')}</select></div>`;
   }
 
   function receiverField() {
@@ -107,7 +107,7 @@
 
   function renderShell() {
     if (!current) return;
-    current.root.innerHTML = `<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1><p class="sub">${descriptions()}</p></div><div class="page-head-actions mv-header-actions"><span data-mode>${mode()==='demo'?'Offline demo':'Live database'}</span>${button('Refresh', 'refresh')}</div></div><div data-notice role="status" aria-live="polite"></div>${mode() === 'demo' ? '<div class="mv-demo-banner">Demo data · Saved in this browser and shared between the demo Engineer and Admin portals.</div>' : ''}<div data-summary class="mv-summary"></div>${current.kind === 'transfer' && operational() ? transferLookup() : ''}<div class="mv-workspace"><div data-create-panel>${createForm()}</div><div class="mv-record-area"><section class="card mv-records"><div class="mv-record-header"><h2>${admin() ? 'All' : 'Your'} ${TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section><section class="card card-pad mv-detail" data-detail hidden aria-label="Movement details"></section></div></div></div>`;
+    current.root.innerHTML = `<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1><p class="sub">${descriptions()}</p></div></div><p class="sync-warning" data-sync-warning role="status"></p><div data-notice role="status" aria-live="polite"></div>${mode() === 'demo' ? '<div class="mv-demo-banner">Demo data · Saved in this browser and shared between the demo Engineer and Admin portals.</div>' : ''}<div data-summary class="mv-summary"></div>${current.kind === 'transfer' && operational() ? transferLookup() : ''}<div class="mv-workspace"><div data-create-panel>${createForm()}</div><div class="mv-record-area"><section class="card mv-records"><div class="mv-record-header"><h2>${admin() ? 'All' : 'Your'} ${TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section><section class="card card-pad mv-detail" data-detail hidden aria-label="Movement details"></section></div></div></div>`;
     renderLists();
     renderNotice();
     if (current.detailId) renderDetail();
@@ -316,7 +316,6 @@
     if (action === 'dismiss') { current.message = ''; renderNotice(); }
     else if (action === 'view') { current.detailId = id; renderLists(); renderDetail(); current.root.querySelector('[data-detail]').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
     else if (action === 'close-detail') { current.detailId = ''; current.root.querySelector('[data-detail]').hidden = true; renderLists(); }
-    else if (action === 'refresh') await perform(() => store().refresh(), 'Movement data refreshed.', {preserveDetail: true});
     else if (action === 'approve') await perform(() => store().approveRequest(id), 'Request approved. Its tools are reserved and ready for release.');
     else if (action === 'release') await perform(() => store().releaseRequest(id), 'Tools released. Share the handover code with the receiver.');
     else if (action === 'start-repair') await perform(() => store().startRepair(id), 'Repair started. The tool remains unavailable.');
@@ -366,7 +365,7 @@
   }
 
   function renderError(error) {
-    current.root.innerHTML = `<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1></div></div><div class="card card-pad mv-setup" role="alert"><h2>Movement data is unavailable</h2><p>${esc(error?.message || 'The database could not be reached.')}</p><p class="mv-help">Check your connection and refresh. Contact your administrator if access is unavailable.</p><div class="mv-action-row">${button('Refresh', 'retry', null, 'btn-primary')}</div></div></div>`;
+    current.root.innerHTML = `<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1></div></div><div class="card card-pad mv-setup" role="alert"><h2>Movement data is unavailable</h2><p>${esc(error?.message || 'The database could not be reached.')}</p><p class="mv-help">We will retry automatically. Contact your administrator if access is unavailable.</p><div class="mv-action-row">${button('Retry connection', 'retry', null, 'btn-primary')}</div></div></div>`;
   }
 
   async function mount(kind) {
@@ -374,15 +373,27 @@
     const root = document.getElementById(`screen-${kind}`);
     if (!root || !TITLES[kind]) return;
     const active = { kind, root, generation: ++generation, search: '', status: '', detailId: '', message: '', busy: false, scanner: null, createDirty: false, detailDirty: false };
+    let finishMount;
+    active.mounted = new Promise(resolve => { finishMount = resolve; });
     current = active;
     root.innerHTML = '<div class="movement-ui"><div class="card card-pad mv-loading" role="status">Loading movement records…</div></div>';
     root.addEventListener('click', click);
     root.addEventListener('submit', submit);
     root.addEventListener('input', input);
     root.addEventListener('change', change);
+    if (mode() === 'live') active.stopWatching = window.EquipmentTracking.watch(async () => {
+      await active.mounted;
+      if (current !== active || active.busy) return;
+      await store().refresh();
+      if (current === active && !root.querySelector('[data-list]')) renderShell();
+    }, message => {
+      if (current !== active) return;
+      const status = root.querySelector('[data-sync-warning]');
+      if (status) status.textContent = message;
+    });
     try {
       if (!store()) throw new Error('The movement service has not loaded. Reload the page and try again.');
-      await store().initialize();
+      await store().refresh();
       if (current !== active) return;
       renderShell();
       if (window.movementDraft?.kind === kind) {
@@ -396,12 +407,14 @@
         active.createDirty = true;
       }
     } catch (error) { if (current === active) renderError(error); }
+    finally { finishMount(); }
   }
 
   function dispose() {
     const active = current;
     if (!active) return;
     current = null;
+    active.stopWatching?.();
     void stopCamera(active);
     active.root.removeEventListener('click', click);
     active.root.removeEventListener('submit', submit);
@@ -410,17 +423,48 @@
   }
 
   window.addEventListener('mcpa:movement-change', () => {
-    if (!current || current.busy || !current.root.isConnected) return;
+    if (!current || current.busy || !current.root.isConnected || !current.root.querySelector('[data-list]')) return;
     renderLists();
-    if (!current.createDirty) {
+    if (!current.createDirty && !document.activeElement?.closest('[data-form="create"]')) {
       const host = current.root.querySelector('[data-create-panel]');
       if (host) host.innerHTML = createForm();
     }
-    if (!current.detailDirty) renderDetail();
+    if (!current.detailDirty && !document.activeElement?.closest('[data-detail] form')) renderDetail();
   });
   window.MovementUI = {
     mount,
     dispose,
+    openRecord: async (kind, id) => {
+      if (current?.kind !== kind) return;
+      const active = current;
+      const navigation = active.navigation = (active.navigation || 0) + 1;
+      // The initial snapshot and module script can finish in either order.
+      // Wait for the initial render so it cannot replace the focused target.
+      await active.mounted;
+      if (current !== active || active.navigation !== navigation) return;
+      active.detailId = ''; active.detailDirty = false;
+      renderDetail();
+      try {
+        await store().refresh();
+        if (current !== active || active.navigation !== navigation) return;
+        if (!active.root.querySelector('[data-list]')) renderShell();
+        if (!visibleRecords().some(record => record.id === id)) {
+          notify('This record is unavailable or your account no longer has access. Refresh the activity list.', true);
+          active.root.querySelector('[data-notice]')?.setAttribute('tabindex', '-1');
+          active.root.querySelector('[data-notice]')?.focus();
+          return;
+        }
+        active.detailId = id; active.search = ''; active.status = '';
+        active.root.querySelector('[data-record-search]').value = '';
+        renderLists(); renderDetail();
+        const detail = active.root.querySelector('[data-detail]');
+        detail.setAttribute('tabindex', '-1');
+        detail.focus({preventScroll:true});
+        detail.scrollIntoView({block:'start'});
+      } catch (error) {
+        if (current === active && active.navigation === navigation) notify(error.message, true);
+      }
+    },
     render: () => { if (current) { renderLists(); if (!current.detailDirty) renderDetail(); } },
     openTransfer: async id => {
       if (current?.kind !== 'transfer') return;

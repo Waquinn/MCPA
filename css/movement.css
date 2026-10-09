@@ -35,6 +35,9 @@
 .mv-tool-option .mv-tool-state { margin-left: auto; font-size: 10px; color: var(--gray); white-space: nowrap; }
 .mv-empty-tools { padding: 12px; margin: 0; }
 .mv-record-area { min-width: 0; }
+.mv-workspace > *, .movement-ui .field { min-width: 0; }
+.movement-ui .field select { min-width: 0; max-width: 100%; min-height: 44px; }
+@media (max-width: 768px) { .movement-ui .field select { font-size: 16px; } }
 .mv-record-header { padding: 20px 20px 16px; }
 .mv-record-header h2 { margin-bottom: 15px; }
 .mv-list-filters { display: flex; gap: 9px; }

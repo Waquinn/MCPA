@@ -7,11 +7,11 @@ const source = fs.readFileSync(path.join(__dirname, '../js/equipment-tracking.js
 function harness(db = {}) {
   const window = new EventTarget(), document = new EventTarget();
   window.supabaseClient = db;
-  const timers = new Map(); let id = 0;
+  const timers = new Map(), intervals = new Map(); let id = 0;
   vm.runInNewContext(source, {window, document,
     setTimeout(fn) {timers.set(++id,fn); return id;}, clearTimeout(id) {timers.delete(id);},
-    setInterval() {return 0;}, clearInterval() {}});
-  return {api:window.EquipmentTracking, window, timers, async flush() {const list=[...timers.values()];timers.clear();for(const fn of list)await fn();}};
+    setInterval(fn,ms) {intervals.set(++id,{fn,ms});return id;}, clearInterval(id) {intervals.delete(id);}});
+  return {api:window.EquipmentTracking, window, document, timers, intervals, async flush() {const list=[...timers.values()];timers.clear();for(const fn of list)await fn();}};
 }
 test('availability follows project assignment and raw/normalized statuses', () => {
   const {api} = harness();
@@ -60,4 +60,21 @@ test('changes arriving during an in-flight reload trigger a follow-up read', asy
   const stop=h.api.watch(()=>{reads++;return reads===1?new Promise(r=>{release=r;}):Promise.resolve();});
   change();const first=h.flush();change();await h.flush();release();await first;await h.flush();
   assert.equal(reads,2);stop();
+});
+
+test('30-second fallback pauses when hidden, retries on return/online, and clears errors after recovery', async()=>{
+  const h=harness();let offline=true,reads=0;const statuses=[];
+  const stop=h.api.watch(async()=>{reads++;if(offline)throw new Error('Offline fixture');},message=>statuses.push(message));
+  assert.equal([...h.intervals.values()][0].ms,30000);
+  [...h.intervals.values()][0].fn();await h.flush();assert.equal(reads,1);assert.match(statuses.at(-1),/Unable to sync/);
+  h.document.hidden=true;[...h.intervals.values()][0].fn();h.window.dispatchEvent(new Event('focus'));await h.flush();assert.equal(reads,1);
+  h.document.hidden=false;offline=false;h.document.dispatchEvent(new Event('visibilitychange'));h.window.dispatchEvent(new Event('online'));await h.flush();assert.equal(reads,2);assert.equal(statuses.at(-1),'');
+  stop();assert.equal(h.intervals.size,0);h.window.dispatchEvent(new Event('online'));await h.flush();assert.equal(reads,2);
+});
+
+test('account watcher subscribes only to its readable audit table and deduplicates table names',()=>{
+  const tables=[];const channel={on(_event,filter){tables.push(filter.table);return this;},subscribe(){return this;}};
+  const h=harness({channel(){return channel;},removeChannel(){}});
+  const stop=h.api.watch(async()=>{},()=>{},{tables:['mcpa_account_audit','mcpa_account_audit']});
+  assert.deepEqual(tables,['mcpa_account_audit']);stop();
 });

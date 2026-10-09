@@ -15,7 +15,7 @@
     target.innerHTML='<div class="movement-context-inner"><span class="movement-source">'+(window.MCPAAuth.isDemo?'Offline demo &middot; browser records':'Company workspace')+'</span><span>'+escape(user.name)+' &middot; '+escape(MCPAPermissions.labels[user.role])+'</span></div>';
   }
   function header(title, sub) {
-    return `<div class="page-head"><div><h1 class="display">${escape(title)}</h1><p class="sub">${escape(sub)}</p></div><div class="page-head-actions"><span data-mode class="workspace-source">${store().mode === 'demo' ? 'Offline demo' : 'Live database'}</span><span class="inventory-sync" role="status">${store().mode === 'live' ? 'Updates automatically' : 'Demo data'}</span></div></div><div id="overview-feedback" role="status"></div>`;
+    return `<div class="page-head"><div><h1 class="display">${escape(title)}</h1><p class="sub">${escape(sub)}</p></div>${store().mode === 'demo' ? '<span class="workspace-source">Offline demo</span>' : ''}</div><p class="sync-warning" data-sync-warning role="status"></p><div id="overview-feedback" role="status"></div>`;
   }
   function toolsTable(tools) {
     if (!tools.length) return '<div class="empty-state"><h3>No tools to show</h3><p>Request an available tool, or change the filters.</p></div>';
@@ -23,7 +23,11 @@
   }
   function activityTable(rows) {
     if (!rows.length) return '<div class="empty-state"><h3>No recorded movement yet</h3><p>Saved requests, handovers, returns, and issues will appear here.</p></div>';
-    return `<div class="table-wrap"><table><thead><tr><th>When · Manila</th><th>Action / reference</th><th>Recorded by</th><th>Details</th></tr></thead><tbody>${rows.map(r => `<tr><td>${escape(when(r.createdAt))}</td><td><div class="cell-name">${escape(r.action)}</div><span class="mono">${escape(r.entityId)}</span></td><td>${escape(r.actor)}</td><td>${escape(r.summary)}<div class="cell-sub">${escape((r.toolIds || []).join(', '))}</div></td></tr>`).join('')}</tbody></table></div>`;
+    return `<div class="table-wrap"><table><thead><tr><th>When · Manila</th><th>Action / reference</th><th>Recorded by</th><th>Details</th></tr></thead><tbody>${rows.map(r => {
+      const href = window.MCPAMovementLinks.href(r, store().getState());
+      const label = `<span class="cell-name">${escape(r.action)}</span><span class="mono">${escape(r.entityId)}</span>`;
+      return `<tr${href ? ' class="activity-linked-row"' : ''}><td>${escape(when(r.createdAt))}</td><td>${href ? `<a class="activity-record-link" data-movement-link href="${escape(href)}" aria-label="Open ${escape(r.entityId)}: ${escape(r.action)}">${label}</a>` : label}</td><td>${escape(r.actor)}</td><td>${escape(r.summary)}<div class="cell-sub">${escape((r.toolIds || []).join(', '))}</div></td></tr>`;
+    }).join('')}</tbody></table></div>`;
   }
   function visibleActivity(data) {
     return [...data.activity].sort((a,b) => b.createdAt.localeCompare(a.createdAt)).filter(r => [r.action, r.entityId, r.actor, r.summary, ...(r.toolIds || [])].join(' ').toLowerCase().includes(query.toLowerCase()));
@@ -106,7 +110,7 @@
   function watch() {
     stopWatching?.(); stopWatching = null;
     if (store().mode === 'live') stopWatching = window.EquipmentTracking.watch(() => load(true), message => {
-      const label = root?.querySelector('.inventory-sync'); if (label) label.textContent = message;
+      const label = root?.querySelector('[data-sync-warning]'); if (label) label.textContent = message;
     });
   }
   async function mount(id) {
@@ -134,7 +138,7 @@
       if (event.target.id === 'overview-mine') mine=event.target.checked;
       filter();
     }, {signal});
-    window.addEventListener('mcpa:movement-change', () => { if (!loading && root?.querySelector('[data-mode]') && !root.querySelector('dialog[open]')) render(); }, {signal});
+    window.addEventListener('mcpa:movement-change', () => { if (!loading && root?.querySelector('#overview-feedback') && !root.querySelector('dialog[open]')) render(); }, {signal});
     watch();
     await load();
   }

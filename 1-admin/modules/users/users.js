@@ -1,6 +1,7 @@
 ﻿(function () {
   'use strict';
   const root = document.getElementById('screen-users');
+  window.MCPAAccounts?.dispose();
   if (!root || !MCPAAuth.canRoute('users') || MCPAAuth.isDemo) return;
   const esc = MovementOverview.escape, client = EquipmentTracking.client();
   const roles = Object.entries(MCPAPermissions.labels).filter(([role]) => role !== 'admin');
@@ -9,7 +10,8 @@
   root.innerHTML = `<div class="page-head"><div><h1 class="display">People & Accountability</h1><p class="sub">Manage company access and preserve each person’s accountability history.</p></div><button class="btn btn-primary" data-open-invite>Invite User</button></div>
     <p id="accounts-feedback" role="status" aria-live="polite"></p>
     <p id="account-availability" class="account-message" role="status">Checking account creation availability…</p>
-    <section class="card card-pad"><div class="account-tools"><div class="field"><label for="people-search">Find a person</label><input id="people-search" type="search" placeholder="Name, email or role"></div><button class="btn btn-secondary" data-refresh>Refresh</button></div><div id="accounts-list" aria-busy="true">Loading people…</div></section>
+    <p class="sync-warning" data-sync-warning role="status"></p>
+    <section class="card card-pad"><div class="account-tools"><div class="field"><label for="people-search">Find a person</label><input id="people-search" type="search" placeholder="Name, email or role"></div></div><div id="accounts-list" aria-busy="true">Loading people…</div></section>
     <section id="invite-panel" class="card card-pad account-section" hidden><h2>Invite User</h2><p class="account-message">Select an existing person when they already have company records. They’ll receive an email to set their password.</p>
     <form id="invite-form" class="account-form"><div class="field account-wide"><label for="invite-person">Company person</label><select id="invite-person"><option value="">Create a new company person</option></select></div>
     <div class="field"><label for="invite-name">Full name</label><input id="invite-name" required maxlength="120" autocomplete="name"></div><div class="field"><label for="invite-email">Email</label><input id="invite-email" type="email" required maxlength="254" autocomplete="email"></div>
@@ -46,7 +48,7 @@
         'Production email invitations are not yet configured. Send Invitation will be available when email delivery is enabled.';
       $('#development-panel').hidden=!data.development_enabled;
       $('#development-pending').innerHTML=data.pending_development_accounts?.length?`<h3>Unfinished test accounts</h3><p class="account-message">Retry the original details and password. If Auth creation already succeeded, retry finishes linking without changing that password.</p><div class="account-tools">${data.pending_development_accounts.map(job=>`<button class="btn btn-secondary" data-development-retry="${esc(job.id)}">Retry ${esc(job.name)} · ${esc(job.email)}</button>`).join('')}</div>`:'';
-    }catch(_){if(!root.isConnected)return;capabilities=null;$('#development-panel').hidden=true;$('#account-availability').textContent='Account creation service is unavailable. Check Edge Function deployment and configuration, then Refresh. People and existing access can still be managed.';}
+    }catch(_){if(!root.isConnected)return;capabilities=null;$('#development-panel').hidden=true;$('#account-availability').textContent='Account creation service is unavailable. Retrying automatically. People and existing access can still be managed.';}
     updateControls();
   }
   function render() {
@@ -58,6 +60,7 @@
   }
   async function load(){
     const {data,error}=await client.rpc('mcpa_accounts');if(error)throw new Error('People could not load. Verify Admin access and the account-management migration, then refresh.');if(!root.isConnected)return;
+    if ($('#accounts-list').getAttribute('aria-busy') === 'false' && JSON.stringify(records) === JSON.stringify(data || [])) return;
     records=data||[];render();
     const options=records.filter(p=>!p.auth_user_id&&!p.invitation_id&&p.role!=='admin').map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.id)}</option>`).join('');
     for(const [selector,label] of [['#invite-person','Create a new company person'],['#account-profile','Choose a person']]){const value=$(selector).value;$(selector).innerHTML=`<option value="">${label}</option>${selector==="#account-profile"?'<option value="__new">Create a new company person</option>':''}${options}`;if([...$(selector).options].some(o=>o.value===value))$(selector).value=value;}
@@ -103,12 +106,16 @@
     const button=event.target.closest('button');if(!button||busy)return;
     if(button.hasAttribute('data-open-invite'))openInvite();if(button.dataset.invite)openInvite(button.dataset.invite);
     if(button.hasAttribute('data-close-invite'))$('#invite-panel').hidden=true;if(button.hasAttribute('data-close-edit'))$('#edit-panel').hidden=true;
-    if(button.hasAttribute('data-refresh')){load().then(()=>message('People refreshed.')).catch(error=>message(error.message,true));loadCapabilities();}
     if(button.dataset.developmentRetry){const job=capabilities?.pending_development_accounts?.find(job=>job.id===button.dataset.developmentRetry);if(job){developmentId=job.id;$('#development-name').value=job.name;$('#development-email').value=job.email;$('#development-role').value=job.role;clearDevelopmentPassword();$('#development-password').focus();}}
     if(button.dataset.retry||button.dataset.resend)run(()=>invoke({action:button.dataset.retry?'retry':'resend',id:button.dataset.retry||button.dataset.resend}));
     if(button.dataset.edit){const p=records.find(p=>p.id===button.dataset.edit);if(!p)return;$('#edit-panel').hidden=false;$('#edit-id').value=p.id;$('#edit-person').textContent=`${p.name} · ${p.email||'No linked email'}`;$('#edit-role').innerHTML=roleOptions()+(p.role==='admin'?'<option value="admin">Admin</option>':'');$('#edit-role').value=p.role||'';$('#edit-status').value=p.account_status;$('#edit-role').focus();}
     if(button.hasAttribute('data-audit')){button.disabled=true;client.from('mcpa_account_audit').select('actor_id,profile_id,event,created_at').order('created_at',{ascending:false}).limit(100).then(({data,error})=>{if(!root.isConnected)return;if(error){$('#account-audit').textContent='History could not load. Refresh and try again.';return;}const name=id=>records.find(p=>p.id===id)?.name||id;$('#account-audit').innerHTML=data?.length?`<ol class="account-history">${data.map(row=>`<li><strong>${esc(row.event.replaceAll('_',' '))}</strong> · ${esc(name(row.profile_id))}<br><small>${esc(name(row.actor_id))} · ${esc(new Date(row.created_at).toLocaleString('en-PH',{timeZone:'Asia/Manila'}))} (Manila)</small></li>`).join('')}</ol>`:'<p>No account changes recorded yet.</p>';}).catch(()=>{if(root.isConnected)$('#account-audit').textContent='History could not load. Try again.';}).finally(()=>{button.disabled=false;});}
   });
-  load().catch(error=>{$('#accounts-list').textContent='People are unavailable. Use Refresh to try again.';message(error.message,true);});
+  const stop = EquipmentTracking.watch(async () => {
+    if (!root.isConnected || busy) return;
+    await load(); await loadCapabilities();
+  }, value => { if(root.isConnected) $('[data-sync-warning]').textContent=value; }, {tables:['mcpa_account_audit']});
+  window.MCPAAccounts = {dispose:stop};
+  load().catch(()=>{$('#accounts-list').textContent='People are unavailable. Retrying automatically.';});
   updateControls();loadCapabilities();
 })();

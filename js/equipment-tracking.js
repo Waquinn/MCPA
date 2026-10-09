@@ -71,14 +71,14 @@
       }))
     };
   }
-  function watch(reload, onStatus = () => {}) {
+  function watch(reload, onStatus = () => {}, {tables = ['equipment','sites']} = {}) {
     let disposed = false, timer, channel, running = false, pending = false;
     const run = async () => {
-      if (disposed) return;
+      if (disposed || document.hidden) return;
       if (running) { pending = true; return; }
       running = true;
-      try { await reload(); }
-      catch (error) { if (!disposed) onStatus('Update failed. Retrying automatically.', error); }
+      try { await reload(); if (!disposed) onStatus(''); }
+      catch (error) { if (!disposed) onStatus('Unable to sync changes. Retrying automatically…', error); }
       finally {
         running = false;
         if (pending && !disposed) { pending = false; schedule(); }
@@ -89,16 +89,16 @@
     try {
       const db = client();
       if (typeof db.channel === 'function') {
-        channel = db.channel('inventory-' + ++sequence)
-          .on('postgres_changes', {event: '*', schema: 'public', table: 'equipment'}, schedule)
-          .on('postgres_changes', {event: '*', schema: 'public', table: 'sites'}, schedule);
+        channel = db.channel('workspace-' + ++sequence);
+        for (const table of new Set(tables)) channel.on('postgres_changes', {event: '*', schema: 'public', table}, visible);
         channel.subscribe(status => {
           if (disposed) return;
-          onStatus(status === 'SUBSCRIBED' ? 'Connected · updates automatically' : 'Reconnecting · checking for updates automatically');
-          if (status === 'SUBSCRIBED') schedule();
+          // Realtime may be unavailable while authorized RPC reads still work.
+          // Verify through the normal reader; report only actual sync failures.
+          if (['SUBSCRIBED','CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status)) visible();
         });
       }
-    } catch (error) { onStatus('Connection unavailable · retrying automatically', error); }
+    } catch (_) { visible(); }
     // Catch missed events after reconnect and installations without Realtime enabled.
     const interval = setInterval(visible, 30000);
     window.addEventListener('focus', visible);

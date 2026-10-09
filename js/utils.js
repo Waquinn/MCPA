@@ -3,6 +3,8 @@
    Reusable helper functions shared across the app.
    ============================================================ */
 const ICONS = {
+  moon:'<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>',
   eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   eyeOff:'<path d="M3 3l18 18M10.6 5.1A12 12 0 0112 5c6.5 0 10 7 10 7a19 19 0 01-3.1 4.2M6.2 6.2A20 20 0 002 12s3.5 7 10 7a12 12 0 005.8-1.8M9.9 9.9a3 3 0 004.2 4.2"/>',
   grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
