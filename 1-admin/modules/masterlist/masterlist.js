@@ -323,6 +323,7 @@ function showToolProfile(assetId) {
 
   const content = document.getElementById("profileContent");
   if (!content) return;
+  window.closeMobileSearch?.(false);
 
   content.innerHTML = `
     <div class="two-col" style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:16px;">

@@ -97,15 +97,24 @@ const server=http.createServer(async(req,res)=>{
   await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1050,deviceScaleFactor:1,mobile:false});await shot('equipment-desktop');
   console.log('PASS Equipment visuals, realtime reload and filter preservation');
   await evaluate("showScreen('sites')");await wait("document.querySelectorAll('#sites-list [data-action=open-site]').length===1");
-  await click('[data-action=open-site]');await wait("document.querySelector('#screen-site-detail.active')");
-  await click('[data-action=archive-site]');await click('[data-action=confirm-archive]');
+  await click('[data-action=open-site]');await wait("document.querySelector('#screen-site-detail.active [data-action=archive-site]:not(:disabled)')");
+  await click('#screen-site-detail.active [data-action=archive-site]');
+  await wait("document.querySelector('#sites-dialog[open] [data-action=confirm-archive]:not(:disabled)')");
+  await click('#sites-dialog[open] [data-action=confirm-archive]');
   await wait("!document.querySelectorAll('#sites-list [data-action=open-site]').length && !document.querySelector('#sites-dialog').open");
   assert.equal(db.sites[0].is_active,false);assert.equal(db.equipment[0].site_id,'p1');assert.equal(writes[0].table,'sites');assert.equal(writes[0].values.is_active,false);
   await evaluate("showScreen('dashboard')");await wait("document.querySelector('.dashboard-projects')?.textContent.includes('No active projects')");
   assert.equal(await evaluate('__channels.length'),1);
   console.log('PASS Archive writes is_active=false, preserves assignments and disappears from dashboard');
   await evaluate("showScreen('sites')");await wait("document.querySelector('#projects-archived') && !document.querySelector('#sites-list').getAttribute('aria-busy').includes('true')");
-  await click('#projects-archived');await click('[data-action=open-site][data-id=p1]');await click('[data-action=archive-site]');await click('[data-action=confirm-archive]');
+  await click('#projects-archived');await wait("document.querySelector('[data-action=open-site][data-id=p1]')");
+  await click('[data-action=open-site][data-id=p1]');
+  // Initial/realtime reads can still be in flight after the list appears.
+  // Wait for the enabled mutation control before opening its confirmation.
+  await wait("document.querySelector('#screen-site-detail.active [data-action=archive-site]:not(:disabled)')");
+  await click('#screen-site-detail.active [data-action=archive-site]');
+  await wait("document.querySelector('#sites-dialog[open] [data-action=confirm-archive]:not(:disabled)')");
+  await click('#sites-dialog[open] [data-action=confirm-archive]');
   await wait("!document.querySelector('#sites-dialog').open");assert.equal(db.sites[0].is_active,true);
   await evaluate("showScreen('dashboard')");await wait("document.querySelector('.dashboard-projects')?.textContent.includes('Casa Buena')");
   db.sites[0].name='Renamed project';await evaluate("__emit('sites')");await wait("document.querySelector('.dashboard-projects').textContent.includes('Renamed project')");

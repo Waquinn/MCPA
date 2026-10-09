@@ -25,35 +25,57 @@ const SCREEN_MODULE = {
 };
 
 let currentModule = null;
-let moduleRequest = 0;
 let moduleAbort = null;
+let pendingModule = null;
 
-/* Loads (or reuses, if already the active module) the module that
-   owns `screenId`, then calls `callback`. HTML is re-fetched and
-   re-inserted whenever the module changes so module scripts
-   (e.g. renderMasterlist) always run against fresh markup; the
-   module's CSS is only ever attached once. */
-function loadModule(screenId, callback){
-  if (!window.MCPAAuth?.canRoute(screenId)) { if (window.MCPAAuth?.profile) MCPAAuth.deny(); return; }
-  const request = ++moduleRequest;
-  const mod = SCREEN_MODULE[screenId];
-  if(!mod){
-    console.error('Unknown screen: ' + screenId);
-    return;
-  }
-  if(mod === currentModule){
-    callback();
-    return;
-  }
-
-  moduleAbort?.abort();
-  moduleAbort = new AbortController();
+function disposeLoadedModule(){
   window.MovementUI?.dispose();
   window.MovementOverview?.dispose();
   window.TrackingView?.dispose();
   window.MCPAProjects?.dispose();
   window.AdminEquipment?.dispose();
   window.MCPAAccounts?.dispose();
+}
+
+/* Loads (or reuses, if already the active module) the module that
+   owns `screenId`, then calls `callback`. HTML is re-fetched and
+   re-inserted whenever the module changes so module scripts
+   (e.g. renderMasterlist) always run against fresh markup; the
+   module's CSS is only ever attached once. */
+function loadModule(screenId, callback, route = screenId){
+  if (!window.MCPAAuth?.canRoute(screenId)) { if (window.MCPAAuth?.profile) MCPAAuth.deny(); return; }
+  const mod = SCREEN_MODULE[screenId];
+  if(!mod){
+    console.error('Unknown screen: ' + screenId);
+    return;
+  }
+  // A second link to the same loading module must wait for its script too.
+  if(pendingModule?.mod === mod){
+    pendingModule.callback = callback;
+    pendingModule.route = route;
+    return;
+  }
+  moduleAbort?.abort();
+  moduleAbort = null;
+  pendingModule = null;
+  if(mod === currentModule){
+    document.getElementById('content').removeAttribute('aria-busy');
+    callback();
+    return;
+  }
+
+  moduleAbort = new AbortController();
+  const active = pendingModule = {mod, callback, route};
+  function failed(err) {
+    if (err.name === 'AbortError' || pendingModule !== active) return;
+    pendingModule = null;
+    currentModule = null;
+    disposeLoadedModule();
+    const content = document.getElementById('content');
+    content.removeAttribute('aria-busy');
+    content.innerHTML = '<div class="card card-pad" role="alert"><h2>Unable to load this screen</h2><p>Please check your connection and try again.</p><button class="btn btn-secondary" id="retry-module">Retry</button></div>';
+    document.getElementById('retry-module').onclick = () => showScreen(active.route);
+  }
   const relative = location.pathname.includes('/2-engr/') ? '../' : '';
   const user = window.MCPAAuth.profile;
   const operational = MCPAPermissions.operational(user.role);
@@ -66,24 +88,21 @@ function loadModule(screenId, callback){
   fetch(base + '.html', {signal: moduleAbort.signal})
     .then(function(res){ if (!res.ok) throw new Error('Screen could not load (' + res.status + ').'); return res.text(); })
     .then(function(html){
-      if (request !== moduleRequest) return;
+      if (pendingModule !== active) return;
+      // Keep the current screen usable until the replacement actually arrives.
+      disposeLoadedModule();
       document.getElementById('content').innerHTML = html;
-      currentModule = mod;
+      currentModule = null;
       ensureModuleCSS(mod, base + '.css');
       loadModuleScript(mod, base + '.js', function(){
-        if (request !== moduleRequest) return;
+        if (pendingModule !== active) return;
+        currentModule = mod;
+        pendingModule = null;
         document.getElementById('content').removeAttribute('aria-busy');
-        callback();
-      });
+        active.callback();
+      }, failed);
     })
-    .catch(function(err){
-      if (err.name === 'AbortError' || request !== moduleRequest) return;
-      currentModule = null;
-      const content = document.getElementById('content');
-      content.removeAttribute('aria-busy');
-      content.innerHTML = '<div class="card card-pad" role="alert"><h2>Unable to load this screen</h2><p>Please check your connection and try again.</p><button class="btn btn-secondary" id="retry-module">Retry</button></div>';
-      document.getElementById('retry-module').onclick = () => showScreen(screenId);
-    });
+    .catch(failed);
 }
 
 function ensureModuleCSS(mod, href){
@@ -95,7 +114,7 @@ function ensureModuleCSS(mod, href){
   document.head.appendChild(link);
 }
 
-function loadModuleScript(mod, src, callback){
+function loadModuleScript(mod, src, callback, failed){
   const old = document.querySelector('script[data-module="' + mod + '"]');
   if(old) old.remove();
   const script = document.createElement('script');
@@ -104,7 +123,7 @@ function loadModuleScript(mod, src, callback){
   script.onload = callback;
   script.onerror = function(){
     console.error('Failed to load script for "' + mod + '"');
-    callback();
+    failed(new Error('Failed to load script for "' + mod + '"'));
   };
   document.body.appendChild(script);
 }
@@ -114,10 +133,8 @@ function loadModuleScript(mod, src, callback){
    ============================================================ */
 function enterApp(event){ return window.MCPAAuth?.signIn(event); }
 function resetApplication(){
-  ++moduleRequest; moduleAbort?.abort(); currentModule=null; clearTimeout(searchTimer);
-  window.MovementUI?.dispose(); window.MovementOverview?.dispose(); window.TrackingView?.dispose();
-  window.MCPAProjects?.dispose(); window.AdminEquipment?.dispose();
-  window.MCPAAccounts?.dispose(); closeMobileSearch(false);
+  moduleAbort?.abort(); pendingModule=null; currentModule=null; clearTimeout(searchTimer);
+  disposeLoadedModule(); closeMobileSearch(false);
   window.mcpaSearch='';
   window.movementDraft=null;
   if (typeof equipmentList !== 'undefined') equipmentList=[];
@@ -161,12 +178,15 @@ async function toggleTheme(button = document.querySelector('.theme-toggle')){
 let searchTimer;
 function globalSearch(q){
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => showScreen('masterlist', function(){
+  searchTimer = setTimeout(() => {
     window.mcpaSearch = q;
-    const input = document.getElementById('movement-inventory-search') || document.getElementById('searchEquipment');
-    if(input){ input.value = q; input.dispatchEvent(new Event('input', {bubbles: true})); }
-    if (typeof filterAndResetPage === 'function' && document.getElementById('equipmentTableBody')) filterAndResetPage();
-  }, {keepSearch:true}), 180);
+    showScreen('masterlist', function(){
+      const input = document.getElementById('movement-inventory-search') || document.getElementById('searchEquipment');
+      if(input){ input.value = q; input.dispatchEvent(new Event('input', {bubbles: true})); }
+      else window.MovementOverview?.setSearch(q);
+      if (typeof filterAndResetPage === 'function' && document.getElementById('equipmentTableBody')) filterAndResetPage();
+    }, {keepSearch:true});
+  }, 180);
 }
 
 const compactSearch = matchMedia('(max-width: 900px)');
@@ -187,11 +207,12 @@ function openMobileSearch(){
   document.getElementById('global-search-input').focus();
 }
 function updateSearchLayout(){
-  const input = document.getElementById('global-search-input');
-  const restore = document.activeElement === document.getElementById('mobile-search-toggle');
+  const input = document.getElementById('global-search-input'), button = document.getElementById('mobile-search-toggle');
+  const focused = document.activeElement;
+  const restore = focused === input || focused === button || Boolean(focused?.closest('.mobile-search-close'));
   closeMobileSearch(false);
   input.placeholder = compactSearch.matches ? 'Search equipment or ID…' : 'Search tool ID, equipment, serial, project, or holder…';
-  if(!compactSearch.matches && restore) input.focus();
+  if(restore) (compactSearch.matches ? button : input).focus();
 }
 compactSearch.addEventListener('change', updateSearchLayout); updateSearchLayout();
 document.getElementById('global-search-panel').addEventListener('keydown', event => {
@@ -201,7 +222,7 @@ document.getElementById('global-search-panel').addEventListener('keydown', event
   }
 });
 document.addEventListener('click', event => {
-  if(event.target.closest('.mobile-menu-btn,.bell-wrap,#account-menu summary')) closeMobileSearch(false);
+  if(event.target.closest('.mobile-menu-btn,.bell-wrap,#account-menu summary,[data-tool]')) closeMobileSearch(false);
 });
 
 function logout(){ return window.MCPAAuth?.logout(); }

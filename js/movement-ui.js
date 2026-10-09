@@ -314,8 +314,8 @@
     const action = target.dataset.action;
     const id = target.dataset.id;
     if (action === 'dismiss') { current.message = ''; renderNotice(); }
-    else if (action === 'view') { current.detailId = id; renderLists(); renderDetail(); current.root.querySelector('[data-detail]').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
-    else if (action === 'close-detail') { current.detailId = ''; current.root.querySelector('[data-detail]').hidden = true; renderLists(); }
+    else if (action === 'view') { cancelTarget(); current.detailId = id; renderLists(); renderDetail(); current.root.querySelector('[data-detail]').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    else if (action === 'close-detail') { cancelTarget(); current.detailId = ''; current.root.querySelector('[data-detail]').hidden = true; renderLists(); }
     else if (action === 'approve') await perform(() => store().approveRequest(id), 'Request approved. Its tools are reserved and ready for release.');
     else if (action === 'release') await perform(() => store().releaseRequest(id), 'Tools released. Share the handover code with the receiver.');
     else if (action === 'start-repair') await perform(() => store().startRepair(id), 'Repair started. The tool remains unavailable.');
@@ -325,7 +325,12 @@
       try { await navigator.clipboard.writeText(id); notify('Transfer code copied.'); } catch (_) { notify(`Copy this transfer code: ${id}`); }
     } else if (action === 'camera') await startCamera();
     else if (action === 'stop-camera') await stopCamera();
-    else if (action === 'retry') await mount(current.kind);
+    else if (action === 'retry') {
+      const {kind, pendingTarget} = current;
+      const remount = mount(kind);
+      if (pendingTarget) void openRecord(kind, pendingTarget);
+      await remount;
+    }
   }
 
   function input(event) {
@@ -369,9 +374,9 @@
   }
 
   async function mount(kind) {
-    dispose();
     const root = document.getElementById(`screen-${kind}`);
     if (!root || !TITLES[kind]) return;
+    dispose();
     const active = { kind, root, generation: ++generation, search: '', status: '', detailId: '', message: '', busy: false, scanner: null, createDirty: false, detailDirty: false };
     let finishMount;
     active.mounted = new Promise(resolve => { finishMount = resolve; });
@@ -385,7 +390,9 @@
       await active.mounted;
       if (current !== active || active.busy) return;
       await store().refresh();
-      if (current === active && !root.querySelector('[data-list]')) renderShell();
+      if (current !== active) return;
+      if (!root.querySelector('[data-list]')) renderShell();
+      if (active.pendingTarget && !active.openingTarget) await openRecord(kind, active.pendingTarget);
     }, message => {
       if (current !== active) return;
       const status = root.querySelector('[data-sync-warning]');
@@ -431,22 +438,30 @@
     }
     if (!current.detailDirty && !document.activeElement?.closest('[data-detail] form')) renderDetail();
   });
-  window.MovementUI = {
-    mount,
-    dispose,
-    openRecord: async (kind, id) => {
+  function cancelTarget() {
+    if (!current) return;
+    current.navigation = (current.navigation || 0) + 1;
+    current.pendingTarget = '';
+    current.openingTarget = false;
+  }
+
+  async function openRecord(kind, id) {
       if (current?.kind !== kind) return;
       const active = current;
       const navigation = active.navigation = (active.navigation || 0) + 1;
+      active.pendingTarget = id;
+      active.openingTarget = true;
       // The initial snapshot and module script can finish in either order.
       // Wait for the initial render so it cannot replace the focused target.
-      await active.mounted;
-      if (current !== active || active.navigation !== navigation) return;
-      active.detailId = ''; active.detailDirty = false;
-      renderDetail();
       try {
+        await active.mounted;
+        if (current !== active || active.navigation !== navigation) return;
+        active.detailId = ''; active.detailDirty = false;
+        renderDetail();
+        if (active.root.querySelector('[data-list]')) renderLists();
         await store().refresh();
         if (current !== active || active.navigation !== navigation) return;
+        active.pendingTarget = '';
         if (!active.root.querySelector('[data-list]')) renderShell();
         if (!visibleRecords().some(record => record.id === id)) {
           notify('This record is unavailable or your account no longer has access. Refresh the activity list.', true);
@@ -454,6 +469,7 @@
           active.root.querySelector('[data-notice]')?.focus();
           return;
         }
+        active.message = ''; active.error = false; renderNotice();
         active.detailId = id; active.search = ''; active.status = '';
         active.root.querySelector('[data-record-search]').value = '';
         renderLists(); renderDetail();
@@ -463,8 +479,16 @@
         detail.scrollIntoView({block:'start'});
       } catch (error) {
         if (current === active && active.navigation === navigation) notify(error.message, true);
+      } finally {
+        if (current === active && active.navigation === navigation) active.openingTarget = false;
       }
-    },
+  }
+
+  window.MovementUI = {
+    mount,
+    dispose,
+    cancelTarget,
+    openRecord,
     render: () => { if (current) { renderLists(); if (!current.detailDirty) renderDetail(); } },
     openTransfer: async id => {
       if (current?.kind !== 'transfer') return;

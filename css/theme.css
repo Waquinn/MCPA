@@ -59,12 +59,13 @@ input::placeholder,textarea::placeholder{color:var(--text-muted);opacity:1}
 .sidebar-foot .icon-btn{color:var(--text-secondary)}
 .theme-toggle{min-height:36px;border-radius:6px}
 /* Reveal the actual destination theme; these layers exist only during a toggle. */
+html.theme-transition body,html.theme-transition body *,html.theme-transition body *::before,html.theme-transition body *::after{transition:none!important}
 html.theme-transition::view-transition-group(root){animation-duration:550ms}
 html.theme-transition::view-transition-old(root),html.theme-transition::view-transition-new(root){mix-blend-mode:normal}
 html.theme-transition::view-transition-old(root){animation:none;z-index:1}
 html.theme-transition::view-transition-new(root){z-index:2;animation:theme-reveal 550ms cubic-bezier(.76,0,.24,1) both}
 @keyframes theme-reveal{from{clip-path:circle(0 at var(--theme-x) var(--theme-y))}to{clip-path:circle(var(--theme-radius) at var(--theme-x) var(--theme-y))}}
-@media(prefers-reduced-motion:reduce){html.theme-transition::view-transition-new(root){animation:none}}
+@media(prefers-reduced-motion:reduce){body{transition:none}html.theme-transition::view-transition-new(root){animation:none}}
 .mobile-search-toggle,.mobile-search-close{display:none}
 .sync-warning{font-size:13px;line-height:1.5;color:var(--warning);margin-block:8px 16px}
 .sync-warning:empty,.inventory-sync:empty{display:none}
@@ -111,6 +112,7 @@ html.theme-transition::view-transition-new(root){z-index:2;animation:theme-revea
 #accounts-list table{min-width:960px}#accounts-list td:first-child{min-width:230px}#accounts-list td:nth-child(2){min-width:190px}#invite-panel,#edit-panel{margin-bottom:24px}#screen-users .table-wrap:focus-visible{outline:2px solid var(--text-primary);outline-offset:3px}
 @media(max-width:600px){#account-menu{min-width:80px}#account-menu .account-name{max-width:85px}.account-form{grid-template-columns:1fr}.admin-review{width:100%}.admin-review>strong{width:100%}.admin-review .btn{flex:1;min-height:44px}.login-card{padding:30px 24px}}
 @media(max-width:900px){
+  #sidebar:not(.open){pointer-events:none}
   #topbar .mobile-search-toggle,#topbar .mobile-search-close{display:flex;color:var(--text-primary);width:44px;height:44px}
   #topbar .search-wrap{display:none;position:absolute;top:100%;left:0;right:0;width:auto;max-width:none;padding:12px 16px;gap:8px;background:var(--surface);border-bottom:1px solid var(--border)}
   #topbar .search-wrap.is-open{display:flex;align-items:center}

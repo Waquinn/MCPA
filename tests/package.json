@@ -2,7 +2,7 @@
   "name": "mcpa-movement-tests",
   "private": true,
   "scripts": {
-    "test": "node --test movement-store.test.cjs inventory.test.cjs dashboard-view.test.cjs archive-database.test.cjs auth-database.test.cjs accounts-database.test.cjs accounts-edge.test.mjs development-accounts.test.mjs legacy-handover-lockdown.test.cjs profile-identity.test.cjs && node movement-database.test.cjs && node auth.browser.cjs",
+    "test": "node --test movement-store.test.cjs movement-sync.test.cjs movement-navigation.test.cjs module-navigation.test.cjs inventory.test.cjs dashboard-view.test.cjs archive-database.test.cjs auth-database.test.cjs accounts-database.test.cjs accounts-edge.test.mjs development-accounts.test.mjs legacy-handover-lockdown.test.cjs profile-identity.test.cjs && node movement-database.test.cjs && node auth.browser.cjs",
     "test:auth": "node --test auth-database.test.cjs accounts-database.test.cjs accounts-edge.test.mjs development-accounts.test.mjs legacy-handover-lockdown.test.cjs profile-identity.test.cjs && node auth.browser.cjs",
     "test:inventory": "node --test inventory.test.cjs archive-database.test.cjs && node inventory.browser.cjs"
   },

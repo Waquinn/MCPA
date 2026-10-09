@@ -102,19 +102,20 @@ window.MCPAMovementLinks = {
 function showScreen(route, afterActivate, options){
   const {screen:id, record} = window.MCPAMovementLinks.parse(route);
   if (!window.MCPAAuth?.canRoute(id)) { if (window.MCPAAuth?.profile) { resetApplication(); MCPAAuth.deny(); } return; }
+  window.MovementUI?.cancelTarget();
+  const hash = '#' + id + (record ? '?record=' + encodeURIComponent(record) : '');
+  if (location.hash !== hash) history.replaceState(null, '', hash);
   if(!options?.keepSearch) window.closeMobileSearch?.(false);
   loadModule(id, function(){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     const target = document.getElementById('screen-'+id);
     if(target) target.classList.add('active');
-    const hash = '#' + id + (record ? '?record=' + encodeURIComponent(record) : '');
-    if (location.hash !== hash) history.replaceState(null, '', hash);
     document.getElementById('sidebar')?.classList.remove('open');
     setActiveNav(id);
     document.getElementById('content').scrollTop = 0;
     window.scrollTo(0,0);
     if(afterActivate) afterActivate();
     if(record) void window.MovementUI?.openRecord(id, record);
-  });
+  }, route);
 }
 

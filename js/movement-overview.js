@@ -61,6 +61,13 @@
     else if (screen === 'activity') results.innerHTML = activityTable(visibleActivity(data));
     else results.innerHTML = toolsTable(data.tools.filter(t => window.EquipmentTracking.matchesStatus(t, status) && (!site || t.site === site) && (!mine || (store().mode === 'live' ? t.holderId === user.id : t.holder === user.name)) && [t.id,t.name,t.brand,t.site,t.holder,t.serial].join(' ').toLowerCase().includes(query.toLowerCase())));
   }
+  function setSearch(value) {
+    if (screen !== 'masterlist' || !root?.isConnected) return;
+    query = value;
+    const input = root.querySelector('#movement-inventory-search');
+    if (input) input.value = value;
+    filter();
+  }
   const userRole = () => store().getContext().role;
   function detail(id) {
     const data = viewData(), item = data.tools.find(t => t.id === id);
@@ -114,8 +121,9 @@
     });
   }
   async function mount(id) {
+    const target = document.getElementById('screen-' + id); if (!target) return;
     dispose(); screen = id; query = id === 'masterlist' ? window.mcpaSearch || '' : ''; status = ''; mine = false; site = ''; dashboardCondition = '';
-    root = document.getElementById('screen-' + id); if (!root) return;
+    root = target;
     root.classList.add('movement-overview'); controller = new AbortController(); const signal = controller.signal;
     root.addEventListener('click', async event => {
       const el = event.target.closest('button'); if (!el) return;
@@ -143,5 +151,5 @@
     await load();
   }
   window.addEventListener('mcpa:movement-change', contextBar);
-  window.MovementOverview = {mount, dispose, contextBar, escape};
+  window.MovementOverview = {mount, dispose, contextBar, escape, setSearch};
 })();

@@ -4,21 +4,69 @@ const {randomUUID}=require('node:crypto');
 
 exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
  await command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
- await evaluate(`window.__transitionCount=0;window.__startTransition=document.startViewTransition.bind(document);document.startViewTransition=update=>{window.__transitionCount++;window.__transitionOrigin={x:parseFloat(document.documentElement.style.getPropertyValue('--theme-x')),y:parseFloat(document.documentElement.style.getPropertyValue('--theme-y')),radius:parseFloat(document.documentElement.style.getPropertyValue('--theme-radius'))};return window.__lastTransition=window.__startTransition(update);}`);
+ // Pause the native reveal as soon as it is ready. CDP round trips and screenshots
+ // can outlast 550ms, so inspect its real animation without racing its completion.
+ await evaluate(`window.__transitionCount=0;window.__startTransition=document.startViewTransition.bind(document);
+ window.__readThemeDestinationColors=()=>{
+  const probe=document.createElement('span');probe.style.cssText='visibility:hidden;position:fixed;background:var(--background);color:var(--text-primary)';document.body.append(probe);
+  const expected=getComputedStyle(probe),body=getComputedStyle(document.body);
+  const colors={background:body.backgroundColor,color:body.color,expectedBackground:expected.backgroundColor,expectedColor:expected.color,components:[]};probe.remove();
+  for(const element of document.querySelectorAll('.nav-item,.btn,tbody tr')){
+   const rect=element.getBoundingClientRect();if(!rect.width||!rect.height||rect.right<=0||rect.left>=innerWidth||rect.bottom<=0||rect.top>=innerHeight)continue;
+   const style=getComputedStyle(element),properties=['backgroundColor','color','borderTopColor'];
+   const actual=properties.map(name=>style[name]),original=element.getAttribute('style');
+   element.style.setProperty('transition','none','important');
+   const destination=getComputedStyle(element),settled=properties.map(name=>destination[name]);
+   if(original===null)element.removeAttribute('style');else element.setAttribute('style',original);
+   colors.components.push({kind:element.matches('.nav-item')?'nav':element.matches('.btn')?'button':'row',actual,settled});
+  }
+  return colors;
+ };
+ document.startViewTransition=update=>{
+  window.__transitionCount++;
+  window.__transitionOrigin={x:parseFloat(document.documentElement.style.getPropertyValue('--theme-x')),y:parseFloat(document.documentElement.style.getPropertyValue('--theme-y')),radius:parseFloat(document.documentElement.style.getPropertyValue('--theme-radius'))};
+  const transition=window.__lastTransition=window.__startTransition(update);
+  window.__revealInspection=transition.ready.then(async()=>{
+   // Sample immediately at ready: descendant fades can finish during CDP calls.
+   window.__destinationSamples=window.__readThemeDestinationColors();
+   const animation=window.__revealAnimation=document.getAnimations().find(animation=>animation.animationName==='theme-reveal');
+   if(animation){animation.pause();await animation.ready;animation.currentTime=0;}
+  });
+  return transition;
+ }`);
+ const assertColors=async(fromReady=false)=>{
+  const colors=await evaluate(fromReady?'window.__destinationSamples':'window.__readThemeDestinationColors()');
+  assert.equal(colors.background,colors.expectedBackground,'Destination background is fully themed');
+  assert.equal(colors.color,colors.expectedColor,'Destination text is fully themed');
+  if(fromReady)for(const component of colors.components)assert.deepEqual(component.actual,component.settled,`Visible ${component.kind} uses final destination colors`);
+  return colors;
+ };
+ const assertCleanup=async()=>{
+  assert.ok(await evaluate("!document.documentElement.classList.contains('theme-transition') && ['--theme-x','--theme-y','--theme-radius'].every(name=>!document.documentElement.style.getPropertyValue(name))"),'Temporary reveal styles are removed');
+ };
  for(const width of [375,393,430,768,1024,1440]){
   await command('Emulation.setDeviceMetricsOverride',{width,height:852,deviceScaleFactor:1,mobile:width<=768});
+  const beforeNavigation=await evaluate('window.__transitionCount');
   await go('request');await wait("document.querySelector('[data-list]')");
+  assert.equal(await evaluate('window.__transitionCount'),beforeNavigation,'Navigation does not animate theme');
   for(const dark of [true,false]){
    const rect=await evaluate("(()=>{const r=document.querySelector('.theme-toggle').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
    await click('.theme-toggle');
-   await evaluate('window.__lastTransition.ready');
+   await evaluate('window.__revealInspection');
    const origin=await evaluate('window.__transitionOrigin');
    assert.equal(origin.x,rect.x);assert.equal(origin.y,rect.y);
    assert.ok(origin.radius>=Math.hypot(Math.max(rect.x,width-rect.x),Math.max(rect.y,852-rect.y))-.01);
-   assert.equal(await evaluate("getComputedStyle(document.documentElement,'::view-transition-new(root)').animationName"),'theme-reveal');
+   const animation=await evaluate("(()=>{const style=getComputedStyle(document.documentElement,'::view-transition-new(root)');return {name:style.animationName,duration:window.__revealAnimation?.effect.getTiming().duration,easing:style.animationTimingFunction,state:window.__revealAnimation?.playState}})()");
+   assert.deepEqual(animation,{name:'theme-reveal',duration:550,easing:'cubic-bezier(0.76, 0, 0.24, 1)',state:'paused'});
+   await assertColors(true);
+   const beforeRepeatedClicks=await evaluate('window.__transitionCount');
+   await evaluate("document.querySelector('.theme-toggle').click();document.querySelector('.theme-toggle').click()");
+   assert.equal(await evaluate('window.__transitionCount'),beforeRepeatedClicks,'Repeated clicks do not overlap reveals');
+   await evaluate('window.__revealAnimation.currentTime=220');
    if(width===393 && dark)await shot('theme-reveal-mobile',true);
-   await evaluate('window.__lastTransition.finished');
+   await evaluate('window.__revealAnimation.play();window.__lastTransition.finished');
    await wait("!document.documentElement.classList.contains('theme-transition')");
+   await assertCleanup();
    assert.equal(await evaluate("document.body.classList.contains('dark')"),dark);
    assert.equal(await evaluate("localStorage.getItem('mcpa.theme')"),dark?'dark':'light');
    assert.equal(await evaluate("document.querySelector('.theme-toggle').getAttribute('aria-label')"),dark?'Switch to light mode':'Switch to night mode');
@@ -48,19 +96,61 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
    }
   }
  }
+ // The empty Requests view has no action buttons or table rows yet. Inspect
+ // existing dashboard components without creating any records for this check.
+ await go('dashboard');await wait("document.querySelector('#overview-results tbody tr .btn')");
+ await evaluate("document.querySelector('#overview-results tbody tr').scrollIntoView({block:'center'})");
+ const hoveredRow=await evaluate("(()=>{const rect=document.querySelector('#overview-results tbody tr').getBoundingClientRect();return {x:rect.left+20,y:rect.top+rect.height/2}})()");
+ await command('Input.dispatchMouseEvent',{type:'mouseMoved',...hoveredRow});
+ assert.ok(await evaluate("document.querySelector('#overview-results tbody tr:hover')"),'The themed inventory hover surface is sampled');
+ for(const dark of [true,false]){
+  await click('.theme-toggle');await evaluate('window.__revealInspection');
+  const colors=await assertColors(true);
+  assert.ok(colors.components.some(component=>component.kind==='button'),'Dashboard action button sampled');
+  assert.ok(colors.components.some(component=>component.kind==='row'),'Dashboard inventory row sampled');
+  assert.ok(colors.components.some(component=>component.kind==='nav'),'Desktop navigation sampled');
+  await evaluate('window.__revealAnimation.play();window.__lastTransition.finished');
+  await assertCleanup();assert.equal(await evaluate("document.body.classList.contains('dark')"),dark);
+ }
+ await go('request');await wait("document.querySelector('[data-list]')");
  const before=await evaluate('window.__transitionCount');
  await command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
  await click('.theme-toggle');assert.equal(await evaluate('window.__transitionCount'),before);
  assert.ok(await evaluate("document.body.classList.contains('dark')"));
+ assert.equal(await evaluate('getComputedStyle(document.body).transitionDuration'),'0s');
+ await assertColors();await assertCleanup();
  await command('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
  await evaluate('document.startViewTransition=undefined');await click('.theme-toggle');
  assert.equal(await evaluate('window.__transitionCount'),before);
  assert.equal(await evaluate("document.body.classList.contains('dark')"),false);
- await evaluate('document.startViewTransition=window.__startTransition');await evaluate('toggleTheme()');
- await command('Page.reload');await wait("document.querySelector('#screen-request.active [data-list]')");
- assert.ok(await evaluate("document.body.classList.contains('dark') && !document.documentElement.classList.contains('theme-transition') && document.querySelector('#theme-label').textContent==='Light mode'"));
+ await assertCleanup();
+ await evaluate("document.startViewTransition=()=>{throw new Error('Fixture: View Transitions unavailable')}");
  await evaluate('toggleTheme()');
- console.log('PASS Header at 375/393/430/768/1024/1440: both theme reveals, actual origin, saved preference, fallback, reduced motion, search/filtering, close/Escape, account and activity access');
+ assert.ok(await evaluate("document.body.classList.contains('dark') && localStorage.getItem('mcpa.theme')==='dark'"));
+ await assertCleanup();
+ // Inject a rejected native update callback and check the existing switch recovers.
+ await evaluate("document.startViewTransition=()=>{const transition=window.__startTransition(()=>Promise.reject(new Error('Fixture: theme update rejected')));transition.updateCallbackDone.catch(()=>{});return transition}");
+ await evaluate('toggleTheme()');
+ assert.ok(await evaluate("!document.body.classList.contains('dark') && localStorage.getItem('mcpa.theme')==='light'"));
+ await assertCleanup();
+ await evaluate('document.startViewTransition=window.__startTransition');
+ // Count calls before app scripts execute, including restoration and navigation.
+ const {identifier}=await command('Page.addScriptToEvaluateOnNewDocument',{source:"window.__initialThemeTransitionCount=0;const start=document.startViewTransition;document.startViewTransition=function(...args){window.__initialThemeTransitionCount++;return start.apply(this,args)}"});
+ try{
+  for(const dark of [true,false]){
+   await evaluate('toggleTheme()');
+   assert.equal(await evaluate("localStorage.getItem('mcpa.theme')"),dark?'dark':'light');
+   await command('Page.reload');await wait("document.querySelector('#screen-request.active [data-list]')");
+   assert.equal(await evaluate("document.body.classList.contains('dark')"),dark);
+   assert.equal(await evaluate("document.querySelector('#theme-label').textContent"),dark?'Light mode':'Night mode');
+   assert.equal(await evaluate("document.querySelector('.theme-toggle').getAttribute('aria-label')"),dark?'Switch to light mode':'Switch to night mode');
+   assert.equal(await evaluate('window.__initialThemeTransitionCount'),0,'Saved theme restoration has no reveal');
+   await assertCleanup();
+   await go('activity');await wait("document.querySelector('#overview-results')");await go('request');
+   assert.equal(await evaluate('window.__initialThemeTransitionCount'),0,'Screen changes have no theme reveal');
+  }
+ }finally{await command('Page.removeScriptToEvaluateOnNewDocument',{identifier});}
+ console.log('PASS Header at 375/393/430/768/1024/1440: both real theme reveals, origin/radius, final colors, 550ms easing, rapid clicks, cleanup, both saved preferences, unsupported/throw/rejected-update fallback, reduced motion, search/filtering, close/Escape, account and activity access');
 };
 
 exports.sync=async({fixture,evaluate,command,wait,fill,go,login,logout,calls})=>{
