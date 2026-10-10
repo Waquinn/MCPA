@@ -34,7 +34,7 @@ const server=http.createServer(async(req,res)=>{
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
- fixture=await authDatabase();fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ fixture=await authDatabase({engineerPortal:true});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
  await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
  server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
@@ -80,8 +80,21 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--portal')){
+  await require('./engineer-portal.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Engineer portal browser checks; isolated database only');return;
+ }
+ if(!process.argv.includes('--flows-only')){
  const headerBaseline=await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot');
  await require('./workspace-ui-checks.cjs').header({evaluate,command,wait,click,fill,go,shot});
+ if(process.argv.includes('--theme-only')){
+  assert.deepEqual(await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot'),headerBaseline,'Theme checks preserve fixture records');
+  assert.equal(calls.filter(call=>call.rpc==='mcpa_movement_action').length,0,'Theme checks perform no business writes');
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Theme browser checks; fixture records unchanged');
+  return;
+ }
  await require('./mobile-search-ui-checks.cjs').verify({evaluate,command,wait,click,fill,go,login,logout});
  assert.deepEqual(await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot'),headerBaseline,'Theme/search interactions preserve all fixture records');
  assert.equal(calls.filter(call=>call.rpc==='mcpa_movement_action').length,0,'Theme/search checks perform no business writes');
@@ -89,6 +102,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   assert.deepEqual(errors,[],'No uncaught browser errors');
   console.log('PASS Read-only theme/search browser checks; fixture records unchanged');
   return;
+ }
  }
  await go('dashboard');await wait("document.querySelector('.admin-review')");
  assert.ok(await evaluate("!document.querySelector('#movement-profile') && !document.body.innerText.includes('Open Engineer') && !document.querySelector('.dashboard-toolbar .overview-actions')"));
@@ -218,7 +232,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   }
   await wait("document.querySelector('#screen-request.active [data-detail]:not([hidden])')?.textContent.includes('Pending review') && document.activeElement.matches('[data-detail]')");
   assert.equal(await evaluate('location.hash'),'#request?record='+request.id);
-  assert.ok(await evaluate("document.querySelector('.mv-selected-row').textContent.includes("+JSON.stringify(request.id)+") && !document.querySelector('dialog[open]') && !document.querySelector('#sidebar.open')"));
+  assert.ok(await evaluate("document.querySelector('.mv-selected-row').textContent.includes("+JSON.stringify(request.id)+") && document.querySelector('dialog[data-detail][open]') && !document.querySelector('#sidebar.open')"));
   if([375,1440].includes(width)){
    await shot('targeted-request-'+width);
    await command('Page.reload');
@@ -231,7 +245,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes('Pending review')");
  await evaluate("location.hash='#request?record=does-not-exist'");
  await wait("document.querySelector('[data-notice]')?.textContent.includes('unavailable')");
- assert.ok(await evaluate("document.querySelector('[data-detail]').hidden"));
+ assert.ok(await evaluate("!document.querySelector('[data-detail]').open"));
  await evaluate("location.hash="+JSON.stringify('#request?record='+request.id));
  await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes('Pending review')");
  assert.deepEqual(await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot'),beforeNavigation,'Opening notification targets preserves requests, custody and activity');
@@ -240,7 +254,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await require('./notification-ui-checks.cjs').targeting({fixture,request,evaluate,command,wait,click,go,enter,calls,shot,login,logout});
  await go('request');await wait("document.querySelector('[data-action=view]')");await click('[data-action=view]');await click('[data-action=approve]');await wait("document.querySelector('[data-action=release]')");await click('[data-action=release]');await wait("MovementStore.getState().transfers.some(t=>t.requestId==="+JSON.stringify(request.id)+")");
  const transfer=await evaluate('MovementStore.getState().transfers.find(t=>t.requestId==='+JSON.stringify(request.id)+')');assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='TOOL-001').holder"),'');
- await logout();await login('sky');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await go('transfer');await wait("document.querySelector('[data-form=lookup]')");await fill('[name=code]',transfer.code);await submit('[data-form=lookup]');await wait("document.querySelector('[data-form=receive]')");await fill('[data-condition]','good');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Test each')");await click('[data-tested]');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Receipt confirmed')");
+ await logout();await login('sky');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await go('transfer');await wait("document.querySelector('[data-form=lookup]')");await click('[data-transfer-tab=receive]');await fill('[name=code]',transfer.code);await submit('[data-form=lookup]');await wait("document.querySelector('[data-form=receive]')");await fill('[data-condition]','good');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Test each')");await click('[data-tested]');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Receipt confirmed')");
  assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='TOOL-001').holder"),'Engr Sky');
  await go('return');await wait("document.querySelector('[data-form=create]')");await click('[name="toolIds"][value="TOOL-001"]');await fill('[name=destination]','Main Warehouse');await fill('[data-condition]','damaged');await fill('[data-condition-notes]','Guard broken');await submit('[data-form=create]');await wait("MovementStore.getState().repairs.some(r=>r.toolId==='TOOL-001')");
  await go('dashboard');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));await shot('engineer-mobile-dark');
@@ -251,7 +265,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  const before=calls.length;await click('[data-auth-demo]');await click('[data-demo-role=engineer]');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");assert.equal(await evaluate('MovementStore.mode'),'demo');await go('request');await wait("document.querySelector('[name=toolIds][value=\"GRD-002\"]')");await click('[name=toolIds][value="GRD-002"]');await fill('[name=destination]','Casa Buena');await fill('[name=purpose]','Demo only');await submit('[data-form=create]');await wait("MovementStore.getState().requests.length===1");await command('Page.reload');await wait("document.querySelector('[data-list]')?.textContent.includes('GRD-002')");assert.equal(calls.length,before,'Offline demo performs no live RPC/table requests');
  await logout();await click('[data-auth-demo]');await click('[data-demo-role=admin]');await wait("document.querySelector('.admin-review')");await go('request');await wait("document.querySelector('[data-list]')?.textContent.includes('GRD-002')");await click('[data-action=view]');await click('[data-action=approve]');await wait("document.querySelector('[data-action=release]')");
  await click('[data-action=release]');await wait("MovementStore.getState().transfers.length===1");const demoTransfer=await evaluate('MovementStore.getState().transfers[0]');
- await logout();await click('[data-auth-demo]');await click('[data-demo-role=engineer]');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await go('transfer');await wait("document.querySelector('[data-form=lookup]')");await fill('[name=code]',demoTransfer.code);await submit('[data-form=lookup]');await wait("document.querySelector('[data-form=receive]')");await fill('[data-condition]','damaged');await fill('[data-condition-notes]','Damage found during demo inspection');
+ await logout();await click('[data-auth-demo]');await click('[data-demo-role=engineer]');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await go('transfer');await wait("document.querySelector('[data-form=lookup]')");await click('[data-transfer-tab=receive]');await fill('[name=code]',demoTransfer.code);await submit('[data-form=lookup]');await wait("document.querySelector('[data-form=receive]')");await fill('[data-condition]','damaged');await fill('[data-condition-notes]','Damage found during demo inspection');
  assert.ok(await evaluate("!document.querySelector('[data-decision-field]').hidden && !document.querySelector('[data-disposition]').disabled"));
  await fill('[data-disposition]','declined');await click('[data-tested]');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Receipt confirmed')");
  assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='GRD-002').holder"),'\u2014');assert.equal(calls.length,before,'Damaged demo receipt stays offline');

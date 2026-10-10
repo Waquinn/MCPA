@@ -106,6 +106,7 @@ function showScreen(route, afterActivate, options){
   const hash = '#' + id + (record ? '?record=' + encodeURIComponent(record) : '');
   if (location.hash !== hash) history.replaceState(null, '', hash);
   if(!options?.keepSearch) window.closeMobileSearch?.(false);
+  window.MCPADrawer?.close(false);
   loadModule(id, function(){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     const target = document.getElementById('screen-'+id);

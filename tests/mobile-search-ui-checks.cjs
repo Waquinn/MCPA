@@ -150,12 +150,13 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
     await touch('#mobile-search-toggle'); await assertOpen();
     // Hold the first read-only inventory load to exercise typing while results are still loading.
     await evaluate(`(()=>{
-      const original=EquipmentTracking.snapshot;
+      const client=EquipmentTracking.client(),original=client.rpc;
       let release; const gate=new Promise(resolve=>{release=resolve});
       window.__searchTestSnapshotStarted=false;
-      window.__restoreSearchTestSnapshot=()=>{EquipmentTracking.snapshot=original;release()};
-      EquipmentTracking.snapshot=function(...args){
-        EquipmentTracking.snapshot=original;
+      window.__restoreSearchTestSnapshot=()=>{client.rpc=original;release()};
+      client.rpc=function(...args){
+        if(args[0]!=='mcpa_personal_equipment_snapshot')return original.apply(this,args);
+        client.rpc=original;
         window.__searchTestSnapshotStarted=true;
         return gate.then(()=>original.apply(this,args));
       };
@@ -163,17 +164,17 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
     try {
       await fill('#global-search-input', 'TOOL-002');
       await wait("window.__searchTestSnapshotStarted && document.querySelector('#screen-masterlist.active') && !document.querySelector('#movement-inventory-search')");
-      await fill('#global-search-input', 'TOOL-001');
-      await wait("window.mcpaSearch==='TOOL-001'");
+      await fill('#global-search-input', 'TOOL-002');
+      await wait("window.mcpaSearch==='TOOL-002'");
       await evaluate('window.__restoreSearchTestSnapshot()');
-      await wait("document.querySelector('#movement-inventory-search')?.value==='TOOL-001' && document.querySelector('#overview-results [data-tool=\"TOOL-001\"]')");
-      assert.deepEqual(await evaluate("[...document.querySelectorAll('#overview-results [data-tool]')].map(button=>button.dataset.tool)"), ['TOOL-001'], 'The latest query filters results after a pending initial inventory load');
+      await wait("document.querySelector('#movement-inventory-search')?.value==='TOOL-002' && document.querySelector('#overview-results [data-tool=\"TOOL-002\"]')");
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('#overview-results [data-tool]')].map(button=>button.dataset.tool)"), ['TOOL-002'], 'The latest query filters results after a pending initial inventory load');
     } finally {
       await evaluate('window.__restoreSearchTestSnapshot?.();delete window.__restoreSearchTestSnapshot;delete window.__searchTestSnapshotStarted');
     }
-    await evaluate("document.querySelector('#overview-results [data-tool=\"TOOL-001\"]').scrollIntoView({block:'center',inline:'center'})");
-    await touch('#overview-results [data-tool="TOOL-001"]');
-    await wait("document.querySelector('dialog[open]')?.textContent.includes('TOOL-001')");
+    await evaluate("document.querySelector('#overview-results [data-tool=\"TOOL-002\"]').scrollIntoView({block:'center',inline:'center'})");
+    await touch('#overview-results [data-tool="TOOL-002"]');
+    await wait("document.querySelector('dialog[open]')?.textContent.includes('TOOL-002')");
     assert.equal(await panelOpen(), false, 'Engineer Details opens the existing read-only dialog and dismisses search');
     assert.ok(await evaluate("(()=>{const d=document.querySelector('dialog[open]'),r=d.getBoundingClientRect();return d.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2))})()"), 'Native detail dialog remains above the header');
     await click('dialog [data-close]');

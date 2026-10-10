@@ -5,6 +5,7 @@
   let loading = false, reloadPending = false;
   const viewData = () => ({...store().getState(), ...(inventory || {})});
   const store = () => window.MovementStore;
+  const personal = () => screen === 'masterlist' && window.MCPAPermissions.operational(store().getContext().role);
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   const when = value => value ? new Date(value).toLocaleString('en-PH', {dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila'}) : '—';
   const badge = value => `<span class="badge badge-${['available', 'inuse', 'repair', 'underrepair', 'missing'].includes(value) ? value : 'pending'}">${escape(typeof STATUS_LABEL !== 'undefined' ? STATUS_LABEL[value] || value : value)}</span>`;
@@ -18,6 +19,7 @@
     return `<div class="page-head"><div><h1 class="display">${escape(title)}</h1><p class="sub">${escape(sub)}</p></div>${store().mode === 'demo' ? '<span class="workspace-source">Offline demo</span>' : ''}</div><p class="sync-warning" data-sync-warning role="status"></p><div id="overview-feedback" role="status"></div>`;
   }
   function toolsTable(tools) {
+    if (!tools.length && personal() && !(viewData().tools||[]).length) return '<div class="empty-state"><h3>No equipment is currently assigned to you.</h3><p>Confirmed receipts will appear here. Available tools can be requested in Requests.</p></div>';
     if (!tools.length) return '<div class="empty-state"><h3>No tools to show</h3><p>Request an available tool, or change the filters.</p></div>';
     return `<div class="table-wrap"><table><thead><tr><th>Equipment</th><th>Project</th><th>Holder</th><th>Condition / availability</th><th>Quantity</th><th>Actions</th></tr></thead><tbody>${tools.map(t => `<tr><td><div class="equipment-identity">${window.EquipmentVisual.thumbnail(t)}<div><span class="tool-id-chip">${escape(t.id)}</span><div class="cell-name">${escape(t.name)}</div><div class="cell-sub">${escape(t.brand)}</div></div></div></td><td>${escape(t.site || 'Unassigned')}</td><td>${escape(t.holder || '—')}</td><td>${badge(t.status)}<div class="cell-sub">${escape(window.EquipmentTracking.availability(t))}</div></td><td>${escape(t.qty)}</td><td><button class="btn btn-secondary btn-sm" data-tool="${escape(t.id)}">Details</button></td></tr>`).join('')}</tbody></table></div>`;
   }
@@ -45,7 +47,7 @@
     contextBar();
     if (screen === 'dashboard') root.innerHTML = dashboard(data,user);
     else if (screen === 'activity') root.innerHTML = `${header('Activity logs', 'A history of saved movement actions and the people who recorded them.')}<div class="overview-filters"><div class="field"><label for="movement-activity-search">Search activity</label><input id="movement-activity-search" data-search value="${escape(query)}" placeholder="Reference, tool ID, person, action…"></div><button class="btn btn-secondary" data-export>Export CSV</button></div><div class="card" id="overview-results">${activityTable(visibleActivity(data))}</div>`;
-    else root.innerHTML = `${header('Equipment Tracking', 'Current location, condition, and custody. Open a tool to see its recorded history.')}<div class="overview-filters"><div class="field"><label for="movement-inventory-search">Search tools</label><input id="movement-inventory-search" data-search value="${escape(query)}" placeholder="Tool ID, name, brand, holder…"></div><div class="field"><label for="overview-status">Status</label><select id="overview-status"><option value="">All statuses</option>${Object.entries(STATUS_LABEL).map(([key,label]) => `<option value="${key}" ${status === key ? 'selected' : ''}>${label}</option>`).join('')}</select></div><div class="field"><label for="overview-site">Project</label><select id="overview-site"><option value="">All projects</option>${data.sites.map(s => `<option ${site === s.name ? 'selected' : ''}>${escape(s.name)}</option>`).join('')}</select></div><label class="checkbox-row"><input type="checkbox" id="overview-mine" ${mine ? 'checked' : ''}>My custody only</label></div><div class="card" id="overview-results"></div>`;
+    else root.innerHTML = `${header('Equipment Tracking', personal() ? 'Equipment in your confirmed custody. Open a tool to see its recorded history.' : 'Current location, condition, and custody. Open a tool to see its recorded history.')}<div class="overview-filters"><div class="field"><label for="movement-inventory-search">Search tools</label><input id="movement-inventory-search" data-search value="${escape(query)}" placeholder="Tool ID, name, brand, holder…"></div><div class="field"><label for="overview-status">Status</label><select id="overview-status"><option value="">All statuses</option>${Object.entries(STATUS_LABEL).map(([key,label]) => `<option value="${key}" ${status === key ? 'selected' : ''}>${label}</option>`).join('')}</select></div><div class="field"><label for="overview-site">Project</label><select id="overview-site"><option value="">All projects</option>${data.sites.map(s => `<option ${site === s.name ? 'selected' : ''}>${escape(s.name)}</option>`).join('')}</select></div>${personal() ? '' : `<label class="checkbox-row"><input type="checkbox" id="overview-mine" ${mine ? 'checked' : ''}>My custody only</label>`}</div><div class="card" id="overview-results"></div>`;
     if (screen === 'masterlist') filter();
     if (focusId) {
       const replacement = document.getElementById(focusId);
@@ -87,6 +89,15 @@
     loading = true;
     if (!automatic) owner.innerHTML = '<div class="card card-pad" role="status">Loading saved movement records…</div>';
     try {
+      if(personal() && sourceMode==='live'){
+        const {data,error}=await window.EquipmentTracking.client().rpc('mcpa_personal_equipment_snapshot');
+        if(error)throw new Error(['PGRST202','42883'].includes(error.code)?'Personal equipment access is not installed yet. Contact your administrator.':'Your equipment could not load. Please retry.');
+        if(!Array.isArray(data?.tools))throw new Error('Invalid personal equipment response.');
+        if(root!==owner||!owner.isConnected||store().mode!==sourceMode)return;
+        inventory=data;
+        if(!owner.querySelector('dialog[open]'))render();
+        return;
+      }
       let movementError;
       const [, latest] = await Promise.all([
         store().refresh().catch(error => { movementError = error; }),
@@ -122,7 +133,7 @@
   }
   async function mount(id) {
     const target = document.getElementById('screen-' + id); if (!target) return;
-    dispose(); screen = id; query = id === 'masterlist' ? window.mcpaSearch || '' : ''; status = ''; mine = false; site = ''; dashboardCondition = '';
+    dispose(); screen = id; query = id === 'masterlist' ? window.mcpaSearch || '' : ''; status = ''; mine = personal(); site = ''; dashboardCondition = '';
     root = target;
     root.classList.add('movement-overview'); controller = new AbortController(); const signal = controller.signal;
     root.addEventListener('click', async event => {

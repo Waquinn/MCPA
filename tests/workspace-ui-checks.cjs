@@ -44,8 +44,9 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
  const assertCleanup=async()=>{
   assert.ok(await evaluate("!document.documentElement.classList.contains('theme-transition') && ['--theme-x','--theme-y','--theme-radius'].every(name=>!document.documentElement.style.getPropertyValue(name))"),'Temporary reveal styles are removed');
  };
- for(const width of [375,393,430,768,1024,1440]){
-  await command('Emulation.setDeviceMetricsOverride',{width,height:852,deviceScaleFactor:1,mobile:width<=768});
+ for(const [width,height] of [[375,852],[393,852],[430,852],[768,852],[1024,852],[1366,768],[1440,900],[1600,900],[1920,1080],[2560,1440]]){
+  await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<=768});
+  await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
   const beforeNavigation=await evaluate('window.__transitionCount');
   await go('request');await wait("document.querySelector('[data-list]')");
   assert.equal(await evaluate('window.__transitionCount'),beforeNavigation,'Navigation does not animate theme');
@@ -55,7 +56,9 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
    await evaluate('window.__revealInspection');
    const origin=await evaluate('window.__transitionOrigin');
    assert.equal(origin.x,rect.x);assert.equal(origin.y,rect.y);
-   assert.ok(origin.radius>=Math.hypot(Math.max(rect.x,width-rect.x),Math.max(rect.y,852-rect.y))-.01);
+   assert.ok(origin.radius>=Math.hypot(Math.max(rect.x,width-rect.x),Math.max(rect.y,height-rect.y))-.01);
+   assert.equal(await evaluate("document.querySelectorAll('.theme-toggle').length"),1,'One shared responsive theme control');
+   if(width>900)assert.notEqual(await evaluate("getComputedStyle(document.querySelector('#theme-label')).display"),'none','Desktop keeps the theme label');
    const animation=await evaluate("(()=>{const style=getComputedStyle(document.documentElement,'::view-transition-new(root)');return {name:style.animationName,duration:window.__revealAnimation?.effect.getTiming().duration,easing:style.animationTimingFunction,state:window.__revealAnimation?.playState}})()");
    assert.deepEqual(animation,{name:'theme-reveal',duration:550,easing:'cubic-bezier(0.76, 0, 0.24, 1)',state:'paused'});
    await assertColors(true);
@@ -63,7 +66,7 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
    await evaluate("document.querySelector('.theme-toggle').click();document.querySelector('.theme-toggle').click()");
    assert.equal(await evaluate('window.__transitionCount'),beforeRepeatedClicks,'Repeated clicks do not overlap reveals');
    await evaluate('window.__revealAnimation.currentTime=220');
-   if([393,1440].includes(width))await shot('theme-reveal-'+(width===393?'mobile':'desktop')+'-'+(dark?'dark':'light'),true);
+   if([393,1440,1920].includes(width))await shot('theme-reveal-'+width+'-'+(dark?'dark':'light'),true);
    await evaluate('window.__revealAnimation.play();window.__lastTransition.finished');
    await wait("!document.documentElement.classList.contains('theme-transition')");
    await assertCleanup();
@@ -116,7 +119,11 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
  await go('request');await wait("document.querySelector('[data-list]')");
  // Keyboard activation must use the same sticky control and viewport origin,
  // preserve scroll/focus, and leave the control exposed to pointer input.
- await command('Emulation.setDeviceMetricsOverride',{width:393,height:852,deviceScaleFactor:1,mobile:true});
+ for(const [width,height] of [[393,852],[1440,900],[1920,1080]]){
+ await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<=768});
+ await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+ // Ensure desktop's otherwise short empty fixture can actually scroll.
+ await evaluate("(()=>{const spacer=document.createElement('div');spacer.id='theme-scroll-fixture';spacer.style.height='100vh';document.querySelector('#content').append(spacer)})()");
  await evaluate("window.scrollTo(0,document.documentElement.scrollHeight);document.querySelector('.theme-toggle').focus({preventScroll:true})");
  const scrolled=await evaluate('scrollY');assert.ok(scrolled>0,'Exercise a genuinely scrolled page');
  for(const dark of [true,false]){
@@ -132,6 +139,8 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
   assert.equal(await evaluate("document.activeElement.matches('.theme-toggle')"),true,'Keyboard focus stays on the control');
   assert.equal(await evaluate("document.body.classList.contains('dark')"),dark);
   assert.ok(await evaluate(`Boolean(document.elementFromPoint(${center.x},${center.y})?.closest('.theme-toggle'))`),'No stale transition layer blocks the control');
+ }
+ await evaluate("document.querySelector('#theme-scroll-fixture').remove();window.scrollTo(0,0)");
  }
  // Interrupt a held native reveal, then prove the next toggle remains usable.
  for(const interruption of ['motion','resize','skip','complete']){
@@ -189,7 +198,7 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
    await assertCleanup();
   }
  }finally{await command('Page.removeScriptToEvaluateOnNewDocument',{identifier});}
- console.log('PASS Header at 375/393/430/768/1024/1440: both real theme reveals, origin/radius, final colors, 550ms easing, rapid clicks, cleanup, scrolled keyboard activation/focus, motion/resize/skipped interruption recovery, both saved preferences, unsupported/throw/rejected-update fallback, reduced motion, search/filtering, close/Escape, account and activity access');
+ console.log('PASS Header at 375/393/430/768/1024/1366/1440/1600/1920/2560: both real theme reveals, origin/radius, final colors, 550ms easing, rapid clicks, cleanup, scrolled keyboard activation/focus, motion/resize/skipped interruption recovery, both saved preferences, unsupported/throw/rejected-update fallback, reduced motion, search/filtering, close/Escape, account and activity access');
 };
 
 exports.sync=async({fixture,evaluate,command,wait,fill,go,login,logout,calls})=>{

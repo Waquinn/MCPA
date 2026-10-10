@@ -133,6 +133,7 @@ function loadModuleScript(mod, src, callback, failed){
    ============================================================ */
 function enterApp(event){ return window.MCPAAuth?.signIn(event); }
 function resetApplication(){
+  window.MCPADrawer?.close(false);
   moduleAbort?.abort(); pendingModule=null; currentModule=null; clearTimeout(searchTimer);
   disposeLoadedModule(); closeMobileSearch(false);
   window.mcpaSearch='';
@@ -205,14 +206,21 @@ function globalSearch(q){
 }
 
 const compactSearch = matchMedia('(max-width: 900px)');
+// A breakpoint can hide the focused close button before the media-change
+// callback runs. Remember ownership so focus moves to the visible search field.
+let searchHadFocus = false;
+document.addEventListener('focusin',event=>{searchHadFocus=Boolean(event.target.closest?.('#global-search-panel,#mobile-search-toggle'));});
+document.addEventListener('pointerdown',event=>{if(!event.target.closest('#global-search-panel,#mobile-search-toggle'))searchHadFocus=false;});
 function closeMobileSearch(restoreFocus = true, cancelPending = true){
   const panel = document.getElementById('global-search-panel'), button = document.getElementById('mobile-search-toggle');
   const wasOpen = panel?.classList.contains('is-open');
   panel?.classList.remove('is-open'); button?.setAttribute('aria-expanded','false');
   if(cancelPending) clearTimeout(searchTimer);
+  if(!restoreFocus)searchHadFocus=false;
   if(wasOpen && restoreFocus && compactSearch.matches) button?.focus();
 }
 function openMobileSearch(){
+  window.MCPADrawer?.close(false);
   if(!window.MCPAAuth?.canRoute('masterlist')) return;
   const panel = document.getElementById('global-search-panel');
   if(panel.classList.contains('is-open')) { closeMobileSearch(); return; }
@@ -224,7 +232,7 @@ function openMobileSearch(){
 function updateSearchLayout(){
   const input = document.getElementById('global-search-input'), button = document.getElementById('mobile-search-toggle');
   const focused = document.activeElement;
-  const restore = focused === input || focused === button || Boolean(focused?.closest('.mobile-search-close'));
+  const restore = searchHadFocus || focused === input || focused === button || Boolean(focused?.closest('.mobile-search-close'));
   closeMobileSearch(false);
   input.placeholder = compactSearch.matches ? 'Search equipment or ID…' : 'Search tool ID, equipment, serial, project, or holder…';
   if(restore) (compactSearch.matches ? button : input).focus();

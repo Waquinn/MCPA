@@ -42,9 +42,9 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
       await key('Escape','Escape',27);
     }
     await evaluate(`document.querySelector(${quote(selector)}).focus()`);
-    await key('End','End',35); await key('Enter','Enter',13); await key('Escape','Escape',27);
+    await key('End','End',35); await key('Enter','Enter',13); if(!await evaluate("document.querySelector('dialog[data-detail][open]')!==null"))await key('Escape','Escape',27);
     assert.equal(await evaluate(`document.querySelector(${quote(selector)}).value`),control.options.at(-1).value,selector+' retains the keyboard selection at '+width);
-    if(selector==='#mv-receiver') assert.ok(control.options.some(option=>option.text.length>70 && option.text.includes(fixture.actors.pau.id)),'Long recipient labels preserve stable identities');
+    if(selector==='#mv-receiver'){assert.ok(control.options.some(option=>option.value===fixture.actors.pau.id),'Stable recipient IDs remain values');assert.ok(control.options.every(option=>!/[0-9a-f]{8}-[0-9a-f]{4}-/.test(option.text)),'Recipient labels omit UUIDs');}
   };
 
   // Inspect equivalent engineering controls while the original held tools are
@@ -60,6 +60,7 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
       ['missing',['#mv-tool']]
     ]) {
       await go(kind); await wait("document.querySelector('[data-form=create]')");
+      if(kind==='transfer')await click('[data-action=manual-receiver]');
       if(kind==='return') await click('[name="toolIds"][value="TOOL-003"]');
       await settle();
       for(const selector of selectors) await checkSelect(selector,width);
@@ -68,7 +69,8 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
   await command('Emulation.setTouchEmulationEnabled',{enabled:false});
   console.log('PASS Equivalent native form selects, long recipient labels, touch targets, keyboard selection and viewport fit at 375/390/430/768/1024/1440; no forms submitted');
 
-  const transfer = await action('sky','createTransfer',{toolIds:['TOOL-002'],destination:'Casa Buena',receiverId:fixture.actors.pau.id,notes:'Isolated notification targeting transfer'});
+  const receiverSite=randomUUID();await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'Notification receiving project','Fixture',$2,$3)",[receiverSite,fixture.actors.pau.name,fixture.actors.pau.id]);
+  const transfer = await action('sky','createTransfer',{toolIds:['TOOL-002'],destination:'Notification receiving project',receiverId:fixture.actors.pau.id,notes:'Isolated notification targeting transfer'});
   const returned = await action('sky','createReturn',{toolIds:['TOOL-003'],destination:'Main Warehouse',conditions:[{toolId:'TOOL-003',condition:'good'}],notes:'Isolated notification targeting return'});
   const repair = await action('sky','reportRepair',{toolId:'TOOL-004',notes:'Isolated notification targeting repair'});
   await action('admin','startRepair',{id:repair.id});
@@ -92,7 +94,7 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
       }
       await wait(opened(kind,record.id));
       assert.equal(await evaluate('location.hash'),hash(kind,record.id));
-      assert.ok(await evaluate(`document.querySelector('.mv-selected-row')?.textContent.includes(${quote(record.id)}) && !document.querySelector('dialog[open]') && !document.querySelector('#sidebar.open')`),'Target opens and overlays are closed');
+      assert.ok(await evaluate(`document.querySelector('.mv-selected-row')?.textContent.includes(${quote(record.id)}) && document.querySelector('dialog[data-detail][open]') && !document.querySelector('#sidebar.open')`),'Target opens and overlays are closed');
     }
   }
   for(const width of [375,390,430,768,1024,1440]) {
@@ -131,7 +133,7 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
     }
     await evaluate("showScreen('request?record=missing-local-target')");
     await wait("document.querySelector('[data-notice]')?.textContent.includes('unavailable')");
-    assert.ok(await evaluate("document.querySelector('[data-detail]').hidden"));
+    assert.ok(await evaluate("!document.querySelector('[data-detail]').open"));
     await open('request',request.id);
     assert.equal(await evaluate("document.querySelector('[data-notice]').textContent"),'','Successful targeting clears stale unavailable notices');
 
@@ -151,7 +153,7 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
     await evaluate('__releaseTargetSnapshot()');
     await evaluate('MovementStore.refresh()'); await settle();
     assert.equal(await evaluate('location.hash'),'#request');
-    assert.ok(await evaluate("document.querySelector('[data-detail]').hidden"),'Plain Requests navigation cancels the pending notification target');
+    assert.ok(await evaluate("!document.querySelector('[data-detail]').open"),'Plain Requests navigation cancels the pending notification target');
 
     await go('activity'); await wait("document.querySelector('#overview-results')");
     await evaluate(`window.__failReads=true;showScreen(${quote(latestTarget)})`);
@@ -164,14 +166,14 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
     await wait("document.querySelector('#screen-request.active [data-list]')");
     await evaluate('MovementStore.refresh()'); await settle();
     assert.equal(await evaluate('location.hash'),'#request');
-    assert.ok(await evaluate("document.querySelector('[data-detail]').hidden"),'A cancelled manual Retry cannot reopen an obsolete target');
+    assert.ok(await evaluate("!document.querySelector('[data-detail]').open"),'A cancelled manual Retry cannot reopen an obsolete target');
   } finally {
     await evaluate("window.__failReads=false;window.__failRequestModule=false;window.__holdTargetSnapshot=false;window.__releaseTargetSnapshot?.();window.fetch=window.__targetingFetch;delete window.__targetingFetch;");
   }
   await logout(); await login('architect'); await wait("MCPAAuth.profile?.role==='architect'");
   await evaluate(`showScreen(${quote(route('request',request.id))})`);
   await wait("document.querySelector('[data-notice]')?.textContent.includes('unavailable')");
-  assert.ok(await evaluate("document.querySelector('[data-detail]').hidden"),'Inaccessible targets expose no unrelated record details');
+  assert.ok(await evaluate("!document.querySelector('[data-detail]').open"),'Inaccessible targets expose no unrelated record details');
   await logout(); await login('admin'); await wait("MCPAAuth.profile?.role==='admin'");
   await open('request',request.id);
   assert.ok(await evaluate("document.querySelector('[data-detail]').textContent.includes('Pending review')"));

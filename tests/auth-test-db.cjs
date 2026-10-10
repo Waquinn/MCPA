@@ -3,7 +3,7 @@ const path=require('node:path');
 const {randomUUID}=require('node:crypto');
 const {database}=require('./movement-test-db.cjs');
 const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610040001_authenticated_access.sql'),'utf8');
-async function authDatabase({accountManagement=true}={}){
+async function authDatabase({accountManagement=true,engineerPortal=false}={}){
   const fixture=await database(),{db,actors,sites}=fixture;
   await db.exec(`create role service_role nologin; grant usage on schema public to service_role;
     create schema auth;create table auth.users(id uuid primary key,email text,invited_at timestamptz,email_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}'::jsonb,raw_app_meta_data jsonb default '{}'::jsonb);
@@ -22,6 +22,7 @@ async function authDatabase({accountManagement=true}={}){
   for (const file of accountManagement ? ['202610060001_account_management.sql','202610060002_recipient_identity.sql','202610060003_development_accounts.sql'] : []) {
     await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations',file),'utf8'));
   }
+  if(engineerPortal)await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610100001_engineer_portal.sql'),'utf8'));
   let queue=Promise.resolve();
   function query(actor,sql,params=[]){
     const run=async()=>{
@@ -32,7 +33,7 @@ async function authDatabase({accountManagement=true}={}){
     const result=queue.then(run);queue=result.catch(()=>{});return result;
   }
   const rpc=async(actor,name,args={})=>{
-    const allowed={mcpa_my_profile:[],mcpa_movement_snapshot:[],mcpa_accounts:[],mcpa_movement_action:['p_action','p_payload','p_operation_id'],mcpa_save_account:['p_id','p_name','p_role','p_status','p_auth_user_id']};
+    const allowed={mcpa_my_profile:[],mcpa_movement_snapshot:[],mcpa_personal_equipment_snapshot:[],mcpa_project_snapshot:[],mcpa_create_receiving_qr:['p_site_id'],mcpa_resolve_receiving_qr:['p_token'],mcpa_revoke_receiving_qr:['p_token'],mcpa_accounts:[],mcpa_movement_action:['p_action','p_payload','p_operation_id'],mcpa_save_account:['p_id','p_name','p_role','p_status','p_auth_user_id']};
     if(!allowed[name])throw new Error('Unknown test RPC');
     const keys=allowed[name];const result=await query(actor,`select public.${name}(${keys.map((_,i)=>'$'+(i+1)).join(',')}) as value`,keys.map(key=>args[key]??null));return result.rows[0].value;
   };

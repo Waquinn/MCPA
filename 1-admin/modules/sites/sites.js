@@ -7,8 +7,9 @@
   const dialog = root.querySelector('#sites-dialog');
   const demo = window.MovementStore?.mode === 'demo';
   const context = () => window.MovementStore?.getContext() || {role:null,name:'',id:null};
-  const isEngineer = () => context().role !== 'admin';
-  const readOnly = demo || isEngineer();
+  const isEngineer = () => window.MCPAPermissions.operational(context().role);
+  const readOnly = demo || context().role !== 'admin';
+  if(isEngineer())root.querySelector('#screen-sites .sub').textContent='Your assigned projects and their recorded accountability.';
   const siteStatuses = {
     active: ['Active', 'inuse'], discrepancy: ['Discrepancy', 'discrepancy'],
     verified: ['Verified', 'verified'], turnover: ['Turnover', 'pending'],
@@ -51,8 +52,8 @@
   function currentSite() { return state.sites.find(site => site.id === state.selectedId); }
   function assignedToMe(site) {
     const user = context();
-    if (site.assigned_engineer_id) return project.assigned_engineer_id === user.id;
-    return Boolean(user.name) && site.assigned_engineer === user.name;
+    if (site.assigned_engineer_id) return site.assigned_engineer_id === user.id;
+    return demo && Boolean(user.name) && site.assigned_engineer === user.name;
   }
   function filteredSites() {
     return state.sites.filter(site => (state.includeArchived || (demo ? !site.archived_at : site.is_active === true))
@@ -76,7 +77,8 @@
   }
 
   function databaseError(error) {
-    if (['PGRST205', '42703'].includes(error.code)) return 'Projects is not set up in the database yet. An administrator must apply the Projects setup, then retry.';
+    if (['PGRST202', '42883'].includes(error.code)) return 'Your project access is not configured yet. Contact your administrator.';
+    if (['PGRST205', '42703'].includes(error.code)) return 'Projects is not set up in the database yet. Contact your administrator, then retry.';
     if (error.code === '23505') return 'A project with this name already exists. Please use a different name.';
     if (['23503', '23001'].includes(error.code)) return 'This project has linked records. Preserve its equipment and history by archiving it.';
     if (error.code === '42501') return 'Project changes are blocked by database permissions. Ask your administrator to apply the Projects access update, then try again. Your entries have been kept.';
@@ -100,6 +102,13 @@
   // All database writes concern site metadata. Equipment and movement are read-only here.
   const repository = {
     async load() {
+      if (!demo && window.MCPAPermissions.operational(context().role)) {
+        const {data:snapshot,error}=await client().rpc('mcpa_project_snapshot');
+        if(error)throw error;
+        if(!Array.isArray(snapshot?.sites)||!Array.isArray(snapshot?.tools))throw new Error('Invalid project response. Please retry.');
+        state.history=snapshot.history||[];
+        return {sites:snapshot.sites,profiles:[],equipment:snapshot.tools.map(tool=>({...tool,id:tool.dbId,asset_id:tool.id,quantity:tool.qty,category:tool.cat,site_id:tool.siteId,current_holder_id:tool.holderId,holder:tool.holder||'Unassigned'}))};
+      }
       if (demo || !window.MCPAPermissions.fullInventory(context().role)) {
         await window.MovementStore.initialize();
         const snapshot = window.MovementStore.getState();
@@ -117,7 +126,7 @@
       ]);
       const holders = new Map(profiles.map(profile => [profile.id, profile.name]));
       return {
-        sites: sites.sort((a, b) => a.name.localeCompare(b.name)),
+        sites: sites.map(site=>({...site,assigned_engineer:site.assigned_engineer_id?holders.get(site.assigned_engineer_id)||'Accountable profile unavailable':site.assigned_engineer})).sort((a, b) => a.name.localeCompare(b.name)),
         profiles: profiles.filter(profile => !profile.role || /engineer|architect/i.test(profile.role)),
         equipment: equipment.map(item => {
           const status = String(item.status || '').toLowerCase().replace(/[\s_-]/g, '');
@@ -138,6 +147,11 @@
     },
     async history(siteId) {
       if (demo) return [];
+      if (window.MCPAPermissions.operational(context().role)) {
+        const {data,error}=await client().rpc('mcpa_project_snapshot');
+        if(error)throw error;
+        return (data.history||[]).filter(item=>item.project_id===siteId);
+      }
       const rows = [];
       for (let offset = 0; ; offset += 500) {
         const { data, count, error } = await client().from('project_history').select('*', {count: 'exact'}).eq('project_id', siteId).order('changed_at', {ascending: false}).range(offset, offset + 499);
@@ -184,6 +198,7 @@
   function syncControls() {
     root.querySelectorAll('[data-action="refresh"]').forEach(button => { button.disabled = state.loading || state.saving; });
     root.querySelectorAll('[data-action="add-site"], [data-action="edit-site"], [data-action="archive-site"]').forEach(button => {
+      if(readOnly){button.remove();return;}
       button.disabled = readOnly || isEngineer() || !state.ready || state.loading || state.saving;
       button.hidden = readOnly || isEngineer();
     });
@@ -202,7 +217,6 @@
       state.sites = result.sites;
       state.equipment = result.equipment;
       state.profiles = result.profiles;
-      state.ready = true;
       if (firstLoad) state.selectedId = filteredSites()[0]?.id || null;
       else if (state.selectedId && !currentSite()) {
         state.selectedId = null;
@@ -210,6 +224,7 @@
         feedback('This project is no longer available. The project list has been updated.');
       }
       render();
+      state.ready = true;
     } catch (error) {
       if (!root.isConnected) return;
       feedback(databaseError(error), true);
@@ -227,8 +242,8 @@
   function render() {
     const projects = filteredSites();
     root.querySelector('#projects-count').textContent = `${projects.length} of ${state.sites.length} projects · ${new Set(state.sites.filter(site => !site.archived_at).map(site => site.assigned_engineer_id || site.assigned_engineer).filter(value => value && value !== 'Unassigned')).size} assigned engineers / architects`;
-    root.querySelector('#projects-scope').value = state.scope;
-    root.querySelector('#projects-scope').hidden = !isEngineer();
+    const scope=root.querySelector('#projects-scope');
+    if(scope){scope.value=state.scope;scope.closest('label').hidden=readOnly;}
     root.querySelector('#projects-mode-note').textContent = demo ? 'Demo projects are read-only.' : 'Projects and equipment update automatically. Admins manage project details and assignments.';
     root.querySelector('#sites-list').innerHTML = projects.length ? projects.map(site => {
       const items = visibleEquipment(site);
@@ -241,7 +256,7 @@
         <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.phase || 'Phase not specified')}</span><span class="sites-muted">${escape(site.location)}</span></span>${site.is_active === false ? '<span class="badge badge-disposed">Archived</span>' : badge(site.status, siteStatuses)}</span>
         <span class="site-stat-row">${stats.filter(([, number]) => number > 0).map(([label, number]) => `<span class="site-stat"><span class="n">${number}</span><span class="l">${label}</span></span>`).join('')}</span>
       </button>`;
-    }).join('') : `<div class="card empty-state sites-full"><p class="t">${state.scope === 'mine' ? 'No projects assigned to you' : 'No matching projects'}</p><p class="d">${state.scope === 'mine' ? 'An Admin can assign your profile to one or more projects. Choose All projects to view other projects.' : 'Adjust the filters or add a project to track its equipment.'}</p><button type="button" class="btn btn-secondary btn-sm" data-action="add-site">+ Add Project</button></div>`;
+    }).join('') : `<div class="card empty-state sites-full"><p class="t">${state.scope === 'mine' ? 'No projects assigned to you' : 'No matching projects'}</p><p class="d">${state.scope === 'mine' ? 'An Admin can assign your profile to a project.' : 'Adjust the filters or add a project to track its equipment.'}</p><button type="button" class="btn btn-secondary btn-sm" data-action="add-site">+ Add Project</button></div>`;
     renderDetail();
     syncControls();
   }
@@ -259,7 +274,7 @@
     const container = root.querySelector('#site-detail-content');
     const site = currentSite();
     if (!site) {
-      container.innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Projects</button><div class="card empty-state"><h1 class="t" id="site-heading">No project selected</h1><p class="d">Add a project or select one from All Projects.</p></div>';
+      container.innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Projects</button><div class="card empty-state"><h1 class="t" id="site-heading">No project selected</h1><p class="d">Select a project from your authorized project list.</p></div>';
       return;
     }
     const items = visibleEquipment(site);
@@ -511,7 +526,7 @@
   });
   root.addEventListener('change', event => {
     if (event.target.id === 'sites-tool-status') filterTools();
-    if (event.target.id === 'projects-scope') { state.scope = event.target.value; render(); }
+    if (event.target.id === 'projects-scope' && !readOnly) { state.scope = event.target.value; render(); }
     if (event.target.id === 'projects-archived') { state.includeArchived = event.target.checked; render(); }
   });
   dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });

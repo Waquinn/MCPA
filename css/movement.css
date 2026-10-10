@@ -47,7 +47,31 @@
 .mv-records .cell-sub { line-height: 1.6; margin-top: 4px; }
 .mv-records .badge { font-size: 9px; padding: 5px 7px; }
 .mv-records .mv-selected-row { background: var(--warning-bg); }
-.mv-detail { margin-top: 20px; scroll-margin-top: 16px; }
+.mv-detail,.mv-scanner { margin:auto; width:min(760px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); padding:0; border:1px solid var(--line); border-radius:12px; color:var(--black); background:var(--white); overflow:auto; overscroll-behavior:contain; }
+.mv-detail::backdrop,.mv-scanner::backdrop{background:var(--overlay,rgba(0,0,0,.5))}
+.mv-detail [data-detail-body]{padding:0 22px 22px}
+.mv-detail-heading{position:sticky;top:0;background:var(--white);z-index:1;padding:18px 0 12px}
+.mv-detail-heading .btn,.mv-scanner .btn{min-height:44px}
+.mv-scanner{padding:20px}
+html.movement-modal-open,html.movement-modal-open body{overflow:hidden}
+.mv-tabs{display:flex;gap:8px;margin-bottom:22px;overflow-x:auto;padding:3px}
+.mv-tabs [role=tab]{min-height:44px;white-space:nowrap}
+.mv-tabs [aria-selected=true]{background:var(--brand-subtle);border-color:var(--gold-dim);color:var(--gold-dim)}
+[data-transfer-panel=send]{max-width:820px}
+.mv-receive-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}
+.mv-receive-grid .mv-receive{margin-bottom:0}
+.mv-receiver-assist{margin-bottom:18px}
+.mv-receiver-assist>.btn,.mv-receive .btn,[data-receiving-projects] .btn,[data-own-qr] .btn{min-height:44px}
+.mv-incoming-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.mv-qr-image{margin:16px 0;max-width:100%;overflow:hidden}
+.mv-qr-image img,.mv-qr-image canvas{border:10px solid #fff;box-sizing:content-box;max-width:calc(100% - 20px)}
+@media(max-width:768px){
+ .mv-receive-grid{grid-template-columns:minmax(0,1fr)}
+ .mv-tabs{gap:5px}.mv-tabs .btn{flex:1;padding:8px 9px;font-size:12px}
+ .mv-detail,.mv-scanner{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding-bottom:env(safe-area-inset-bottom)}
+ .mv-detail [data-detail-body]{padding:0 14px 20px}
+ .mv-detail input,.mv-detail select,.mv-detail textarea{font-size:16px}
+}
 .mv-detail .kv { gap: 18px; align-items: flex-start; line-height: 1.5; }
 .mv-detail .kv .v { max-width: 70%; overflow-wrap: anywhere; white-space: pre-wrap; }
 .mv-detail .kv .v small { display: block; color: var(--gray); font-weight: 400; margin-top: 3px; }
