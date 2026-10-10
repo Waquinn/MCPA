@@ -35,6 +35,8 @@ function disposeLoadedModule(){
   window.MCPAProjects?.dispose();
   window.AdminEquipment?.dispose();
   window.MCPAAccounts?.dispose();
+  window.MCPAPurchases?.dispose();
+  window.MCPAReports?.dispose();
 }
 
 /* Loads (or reuses, if already the active module) the module that
@@ -133,6 +135,7 @@ function loadModuleScript(mod, src, callback, failed){
    ============================================================ */
 function enterApp(event){ return window.MCPAAuth?.signIn(event); }
 function resetApplication(){
+  window.MCPAMonitoring?.dispose();
   window.MCPADrawer?.close(false);
   moduleAbort?.abort(); pendingModule=null; currentModule=null; clearTimeout(searchTimer);
   disposeLoadedModule(); closeMobileSearch(false);
@@ -147,21 +150,33 @@ function resetApplication(){
 let themeTransitionRunning = false;
 function applyTheme(dark, persist = true){
   document.body.classList.toggle('dark', dark);
-  document.getElementById('theme-label').textContent = dark ? 'Light mode' : 'Night mode';
+  const label = document.getElementById('theme-label');
+  if (label) label.textContent = dark ? 'Light mode' : 'Night mode';
   const button = document.querySelector('.theme-toggle');
-  button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to night mode');
-  button.title = button.getAttribute('aria-label');
-  document.getElementById('theme-icon').innerHTML = ICONS[dark ? 'sun' : 'moon'];
+  if (button) {
+    button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to night mode');
+    button.setAttribute('aria-pressed', String(dark));
+    button.title = button.getAttribute('aria-label');
+  }
+  const icon = document.getElementById('theme-icon');
+  if (icon) icon.innerHTML = ICONS[dark ? 'sun' : 'moon'];
+  document.querySelectorAll('#account-theme,[data-account-theme]').forEach(control => {
+    control.textContent = dark ? 'Switch to light mode' : 'Switch to night mode';
+    control.setAttribute('aria-pressed', String(dark));
+  });
   if(persist) try { localStorage.setItem('mcpa.theme', dark ? 'dark' : 'light'); } catch (_) {}
 }
 async function toggleTheme(button = document.querySelector('.theme-toggle')){
   if(themeTransitionRunning) return;
   const dark = !document.body.classList.contains('dark');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  // Accept event handlers as well as element callers, including older modules.
+  button = button?.currentTarget || button;
+  if (typeof button?.getBoundingClientRect !== 'function') button = document.querySelector('.theme-toggle');
   if(typeof document.startViewTransition !== 'function' || reducedMotion.matches){ applyTheme(dark); return; }
 
   // Viewport coordinates stay correct when the page is scrolled.
-  const rect = button.getBoundingClientRect();
+  const rect = typeof button?.getBoundingClientRect === 'function' ? button.getBoundingClientRect() : {left:innerWidth / 2,top:innerHeight / 2,width:0,height:0};
   const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
   // Extend just past the farthest corner to cover the antialiased circle edge.
   const radius = Math.ceil(Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))) + 1;
@@ -178,12 +193,12 @@ async function toggleTheme(button = document.querySelector('.theme-toggle')){
     // A skipped reveal can reject ready; a failed update can reject both promises.
     transition.ready.catch(() => {});
     transition.updateCallbackDone.catch(() => {});
-    reducedMotion.addEventListener('change', stopReveal);
+    reducedMotion.addEventListener?.('change', stopReveal);
     window.addEventListener('resize', stopReveal, {once: true});
     await transition.finished;
   } catch (_) { applyTheme(dark); }
   finally {
-    reducedMotion.removeEventListener('change', stopReveal);
+    reducedMotion.removeEventListener?.('change', stopReveal);
     window.removeEventListener('resize', stopReveal);
     root.classList.remove('theme-transition');
     ['--theme-x','--theme-y','--theme-radius'].forEach(name => root.style.removeProperty(name));

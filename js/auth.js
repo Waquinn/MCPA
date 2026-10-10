@@ -71,6 +71,7 @@
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     accountUI(); buildNav();
+    window.MCPAMonitoring?.initialize();
     const requested=location.hash.slice(1);
     showScreen(window.MCPAMovementLinks.parse(requested).screen in SCREEN_MODULE ? requested : MCPAPermissions.home(profile.role));
   }

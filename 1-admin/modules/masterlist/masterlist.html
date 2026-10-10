@@ -16,7 +16,7 @@
 <div class="table-toolbar" style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
     <div class="search-wrap" style="flex:1; min-width:240px;">
       <!-- Updated oninput -->
-      <input id="searchEquipment" type="text" placeholder="Search asset ID, item, brand, serial..." style="width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:6px;" oninput="filterAndResetPage()"/>
+      <input id="searchEquipment" type="search" aria-label="Search equipment by asset ID, name, brand, serial number, project, or holder" placeholder="Search ID, item, brand, serial, project, holder…" style="width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:6px;" oninput="filterAndResetPage()"/>
     </div>
     <!-- Updated onchange -->
     <select id="siteFilter" class="chip-filter" onchange="filterAndResetPage()"><option value="">Project</option></select>
@@ -181,9 +181,15 @@
 
       <!-- Item Photo Field -->
       <div class="field full">
-        <label for="equipmentPhoto" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">Item Photo <span style="font-size:11px; font-weight:400; color:#888;">(Optional)</span></label>
-        <input type="file" id="equipmentPhoto" accept="image/*" style="width:100%; padding:8px; background:var(--off-white); border:1px solid var(--line); border-radius:6px; cursor:pointer;" />
+        <label for="equipmentPhoto" id="equipmentPhotoLabel">Item photo (optional)</label>
+        <input type="file" id="equipmentPhoto" accept="image/jpeg,image/png,image/webp" aria-describedby="equipmentPhotoHelp equipmentPhotoStatus" />
+        <p id="equipmentPhotoHelp" class="equipment-photo-help">JPEG, PNG, or WebP. Maximum 5 MB.</p>
+        <div id="equipmentPhotoPreview" class="equipment-photo-preview" hidden></div>
+        <button type="button" id="clearEquipmentPhoto" class="btn btn-secondary btn-sm" hidden>Clear selected photo</button>
+        <p id="equipmentPhotoStatus" class="equipment-photo-help" role="status" aria-live="polite"></p>
       </div>
+
+      <p id="equipmentFormFeedback" class="equipment-form-feedback" role="alert" aria-live="assertive"></p>
 
       <!-- QR Notice Box -->
       <div class="field full" style="display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--off-white); border:1px solid var(--line); border-radius:8px;">

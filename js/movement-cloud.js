@@ -124,6 +124,14 @@
     api[action] = id => mutate(action, {values: {id}, args: [id]});
   });
   api.rejectRequest = (id, reason) => mutate('rejectRequest', {values: {id, reason}, args: [id, reason]});
+  // Cancellation stays behind canAction and the authenticated database gateway.
+  // A retained operation UUID makes a network retry reuse the same transaction.
+  ['withdrawRequest', 'cancelReservation', 'cancelTransfer', 'refuseTransfer', 'reopenTransfer'].forEach(action => {
+    api[action] = (id, values = {}) => mutate(action, {
+      values: {id, reason: values.reason, confirmed: values.confirmed === true, ...(action === 'refuseTransfer' ? {inspections: values.inspections} : {})},
+      args: [id, values]
+    });
+  });
   ['receiveTransfer', 'completeRepair', 'recoverMissing'].forEach(action => {
     api[action] = (id, values = {}) => mutate(action, {values: {id, ...values}, args: [id, values]});
   });

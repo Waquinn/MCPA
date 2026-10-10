@@ -14,3 +14,21 @@
 .tl-meta span{font-size:11.5px; color:var(--gray);}
 .tl-meta b{color:var(--black); font-weight:600;}
 
+/* Photo preview and saved photo retain the inventory's existing palette. */
+#equipmentPhotoLabel{display:block;font-size:12px;font-weight:600;margin-bottom:4px}
+#equipmentPhoto{width:100%;padding:8px;background:var(--off-white);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--black)}
+.equipment-photo-help{font-size:12px;color:var(--gray);line-height:1.5;margin:6px 0;overflow-wrap:anywhere}
+.equipment-photo-preview{display:flex;align-items:center;justify-content:center;max-width:100%;height:160px;background:var(--off-white);border:1px solid var(--line);border-radius:8px;margin:10px 0;overflow:hidden}
+.equipment-photo-preview[hidden],#clearEquipmentPhoto[hidden]{display:none}
+.equipment-photo-preview>img,.equipment-photo-preview .equipment-thumbnail{width:100%;height:100%;object-fit:contain;border:0;border-radius:0}
+.equipment-photo-preview .equipment-thumbnail img{object-fit:contain}
+.equipment-form-feedback{font-size:13px;line-height:1.5;color:var(--danger);margin:0;overflow-wrap:anywhere}
+.equipment-form-feedback:empty{display:none}
+.equipment-profile-photo{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;aspect-ratio:16/9;background:var(--off-white);border:1px solid var(--line);border-radius:8px;margin:0 0 22px;overflow:hidden}
+.equipment-profile-photo>.equipment-thumbnail{width:100%;height:100%;flex:1;border:0;border-radius:0}
+.equipment-profile-photo .equipment-symbol{width:64px;height:64px}
+.equipment-profile-photo .equipment-symbol svg{width:64px;height:64px}
+.equipment-profile-photo figcaption{font-size:13px;color:var(--gray);padding-bottom:12px}
+#equipmentForm[aria-busy="true"] :disabled{cursor:wait;opacity:.65}
+@media(max-width:600px){#equipmentPhoto{font-size:16px}#equipmentForm button{min-height:44px}#profileContent>.two-col{grid-template-columns:1fr!important}}
+

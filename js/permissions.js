@@ -12,14 +12,30 @@
   };
   const actions = {
     admin: ['approveRequest','rejectRequest','releaseRequest','startRepair','completeRepair','recoverMissing'],
-    engineer: ['createRequest','createTransfer','receiveTransfer','createReturn','reportRepair','reportMissing'],
-    architect: ['createRequest','createTransfer','receiveTransfer','createReturn','reportRepair','reportMissing'],
+    engineer: ['createRequest','createTransfer','receiveTransfer','createReturn','reportRepair','reportMissing','withdrawRequest','cancelReservation','cancelTransfer','refuseTransfer','reopenTransfer'],
+    architect: ['createRequest','createTransfer','receiveTransfer','createReturn','reportRepair','reportMissing','withdrawRequest','cancelReservation','cancelTransfer','refuseTransfer','reopenTransfer'],
     secretary: [], tool_handler: ['createTransfer']
   };
   window.MCPAPermissions = Object.freeze({
     labels: {admin:'Admin',engineer:'Engineer',architect:'Architect',secretary:'Secretary',tool_handler:'Tool Handler'},
     route: (role, route) => !!routes[role]?.includes(route),
     action: (role, action) => !!actions[role]?.includes(action),
+    movementAction(role, action, record, actor, mode, snapshot) {
+      if (!record || !actions[role]?.includes(action)) return false;
+      // These live eligibility hints are projected by the authenticated RPC.
+      // The write gateway independently rechecks ownership and current state.
+      if (mode === 'live') return !!record.allowedActions?.includes(action);
+      const ownRequest = item => item?.requester === actor.name;
+      const sender = record.sender === actor.name;
+      const linked = snapshot?.requests?.find(item => item.id === record.requestId && item.status === 'released' && item.transferId === record.id);
+      const senderRole = record.senderRole || snapshot?.users?.find(item => item.name === record.sender)?.role;
+      if (action === 'withdrawRequest') return record.status === 'pending' && ownRequest(record);
+      if (action === 'cancelReservation') return record.status === 'approved' && !record.transferId && ownRequest(record);
+      if (action === 'cancelTransfer') return ['pending','refused'].includes(record.status) && (sender || ownRequest(linked));
+      if (action === 'refuseTransfer') return record.status === 'pending' && record.receiver === actor.name && (operational.includes(senderRole) || ownRequest(linked));
+      if (action === 'reopenTransfer') return record.status === 'refused' && sender;
+      return false;
+    },
     operational: role => operational.includes(role),
     fullInventory: role => monitoring.includes(role),
     home: role => role === 'secretary' ? 'consumables' : 'dashboard'

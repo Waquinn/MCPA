@@ -91,6 +91,9 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
     await click('#mobile-search-toggle');await click('.mobile-search-close');
     assert.equal(await evaluate('document.activeElement.id'),'mobile-search-toggle');
     await click('#mobile-search-toggle');await click('.bell-wrap');
+    await wait("document.querySelector('#monitoring-dialog')?.open");
+    assert.equal(await evaluate("document.querySelector('#global-search-panel').classList.contains('is-open')"),false);
+    await click('[data-monitoring-activity]');
     await wait("document.querySelector('#screen-activity.active #overview-results')");
     assert.equal(await evaluate("document.querySelector('#global-search-panel').classList.contains('is-open')"),false);
     await click('#account-menu summary');assert.ok(await evaluate("document.querySelector('#account-menu').open"));await click('#account-menu summary');
@@ -208,7 +211,7 @@ exports.sync=async({fixture,evaluate,command,wait,fill,go,login,logout,calls})=>
  const req=await action('sky','createRequest',{toolIds:['SYNC-TOOL'],destination:'Casa Buena',purpose:'Isolated automatic sync test'});
  await evaluate('__tickSync()');
  await wait("document.querySelector('[data-list]')?.textContent.includes("+JSON.stringify(req.id)+")");
- assert.equal(await evaluate('window.__channels.size'),1);assert.equal(await evaluate('window.__syncTimers.size'),1);
+ assert.equal(await evaluate('window.__channels.size'),2);assert.equal(await evaluate('window.__syncTimers.size'),2);
  await logout();await login('sky');await wait("document.querySelector('.overview-actions')");await go('request');await wait("document.querySelector('[name=purpose]')");
  await fill('[name=purpose]','Keep my unsaved draft');
  await action('admin','approveRequest',{id:req.id});await evaluate('__tickSync()');
@@ -231,13 +234,13 @@ exports.sync=async({fixture,evaluate,command,wait,fill,go,login,logout,calls})=>
  await wait("document.querySelector('[data-sync-warning]').textContent===''");
  assert.equal(await evaluate("document.querySelector('[name=purpose]').value"),'Draft survives lost connectivity');
  for(const screen of ['transfer','activity','request']){await go(screen);await wait("document.querySelector('#screen-"+screen+".active')");}
- assert.equal(await evaluate('window.__channels.size'),1);assert.equal(await evaluate('window.__syncTimers.size'),1);
- assert.deepEqual(await evaluate('[...window.__channels][0].tables'),['equipment','sites']);
+ assert.equal(await evaluate('window.__channels.size'),2);assert.equal(await evaluate('window.__syncTimers.size'),2);
+ assert.deepEqual(await evaluate('[...window.__channels].map(channel=>channel.tables).sort((a,b)=>a[0].localeCompare(b[0]))'),[['equipment','sites'],['mcpa_notifications']]);
  await logout();assert.equal(await evaluate('window.__channels.size'),0);assert.equal(await evaluate('window.__syncTimers.size'),0);
  await login('admin');await wait("document.querySelector('.admin-review')");await go('users');await wait("document.querySelector('#accounts-list tbody tr')");
  await fixture.rpc(fixture.actors.admin,'mcpa_save_account',{p_id:fixture.actors.pau.id,p_name:'Engineer Pau updated in fixture',p_role:'engineer',p_status:'active',p_auth_user_id:fixture.actors.pau.authId});
  await evaluate('__tickSync()');await wait("document.querySelector('#accounts-list').textContent.includes('Engineer Pau updated in fixture')");
- assert.deepEqual(await evaluate('[...window.__channels][0].tables'),['mcpa_account_audit']);
+ assert.deepEqual(await evaluate('[...window.__channels].map(channel=>channel.tables).sort((a,b)=>a[0].localeCompare(b[0]))'),[['mcpa_account_audit'],['mcpa_notifications']]);
  await logout();assert.equal(await evaluate('window.__channels.size'),0);assert.equal(await evaluate('window.__syncTimers.size'),0);
  console.log('PASS Automatic request/approval/release/receipt/custody/activity/people updates, drafts preserved, outage recovery, and channel/timer cleanup; isolated database only');
 };

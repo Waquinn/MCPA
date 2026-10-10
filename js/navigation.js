@@ -81,10 +81,12 @@ window.MCPAMovementLinks = {
     const known = Object.entries(this.collections).find(([,collection]) => snapshot[collection]?.some(record => record.id === event.entityId));
     const actions = {
       createRequest:'request', approveRequest:'request', rejectRequest:'request',
+      withdrawRequest:'request', cancelReservation:'request', cancelTransfer:'transfer', refuseTransfer:'transfer', reopenTransfer:'transfer',
       releaseRequest:'transfer', createTransfer:'transfer', receiveTransfer:'transfer',
       createReturn:'return', reportRepair:'repair', startRepair:'repair', completeRepair:'repair',
       reportMissing:'missing', recoverMissing:'missing',
       request_created:'request', request_approved:'request', request_rejected:'request',
+      request_withdrawn:'request', reservation_canceled:'request', transfer_canceled:'transfer', transfer_refused:'transfer', transfer_reopened:'transfer',
       transfer_created:'transfer', transfer_received:'transfer', return_created:'return',
       repair_reported:'repair', repair_started:'repair', repair_completed:'repair',
       missing_reported:'missing', missing_recovered:'missing'

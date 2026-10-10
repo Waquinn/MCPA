@@ -2,6 +2,7 @@
   "name": "mcpa-movement-tests",
   "private": true,
   "scripts": {
+    "test:features": "node --test --test-concurrency=1 feature-frontend.test.cjs feature-storage.test.cjs purchase-ledger.test.cjs movement-cancellation.test.cjs monitoring-database.test.cjs && node auth.browser.cjs --feature-completion",
     "test:transfer-history": "node auth.browser.cjs --transfer-history",
     "test:projects": "node --test project-history-dependency.test.cjs project-history-repair.test.cjs && node auth.browser.cjs --projects-errors",
     "test:portal": "node --test engineer-portal.database.cjs && node auth.browser.cjs --portal",

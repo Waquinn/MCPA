@@ -24,15 +24,16 @@
   function thumbnail(tool) {
     const name = tool.name || tool.equipmentType || 'Equipment';
     const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    let url = '';
+    let url = '', reference = '';
     try {
       const value = tool.image_url || tool.imageUrl;
-      if (value) {
+      if (window.EquipmentPhotos?.pathFromReference(value)) reference = value;
+      else if (value) {
         const parsed = new URL(value, location.href);
         if (['http:', 'https:'].includes(parsed.protocol)) url = parsed.href;
       }
     } catch (_) { /* Invalid image URLs use the tool symbol. */ }
-    return `<span class="equipment-thumbnail">${icon(name, tool.category || tool.cat)}${url ? `<img src="${escape(url)}" alt="${escape(name)}" loading="lazy" decoding="async">` : ''}</span>`;
+    return `<span class="equipment-thumbnail"${reference ? ` data-equipment-photo="${escape(reference)}" data-photo-alt="${escape(name)}"` : ''}>${icon(name, tool.category || tool.cat)}${url ? `<img src="${escape(url)}" alt="${escape(name)}" loading="lazy" decoding="async">` : ''}</span>`;
   }
   document.addEventListener('error', event => {
     if (event.target.matches?.('.equipment-thumbnail img')) event.target.remove();

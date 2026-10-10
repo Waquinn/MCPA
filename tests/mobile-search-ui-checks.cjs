@@ -12,18 +12,25 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
   }
   const viewport = async width => {
     await command('Emulation.setDeviceMetricsOverride', {width, height:852, deviceScaleFactor:1, mobile:width<=768});
+    await command('Emulation.setTouchEmulationEnabled', {enabled:width<=768,maxTouchPoints:1});
     await wait(`innerWidth === ${width} && matchMedia('(max-width: 900px)').matches === ${width<=900}`);
+    // Media-query change handlers and layout can finish after CDP reports the
+    // new dimensions. Let them settle before the first trusted search tap.
+    await evaluate('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
   };
   const key = async (name, code) => {
     await command('Input.dispatchKeyEvent', {type:'keyDown', key:name, code:name, windowsVirtualKeyCode:code, ...(name==='Enter' ? {text:'\r'} : {})});
     await command('Input.dispatchKeyEvent', {type:'keyUp', key:name, code:name, windowsVirtualKeyCode:code});
   };
-  const touchPoint = async (x, y) => {
+  const touchPoint = async (x, y, selector = '') => {
     await evaluate(`(()=>{
       window.__mobileSearchTestTap={complete:false};
       document.addEventListener('click',event=>{
         window.__mobileSearchTestTap.trusted=event.isTrusted;
         window.__mobileSearchTestTap.target=event.target.outerHTML?.slice(0,300);
+        window.__mobileSearchTestTap.client={x:event.clientX,y:event.clientY};
+        window.__mobileSearchTestTap.expectedTarget=${JSON.stringify(selector)};
+        window.__mobileSearchTestTap.matched=!${JSON.stringify(selector)} || !!event.target.closest(${JSON.stringify(selector)});
         requestAnimationFrame(()=>{window.__mobileSearchTestTap.complete=true});
       },{once:true,capture:true});
     })()`);
@@ -31,8 +38,11 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
     await command('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]});
     await wait('window.__mobileSearchTestTap.complete');
     assert.equal(await evaluate('window.__mobileSearchTestTap.trusted'), true, 'Touch generates a trusted click before the next action');
+    assert.equal(await evaluate('window.__mobileSearchTestTap.matched'),true,'Trusted touch reaches its intended control: '+JSON.stringify(await evaluate('window.__mobileSearchTestTap')));
   };
   const touch = async selector => {
+    // Wait for scrollIntoView and reflow before measuring a trusted tap target.
+    await evaluate(`new Promise(resolve=>{let previous='',stable=0,frames=0;const check=()=>{const element=document.querySelector(${JSON.stringify(selector)});let rect=element?.getBoundingClientRect();if(rect&&(rect.left<0||rect.right>innerWidth||rect.top<0||rect.bottom>innerHeight)){element.scrollIntoView({block:'nearest',inline:'center'});rect=element.getBoundingClientRect()}const position=rect?JSON.stringify([rect.left,rect.top,rect.width,rect.height]):'';stable=position&&position===previous?stable+1:0;previous=position;if(stable>=3||++frames>=60)resolve();else requestAnimationFrame(check)};check()})`);
     const point = await evaluate(`(()=>{
       const e=document.querySelector(${JSON.stringify(selector)}),r=e?.getBoundingClientRect();
       if(!r)return {error:'Missing target',selector:${JSON.stringify(selector)},viewport:innerWidth};
@@ -43,11 +53,13 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
         drawerOpen:document.querySelector('#sidebar').classList.contains('open'),accountOpen:document.querySelector('#account-menu').open};
     })()`);
     assert.ok(point.unobstructed, 'Touch target is visible and unobstructed: '+JSON.stringify(point));
-    await touchPoint(point.x, point.y);
+    await evaluate('window.__mobileSearchTestPoint='+JSON.stringify(point));
+    await touchPoint(point.x, point.y, selector);
   };
   const panelOpen = () => evaluate("document.querySelector('#global-search-panel').classList.contains('is-open')");
   const assertOpen = async () => {
-    await wait("document.activeElement.id === 'global-search-input'");
+    try{await wait("document.activeElement.id === 'global-search-input'");}
+    catch(error){throw new Error(error.message+'\nSearch interaction state: '+JSON.stringify(await evaluate(`({viewport:innerWidth,visualViewport:{width:visualViewport.width,scale:visualViewport.scale,offsetTop:visualViewport.offsetTop,offsetLeft:visualViewport.offsetLeft},focused:document.activeElement.outerHTML?.slice(0,300),panelOpen:document.querySelector('#global-search-panel').classList.contains('is-open'),expanded:document.querySelector('#mobile-search-toggle').getAttribute('aria-expanded'),lastTap:window.__mobileSearchTestTap,point:window.__mobileSearchTestPoint,transition:themeTransitionRunning,openDialogs:[...document.querySelectorAll('dialog[open]')].map(d=>d.id)})`)));}
     assert.equal(await evaluate("document.querySelector('#mobile-search-toggle').getAttribute('aria-expanded')"), 'true');
     const size = await evaluate(`(()=>{
       const panel=document.querySelector('#global-search-panel'), input=document.querySelector('#global-search-input');
@@ -127,8 +139,11 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
         await wait("!document.querySelector('#account-menu').open");
         assert.equal(await evaluate("document.querySelector('#account-menu').open"), false, 'Opening search dismisses account menu');
         await touch('.bell-wrap');
+        await wait("document.querySelector('#monitoring-dialog')?.open");
+        assert.equal(await panelOpen(), false, 'Notifications dismisses search');
+        await touch('[data-monitoring-activity]');
         await wait("document.querySelector('#screen-activity.active #overview-results')");
-        assert.equal(await panelOpen(), false, 'Activity bell still navigates and dismisses search');
+        assert.equal(await panelOpen(), false, 'Activity remains accessible from notifications');
       }
     }
   } finally {
@@ -172,6 +187,9 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
     } finally {
       await evaluate('window.__restoreSearchTestSnapshot?.();delete window.__restoreSearchTestSnapshot;delete window.__searchTestSnapshotStarted');
     }
+    // The second input deliberately arrives during the held read. Its pending
+    // search debounce can rebuild the table; finish it before measuring a row.
+    await evaluate('new Promise(resolve=>setTimeout(resolve,250))');
     await evaluate("document.querySelector('#overview-results [data-tool=\"TOOL-002\"]').scrollIntoView({block:'center',inline:'center'})");
     await touch('#overview-results [data-tool="TOOL-002"]');
     await wait("document.querySelector('dialog[open]')?.textContent.includes('TOOL-002')");

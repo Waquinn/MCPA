@@ -149,7 +149,7 @@
   }
   function assertUnlocked(next, tools, allowedRequestId) {
     tools.forEach(function (tool) {
-      if (next.transfers.some(function (record) { return record.status === 'pending' && record.toolIds.indexOf(tool.id) !== -1; })) fail(tool.id + ' already has a transfer awaiting receipt.');
+      if (next.transfers.some(function (record) { return ['pending','refused'].indexOf(record.status) !== -1 && record.toolIds.indexOf(tool.id) !== -1; })) fail(tool.id + ' already has a transfer awaiting receipt or sender follow-up.');
       if (next.requests.some(function (record) { return record.status === 'approved' && record.id !== allowedRequestId && record.toolIds.indexOf(tool.id) !== -1; })) fail(tool.id + ' is allocated to an approved request.');
     });
   }
@@ -197,10 +197,68 @@
     var person = receiver(next, input.receiver);
     if (tools.some(function (tool) { return tool.status === 'inuse' && tool.site === destination && tool.holder === person; })) fail('The receiver already holds selected equipment at this destination.');
     var recordId = id(next, 'TRF');
-    var record = { id: recordId, code: recordId, toolIds: tools.map(function (tool) { return tool.id; }), source: tools.map(snapshot), destination: destination, receiver: person, sender: context().name, notes: text(input.notes, 'Notes'), requestId: requestId || null, status: 'pending', createdAt: now() };
+    var record = { id: recordId, code: recordId, toolIds: tools.map(function (tool) { return tool.id; }), source: tools.map(snapshot), destination: destination, receiver: person, sender: context().name, senderRole: global.MCPAAuth.profile.role, notes: text(input.notes, 'Notes'), requestId: requestId || null, status: 'pending', createdAt: now() };
     next.transfers.unshift(record);
     activity(next, 'transfer_created', record, record.toolIds, record.id + ' released to ' + person + ' at ' + destination);
     return record;
+  }
+
+  function adjustMovement(action, recordId, input) {
+    input = input || {};
+    var actor = context();
+    if (actor.role !== 'engineer') fail('Only the accountable Engineer or Architect can perform this action.');
+    var reason = text(input.reason, 'Reason', true);
+    if (input.confirmed !== true) fail('Confirm the action before submitting.');
+    return change(function (next) {
+      var requestAction = ['withdrawRequest','cancelReservation'].indexOf(action) !== -1;
+      var record = entity(next, requestAction ? 'requests' : 'transfers', recordId);
+      var linked = !requestAction && record.requestId ? entity(next, 'requests', record.requestId) : null;
+      var ownsRequest = requestAction && record.requester === actor.name;
+      var sender = !requestAction && record.sender === actor.name;
+      var senderRole = record.senderRole || next.users.find(function (person) { return person.name === record.sender; })?.role;
+      var fieldSender = ['engineer','architect'].indexOf(senderRole) !== -1;
+      var linkedOwner = linked && linked.requester === actor.name && linked.status === 'released' && linked.transferId === record.id;
+      var allowed = action === 'withdrawRequest' ? ownsRequest && record.status === 'pending'
+        : action === 'cancelReservation' ? ownsRequest && record.status === 'approved' && !record.transferId
+        : action === 'cancelTransfer' ? ['pending','refused'].indexOf(record.status) !== -1 && (sender || linkedOwner)
+        : action === 'refuseTransfer' ? record.status === 'pending' && record.receiver === actor.name && (fieldSender || linkedOwner)
+        : action === 'reopenTransfer' ? record.status === 'refused' && sender : false;
+      if (!allowed) fail('This movement is no longer eligible, or belongs to another accountable person.');
+      var tools = selected(next, record.toolIds);
+      if (action !== 'withdrawRequest') {
+        tools.forEach(function (tool) {
+          if (next.requests.some(function (other) { return other.id !== record.id && other.status === 'approved' && other.toolIds.indexOf(tool.id) !== -1; })
+            || next.transfers.some(function (other) { return other.id !== record.id && ['pending','refused'].indexOf(other.status) !== -1 && other.toolIds.indexOf(tool.id) !== -1; })) fail('The reservation changed. Refresh before continuing.');
+          if (action === 'cancelReservation') {
+            if (tool.status !== 'available' || (tool.holder && tool.holder !== '\u2014') || next.transfers.some(function (transfer) { return transfer.requestId === record.id; })) fail('This reservation has already been fulfilled or its inventory changed.');
+          } else assertSnapshot(tool, record.source.find(function (item) { return item.toolId === tool.id; }));
+        });
+      }
+      var before = clone(record), linkedBefore = linked ? clone(linked) : null, timestamp = now();
+      var history = {action:action, actor:actor.name, role:global.MCPAAuth.profile.role, reason:reason, createdAt:timestamp, entityId:record.id, before:before};
+      if (action === 'refuseTransfer') {
+        var results = inspections(tools, input.inspections, true);
+        if (results.some(function (item) { return item.condition !== 'lost' && item.tested !== true; })) fail('Test every received tool before recording the inspection.');
+        if (!results.some(function (item) { return item.condition === 'damaged' && item.disposition === 'declined'; })) fail('Damage refusal requires at least one damaged tool declined with inspection notes.');
+        record.status='refused'; record.refusedBy=actor.name; record.refusedAt=timestamp; record.refusalReason=reason; record.refusalInspections=results;
+      } else if (action === 'reopenTransfer') {
+        record.status='pending'; record.reopenedBy=actor.name; record.reopenedAt=timestamp; record.reopenReason=reason;
+      } else {
+        record.status=action==='withdrawRequest'?'withdrawn':'canceled'; record.canceledBy=actor.name; record.canceledAt=timestamp; record.cancellationReason=reason;
+        if (action === 'cancelTransfer' && linked) {
+          if (linked.status !== 'released' || linked.transferId !== record.id) fail('The linked request changed. Refresh before canceling.');
+          linked.status='canceled'; linked.canceledBy=actor.name; linked.canceledAt=timestamp; linked.cancellationReason=reason; linked.updatedAt=timestamp;
+          history.linkedBefore=linkedBefore; history.linkedAfter=clone(linked);
+        }
+      }
+      record.updatedAt=timestamp; history.after=clone(record);
+      var historyKey=['refuseTransfer','reopenTransfer'].indexOf(action)!==-1?'refusalHistory':'cancellationHistory';
+      if (!next[historyKey]) next[historyKey]=[];
+      next[historyKey].push(history);
+      var labels={withdrawRequest:'Requester withdrew pending request',cancelReservation:'Requester canceled unfulfilled reservation',cancelTransfer:'Field user canceled unreceived handover; custody unchanged',refuseTransfer:'Receiver refused damaged handover; custody and reservations held',reopenTransfer:'Sender reopened handover for receiver inspection'};
+      activity(next,action,record,record.toolIds,labels[action]+'. Reason: '+reason);
+      return record;
+    });
   }
 
   var api = {
@@ -287,6 +345,11 @@
       });
     },
     createTransfer: function (input) { return change(function (next) { return newTransfer(next, input || {}, null); }); },
+    withdrawRequest: function (id,input) { return adjustMovement('withdrawRequest',id,input); },
+    cancelReservation: function (id,input) { return adjustMovement('cancelReservation',id,input); },
+    cancelTransfer: function (id,input) { return adjustMovement('cancelTransfer',id,input); },
+    refuseTransfer: function (id,input) { return adjustMovement('refuseTransfer',id,input); },
+    reopenTransfer: function (id,input) { return adjustMovement('reopenTransfer',id,input); },
     findTransfer: function (code) {
       ensureActive();
       var normalized = text(code, 'Transfer code', true).toUpperCase();

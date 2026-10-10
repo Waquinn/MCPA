@@ -6,11 +6,48 @@ if (typeof supabaseClient === 'undefined') {
 
 var equipmentList = [];
 var currentEditId = null; 
+var currentProfileId = null;
+var currentProfileId = null;
 
 var currentPage = 1;
 var selectedAssets = [];
 var bulkActionMode = '';
 var itemsPerPage = 10;
+var equipmentPhotoState = {file:null,previewUrl:null,staged:null,revision:0,saving:false,validating:false,newAssetId:null,newRecordId:null};
+
+function resetEquipmentPhoto(item = null, keepSelection = false) {
+  const state = equipmentPhotoState;
+  ++state.revision;
+  if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+  state.file = null; state.previewUrl = null; state.staged = null; state.validating = false;
+  const input = document.getElementById('equipmentPhoto');
+  if (input && !keepSelection) input.value = '';
+  const preview = document.getElementById('equipmentPhotoPreview');
+  if (preview) { preview.innerHTML = item?.image_url ? window.EquipmentVisual.thumbnail(item) : ''; preview.hidden = !item?.image_url; }
+  const clear = document.getElementById('clearEquipmentPhoto');
+  if (clear) clear.hidden = true;
+  const label = document.getElementById('equipmentPhotoLabel');
+  if (label) label.textContent = item?.image_url ? 'Replace item photo (optional)' : 'Item photo (optional)';
+  const status = document.getElementById('equipmentPhotoStatus');
+  if (status) status.textContent = item?.image_url ? 'The current photo is kept unless you select a replacement.' : '';
+  const feedback = document.getElementById('equipmentFormFeedback');
+  if (feedback) feedback.textContent = '';
+}
+
+function equipmentMatchesSearch(item, query) {
+  const search = String(query || '').trim().toLowerCase();
+  return !search || [item.assetId,item.equipmentType,item.brand,item.serialNumber,item.site,item.holder]
+    .some(value => String(value ?? '').toLowerCase().includes(search));
+}
+
+function filteredEquipment() {
+  const search = document.getElementById('searchEquipment')?.value || '';
+  const category = document.getElementById('typeFilter')?.value || '';
+  const status = document.getElementById('statusFilter')?.value || '';
+  const site = document.getElementById('siteFilter')?.value || '';
+  return equipmentList.filter(item => equipmentMatchesSearch(item, search) && (!category || item.category === category)
+    && window.EquipmentTracking.matchesStatus({...item,status:item.dbStatus},status) && (!site || item.site === site));
+}
 
 function filterAndResetPage() {
   currentPage = 1;
@@ -62,6 +99,8 @@ async function initMasterlist() {
 
   populateFilters();
   renderTable();
+  if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId);
+  if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId);
   if (!tbody.dataset.listeners) { setupMasterlistListeners(); tbody.dataset.listeners = 'true'; }
   document.getElementById('inventory-sync').textContent = '';
 }
@@ -187,22 +226,7 @@ function closeBulkModal() {
 // ---------------------------------
 
 function renderTable() {
-  const searchInput = document.getElementById("searchEquipment");
-  const typeFilter = document.getElementById("typeFilter");
-  const statusFilter = document.getElementById("statusFilter");
-  const siteFilter = document.getElementById("siteFilter");
-
-  const search = searchInput ? searchInput.value.toLowerCase().trim() : "";
-  const typeVal = typeFilter ? typeFilter.value : "";
-  const statusVal = statusFilter ? statusFilter.value : "";
-  const siteVal = siteFilter ? siteFilter.value : "";
-
-  const filtered = equipmentList.filter(item => {
-    return (!search || item.assetId.toLowerCase().includes(search) || item.brand.toLowerCase().includes(search) || item.equipmentType.toLowerCase().includes(search)) &&
-           (!typeVal || item.category === typeVal) &&
-           window.EquipmentTracking.matchesStatus({...item, status: item.dbStatus}, statusVal) &&
-           (!siteVal || item.site === siteVal);
-  });
+  const filtered = filteredEquipment();
 
   const tbody = document.getElementById("equipmentTableBody");
   const emptyState = document.getElementById("emptyState");
@@ -309,6 +333,8 @@ function showMasterlistView(viewName) {
   const profileScreen = document.getElementById('screen-tool-profile');
 
   if (viewName === 'masterlist') {
+    currentProfileId = null;
+    currentProfileId = null;
     if (masterlistScreen) masterlistScreen.style.display = 'block';
     if (profileScreen) profileScreen.style.display = 'none';
   } else if (viewName === 'tool-profile') {
@@ -320,6 +346,8 @@ function showMasterlistView(viewName) {
 function showToolProfile(assetId) {
   const item = equipmentList.find(eq => eq.assetId === assetId);
   if (!item) return;
+  currentProfileId = assetId;
+  currentProfileId = assetId;
 
   const content = document.getElementById("profileContent");
   if (!content) return;
@@ -336,11 +364,7 @@ function showToolProfile(assetId) {
           <span class="badge ${getBadgeClass(item.status)}" style="padding:8px 14px; text-transform:uppercase;">${item.status}</span>
         </div>
 
-        <div class="card" style="aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; background:#f4f4f4; color:#666; margin-bottom:22px; border-radius:8px; border:1px solid var(--line);">
-          <div style="text-align:center;">
-            <div style="font-size:13px; font-weight:600;">Tool Photo Placeholder</div>
-          </div>
-        </div>
+        <figure class="equipment-profile-photo">${window.EquipmentVisual.thumbnail(item)}${item.image_url ? '' : '<figcaption>No item photo saved</figcaption>'}</figure>
 
         <div class="section-title"><h2 style="font-size:15px; font-weight:600; margin-bottom:8px;">Movement History</h2></div>
         <div class="card card-pad" style="background:#fff; padding:16px; border-radius:8px; border:1px solid var(--line);">
@@ -410,6 +434,7 @@ function editTool(assetId) {
   if (!item) return;
   
   currentEditId = assetId;
+  resetEquipmentPhoto(item);
 
   document.getElementById('equipmentType').value = item.equipmentType || '';
   document.getElementById('equipmentCategory').value = item.category || '';
@@ -445,6 +470,10 @@ function setupMasterlistListeners() {
   const modal = document.getElementById('equipmentModal');
   const form = document.getElementById('equipmentForm');
   const trackingType = document.getElementById('trackingType');
+  const photoInput = document.getElementById('equipmentPhoto');
+  const photoClear = document.getElementById('clearEquipmentPhoto');
+  const photoStatus = document.getElementById('equipmentPhotoStatus');
+  const feedback = document.getElementById('equipmentFormFeedback');
 
   // --- CONNECTING THE NEW BULK BUTTONS ---
   const btnBulkStatus = document.getElementById('btnBulkStatus');
@@ -511,20 +540,51 @@ function setupMasterlistListeners() {
       if (modalTitle) modalTitle.innerText = 'Add New Item';
       if (modalSubmitBtn) modalSubmitBtn.innerText = 'Save Item';
       if (form) form.reset();
+      equipmentPhotoState.newAssetId = null;
+      equipmentPhotoState.newRecordId = null;
+      resetEquipmentPhoto();
       
       modal.style.display = 'flex';
     };
   }
 
   const closeModal = () => {
+    if (equipmentPhotoState.saving) return;
     if (modal) modal.style.display = 'none';
     if (form) form.reset();
+    resetEquipmentPhoto();
+    equipmentPhotoState.newAssetId = null;
+    equipmentPhotoState.newRecordId = null;
     currentEditId = null;
   };
 
   if (closeBtn) closeBtn.onclick = closeModal;
   if (cancelBtn) cancelBtn.onclick = closeModal;
   if (exportBtn) exportBtn.onclick = exportMasterlist;
+  if (photoClear) photoClear.onclick = () => resetEquipmentPhoto(equipmentList.find(item => item.assetId === currentEditId));
+  if (photoInput) photoInput.onchange = async () => {
+    const file = photoInput.files?.[0];
+    resetEquipmentPhoto(equipmentList.find(item => item.assetId === currentEditId), true);
+    if (!file) return;
+    const state = equipmentPhotoState, revision = state.revision;
+    state.validating = true;
+    photoStatus.textContent = 'Checking photo…';
+    try {
+      await window.EquipmentPhotos.validate(file);
+      if (state !== equipmentPhotoState || revision !== state.revision || !photoInput.isConnected) return;
+      state.file = file; state.previewUrl = URL.createObjectURL(file);
+      const preview = document.getElementById('equipmentPhotoPreview');
+      const img = document.createElement('img'); img.alt = 'Selected equipment photo preview';
+      const opened = new Promise((resolve,reject) => {img.onload = resolve; img.onerror = () => reject(new Error('This image could not be opened. Choose another JPEG, PNG, or WebP photo.'));});
+      img.src = state.previewUrl;
+      preview.replaceChildren(img); preview.hidden = false; photoClear.hidden = false;
+      await opened;
+      if (state !== equipmentPhotoState || revision !== state.revision || !photoInput.isConnected) return;
+      photoClear.textContent = currentEditId && equipmentList.find(item => item.assetId === currentEditId)?.image_url ? 'Keep current photo' : 'Clear selected photo';
+      photoStatus.textContent = currentEditId && equipmentList.find(item => item.assetId === currentEditId)?.image_url ? 'New photo selected. Saving will replace the current photo.' : 'Photo selected. It will be uploaded when you save the item.';
+    } catch (error) { if (revision === state.revision && photoInput.isConnected) { resetEquipmentPhoto(equipmentList.find(item => item.assetId === currentEditId)); photoStatus.textContent = error.message; } }
+    finally { if (revision === state.revision) state.validating = false; }
+  };
 
   if (trackingType) {
     trackingType.onchange = function() {
@@ -543,6 +603,12 @@ function setupMasterlistListeners() {
   if (form) {
     form.onsubmit = async (e) => {
       e.preventDefault();
+      const state = equipmentPhotoState, editId = currentEditId;
+      if (state.saving) return;
+      if (state.validating) { feedback.textContent = 'Please wait while the photo is checked.'; return; }
+      let user;
+      try { user = window.MCPAAuth.requireLive(); if (user.role !== 'admin') throw new Error('Only Admin can save inventory items.'); }
+      catch (error) { feedback.textContent = error.message; return; }
       
       const payload = {
         name: document.getElementById('equipmentType').value,
@@ -557,31 +623,38 @@ function setupMasterlistListeners() {
         details: document.getElementById('identifyingDetails').value
       };
 
-      if (currentEditId) {
-        const { error } = await supabaseClient
-          .from('equipment')
-          .update(payload)
-          .eq('asset_id', currentEditId);
-
-        if (error) alert("Error updating tool: " + error.message);
-        else {
-          closeModal();
-          initMasterlist(); 
+      const assetId = editId || (state.newAssetId ||= 'T-' + crypto.randomUUID().replaceAll('-','').slice(0,16).toUpperCase());
+      const submit = form.querySelector('button[type="submit"]'), originalLabel = submit.textContent;
+      const controls = [...form.querySelectorAll('input,select,textarea,button'),closeBtn];
+      const disabled = controls.map(control => control.disabled);
+      state.saving = true; form.setAttribute('aria-busy','true'); controls.forEach(control => { control.disabled = true; });
+      submit.textContent = state.file ? 'Uploading photo…' : 'Saving item…'; feedback.textContent = '';
+      let saved = false;
+      try {
+        if (state.file) {
+          state.staged = await window.EquipmentPhotos.prepare(state.file,assetId,state.staged);
+          payload.image_url = state.staged.reference;
         }
-      } else {
-        const newAssetId = 'T-' + Math.floor(1000 + Math.random() * 9000);
-        payload.asset_id = newAssetId;
-        payload.status = 'AVAILABLE';
-        
-        const { error } = await supabaseClient
-          .from('equipment')
-          .insert([payload]);
-
-        if (error) alert("Error saving tool: " + error.message);
-        else {
-          closeModal();
-          initMasterlist();
+        if (!form.isConnected || window.MCPAAuth.requireLive().id !== user.id || equipmentPhotoState !== state) throw new Error('Your screen or account changed. Reopen the item before saving.');
+        submit.textContent = 'Saving item…';
+        const db = window.EquipmentTracking.client();
+        const query = editId ? db.from('equipment').update(payload).eq('asset_id',editId) : db.from('equipment').insert([{...payload,id:state.newRecordId ||= crypto.randomUUID(),asset_id:assetId,status:'AVAILABLE'}]);
+        const {data,error} = await query.select('asset_id,image_url').single();
+        if (error) throw new Error('The item could not be saved. Your form and photo selection have been kept. Check your connection and retry. ' + error.message);
+        if (!data || data.asset_id !== assetId) throw new Error('The saved item could not be verified. Refresh the inventory before retrying.');
+        saved = true;
+      } catch (error) { if (feedback.isConnected) feedback.textContent = error.message; }
+      finally {
+        state.saving = false;
+        if (form.isConnected) {
+          form.removeAttribute('aria-busy'); controls.forEach((control,index) => {control.disabled = disabled[index];}); submit.textContent = originalLabel;
         }
+      }
+      if (saved && form.isConnected && equipmentPhotoState === state) {
+        closeModal();
+        const sync = document.getElementById('inventory-sync');
+        sync.textContent = editId ? 'Item updated.' : 'Item saved.';
+        initMasterlist().catch(() => { if (sync.isConnected) sync.textContent = 'Item saved. Inventory refresh failed; reload to see the changes.'; });
       }
     };
   }
@@ -625,22 +698,7 @@ function printQRTag(assetId) {
 }
 
 function exportMasterlist() {
-  const searchInput = document.getElementById("searchEquipment");
-  const typeFilter = document.getElementById("typeFilter");
-  const statusFilter = document.getElementById("statusFilter");
-  const siteFilter = document.getElementById("siteFilter");
-
-  const search = searchInput ? searchInput.value.toLowerCase().trim() : "";
-  const typeVal = typeFilter ? typeFilter.value : "";
-  const statusVal = statusFilter ? statusFilter.value : "";
-  const siteVal = siteFilter ? siteFilter.value : "";
-
-  const filtered = equipmentList.filter(item => {
-    return (!search || item.assetId.toLowerCase().includes(search) || item.brand.toLowerCase().includes(search) || item.equipmentType.toLowerCase().includes(search)) &&
-           (!typeVal || item.category === typeVal) &&
-           window.EquipmentTracking.matchesStatus({...item, status: item.dbStatus}, statusVal) &&
-           (!siteVal || item.site === siteVal);
-  });
+  const filtered = filteredEquipment();
 
   const currentDate = new Date().toLocaleString('en-US', { 
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', 
@@ -726,7 +784,7 @@ function formatDate(dateString) {
 
 (function () {
   window.AdminEquipment?.dispose();
-  const owner = {disposed: false, dispose() { this.disposed = true; stop(); }};
+  const owner = {disposed: false, dispose() { this.disposed = true; if (equipmentPhotoState.previewUrl) URL.revokeObjectURL(equipmentPhotoState.previewUrl); ++equipmentPhotoState.revision; stop(); }};
   let stop = () => {};
   window.AdminEquipment = owner;
   stop = window.EquipmentTracking.watch(initMasterlist, message => {

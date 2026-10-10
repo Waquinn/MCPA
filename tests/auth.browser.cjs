@@ -4,20 +4,49 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 const {spawn}=require('node:child_process'),{once}=require('node:events'),{authDatabase}=require('./auth-test-db.cjs');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'mcpa-auth-'));
 let fixture,chrome,socket,passwordLogged=false;const errors=[],calls=[];
+const storedFiles=new Map(),signedFiles=new Map();
 const sdk=`window.__syncTimers=new Map();const realInterval=window.setInterval,realClear=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=realInterval(fn,ms,...args);if(ms===30000)__syncTimers.set(id,fn);return id;};window.clearInterval=id=>{__syncTimers.delete(id);realClear(id);};window.__tickSync=()=>__syncTimers.forEach(fn=>fn());window.__channels=new Set();
 window.supabase={createClient(){let listener;const session=()=>{const key=localStorage.getItem('fixture.account');return key?{user:{id:key},access_token:key}:null};const request=q=>window.__failReads&&q.rpc==='mcpa_movement_snapshot'?Promise.resolve({error:{code:'TEST'}}):fetch('/__db',{method:'POST',headers:{'Authorization':session()?.access_token||''},body:JSON.stringify(q)}).then(r=>r.json());window.__authEvent=event=>listener?.(event,session());window.__expire=()=>{localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null)};return {
  channel(){const c={tables:[],on(_type,filter,fn){this.tables.push(filter.table);this.notify=fn;return this},subscribe(){return this}};__channels.add(c);return c;},removeChannel(c){__channels.delete(c);return Promise.resolve();},
  auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange(fn){listener=fn;return {data:{subscription:{unsubscribe(){}}}}},async signInWithPassword({email,password}){const key=email.split('@')[0];if(!['admin','sky','pau','architect','secretary','handler','inactive','missing'].includes(key)||password!=='test-password')return {error:{code:'invalid_credentials'}};localStorage.setItem('fixture.account',key);listener?.('SIGNED_IN',session());return {data:{session:session()}}},async signOut(){localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null);return {error:null}},resetPasswordForEmail:async()=>({error:null}),updateUser:async values=>{window.__savedPassword=values.password;return {error:null}} },
  functions:{invoke:async(name,{body})=>{if(body.action==='capabilities')return {data:window.__accountCapabilities||{invitations_enabled:true,development_enabled:true,pending_development_accounts:[]}};window.__accountRequest={name,body};return window.__developmentFailure?{error:{context:{json:async()=>({error:'Creation interrupted. Retry the same test account.'})}}}:{data:{message:body.action==='invite'?'Invitation sent.':'Test account created.'}};}},
- rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
+ storage:{from(bucket){return {async upload(name,file,options){if(window.__failUpload)return {error:{message:'Isolated upload failure'}};const bytes=new Uint8Array(await file.arrayBuffer());let raw='';for(const value of bytes)raw+=String.fromCharCode(value);return request({storage:'upload',bucket,name,type:file.type,size:file.size,body:btoa(raw),options});},createSignedUrl(name,expires){return request({storage:'sign',bucket,name,expires});}}}},
+ rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},insert(values){q.write='insert';q.values=values;return this},update(values){q.write='update';q.values=values;return this},single(){q.single=true;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
 }}};`;
 const server=http.createServer(async(req,res)=>{
  if(req.url==='/__sdk.js'){res.setHeader('Content-Type','text/javascript');res.end(sdk);return;}
+ if(req.url.startsWith('/__stored/')){
+  const signed=signedFiles.get(req.url.slice('/__stored/'.length));
+  if(!signed||signed.expires<Date.now()){res.writeHead(403);res.end();return;}
+  res.setHeader('Content-Type',signed.type);res.end(signed.bytes);return;
+ }
  if(req.url==='/__db'){
   let body='';for await(const part of req)body+=part;const q=JSON.parse(body),actor=fixture.actors[req.headers.authorization];calls.push({rpc:q.rpc,table:q.table,actor:req.headers.authorization});
   let data=null,error=null,count=null;
   try{
-   if(q.rpc){data=await fixture.rpc(actor,q.rpc,q.args||{});}
+   if(q.storage){
+    if(q.storage==='upload'){
+     const bucket=(await fixture.db.query('select * from storage.buckets where id=$1',[q.bucket])).rows[0];
+     if(!bucket||q.size>Number(bucket.file_size_limit)||!bucket.allowed_mime_types.includes(q.type)||q.options?.upsert)throw new Error('Invalid isolated upload');
+     await fixture.query(actor,'insert into storage.objects(bucket_id,name) values($1,$2)',[q.bucket,q.name]);
+     storedFiles.set(q.bucket+'/'+q.name,{bytes:Buffer.from(q.body,'base64'),type:q.type});data={path:q.name};
+    }else if(q.storage==='sign'){
+     const rows=(await fixture.query(actor,'select name from storage.objects where bucket_id=$1 and name=$2',[q.bucket,q.name])).rows;
+     const file=storedFiles.get(q.bucket+'/'+q.name);if(!rows.length||!file)throw new Error('File access denied');
+     const token=require('node:crypto').randomUUID();signedFiles.set(token,{...file,expires:Date.now()+Math.min(q.expires,3600)*1000});data={signedUrl:'/__stored/'+token};
+    }else throw new Error('Unsupported isolated storage operation');
+   }
+   else if(q.rpc){data=await fixture.rpc(actor,q.rpc,q.args||{});}
+   else if(q.write){
+    if(q.table!=='equipment')throw new Error('Unsupported isolated write');
+    const values=Array.isArray(q.values)?q.values[0]:q.values,keys=Object.keys(values);
+    if(!keys.length||keys.some(key=>!/^[a-z_]+$/.test(key)))throw new Error('Bad write column');
+    let result;
+    if(q.write==='insert')result=await fixture.query(actor,`insert into public.equipment(${keys.join(',')}) values(${keys.map((_,i)=>'$'+(i+1)).join(',')}) returning *`,keys.map(key=>values[key]));
+    else if(q.write==='update'&&q.filters.length===1&&q.filters[0][0]==='asset_id')result=await fixture.query(actor,`update public.equipment set ${keys.map((key,i)=>key+'=$'+(i+1)).join(',')} where asset_id=$${keys.length+1} returning *`,[...keys.map(key=>values[key]),q.filters[0][1]]);
+    else throw new Error('Unsupported isolated update');
+    data=q.single?result.rows[0]:result.rows;
+   }
    else{
     if(!['equipment','sites','profiles','consumables','consumable_requests','consumable_stock_movements','project_history','mcpa_account_audit'].includes(q.table))throw new Error('Unsupported test table');
     const cols=q.columns==='*'?'*':q.columns.split(',').map(c=>{if(!/^[a-z_]+$/.test(c))throw new Error('Bad column');return '"'+c+'"'}).join(',');
@@ -35,6 +64,14 @@ const server=http.createServer(async(req,res)=>{
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
  fixture=await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ console.log('Browser fixture ready; isolated local database');
+ if(process.argv.includes('--feature-completion')){
+  await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
+   create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
+   alter table storage.objects enable row level security;grant usage on schema storage to authenticated,anon;grant select,insert,update,delete on storage.objects to authenticated,anon;
+   alter table equipment alter column id set default gen_random_uuid();`);
+  for(const file of ['202610100003_feature_storage.sql','202610100004_movement_cancellation.sql','202610100005_purchase_ledger.sql','202610100006_monitoring.sql'])await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
+ }
  await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
  server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
@@ -52,6 +89,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  const logout=async()=>{await evaluate('MCPAAuth.logout()');await wait("document.querySelector('#auth-email')");};
  const shot=async (name,viewport=false)=>{if(process.env.MCPA_SKIP_SCREENSHOTS==='1')return;await pause(300);const {data}=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:!viewport});fs.writeFileSync(path.join(profile,name+'.png'),Buffer.from(data,'base64'));console.log('SCREENSHOT '+path.join(profile,name+'.png'));};
  await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+ console.log('Local Chrome ready; external HTTPS blocked');
  const base=`http://127.0.0.1:${server.address().port}`;
  await command('Page.navigate',{url:base+'/2-engr/index.html#users'});await wait("document.querySelector('#auth-email')");
  assert.equal(calls.length,0,'Protected pages do not fetch business records while signed out');
@@ -80,6 +118,13 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--feature-completion')){
+  await require('./feature-frontend.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
+  await require('./procurement-monitoring.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
+  await require('./cancellation.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Feature completion browser checks; isolated storage/database, no live requests');return;
+ }
  if(process.argv.includes('--transfer-history')){
   await require('./transfer-history.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,calls,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');
@@ -95,8 +140,17 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   assert.deepEqual(errors,[],'No uncaught browser errors');
   console.log('PASS Engineer portal browser checks; isolated database only');return;
  }
+ if(process.argv.includes('--mobile-search-only')){
+  await require('./mobile-search-ui-checks.cjs').verify({evaluate,command,wait,click,fill,go,login,logout});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Mobile search browser checks; isolated database only');return;
+ }
  if(!process.argv.includes('--flows-only')){
  const headerBaseline=await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot');
+ // Trusted touch runs before the native animation inspection suite injects
+ // paused transitions and repeatedly changes device emulation. Both suites
+ // retain their real input assertions and preserve the database baseline.
+ if(!process.argv.includes('--theme-only'))await require('./mobile-search-ui-checks.cjs').verify({evaluate,command,wait,click,fill,go,login,logout});
  await require('./workspace-ui-checks.cjs').header({evaluate,command,wait,click,fill,go,shot});
  if(process.argv.includes('--theme-only')){
   assert.deepEqual(await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot'),headerBaseline,'Theme checks preserve fixture records');
@@ -105,7 +159,6 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   console.log('PASS Theme browser checks; fixture records unchanged');
   return;
  }
- await require('./mobile-search-ui-checks.cjs').verify({evaluate,command,wait,click,fill,go,login,logout});
  assert.deepEqual(await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot'),headerBaseline,'Theme/search interactions preserve all fixture records');
  assert.equal(calls.filter(call=>call.rpc==='mcpa_movement_action').length,0,'Theme/search checks perform no business writes');
  if(process.argv.includes('--header-only')){
@@ -277,7 +330,8 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await click('[data-action=release]');await wait("MovementStore.getState().transfers.length===1");const demoTransfer=await evaluate('MovementStore.getState().transfers[0]');
  await logout();await click('[data-auth-demo]');await click('[data-demo-role=engineer]');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await go('transfer');await wait("document.querySelector('[data-form=lookup]')");await click('[data-transfer-tab=receive]');await fill('[name=code]',demoTransfer.code);await submit('[data-form=lookup]');await wait("document.querySelector('[data-form=receive]')");await fill('[data-condition]','damaged');await fill('[data-condition-notes]','Damage found during demo inspection');
  assert.ok(await evaluate("!document.querySelector('[data-decision-field]').hidden && !document.querySelector('[data-disposition]').disabled"));
- await fill('[data-disposition]','declined');await click('[data-tested]');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Receipt confirmed')");
+ await fill('[data-disposition]','declined');await click('[data-tested]');await fill('[name=refusalReason]','Damage found during demo inspection');await click('[name=refusalConfirmed]');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Damage refusal recorded')");
+ assert.equal(await evaluate('MovementStore.getState().transfers[0].status'),'refused');
  assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='GRD-002').holder"),'\u2014');assert.equal(calls.length,before,'Damaged demo receipt stays offline');
  await logout();await login('admin');await wait("document.querySelector('.admin-review')");await evaluate('__expire()');await wait("document.querySelector('#auth-email')");assert.equal(await evaluate('MovementStore.getState().tools.length'),0,'Auth events remain connected after restoring and exiting demo');
 
