@@ -47,6 +47,34 @@
 .mv-records .cell-sub { line-height: 1.6; margin-top: 4px; }
 .mv-records .badge { font-size: 9px; padding: 5px 7px; }
 .mv-records .mv-selected-row { background: var(--warning-bg); }
+.mv-transfer-cards { display: none; }
+@media (max-width: 600px) {
+  .mv-transfer-history.card { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+  .mv-transfer-history .mv-record-header { padding: 0 0 18px; }
+  .mv-transfer-history .mv-list-filters .mv-input { min-height: 44px; font-size: 16px; }
+  .mv-transfer-table { display: none; }
+  .mv-transfer-cards { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .mv-transfer-cards > li { min-width: 0; }
+  .mv-transfer-card { position: relative; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); color: var(--black); overflow-wrap: anywhere; cursor: pointer; }
+  .mv-transfer-card:focus-within { border-color: var(--gold-dim); }
+  .mv-transfer-card-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .movement-ui .mv-transfer-card-top h3 { margin: 0; min-width: 0; max-width: 100%; }
+  .mv-transfer-card-top .tool-id-chip { font-size: 14px; white-space: normal; }
+  .mv-transfer-card .badge { max-width: 100%; min-width: 0; font-size: 14px; line-height: 1.4; white-space: normal; text-align: left; letter-spacing: .02em; }
+  .mv-transfer-card .badge::before { flex-shrink: 0; }
+  .mv-transfer-equipment { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .mv-transfer-equipment strong { display: block; font-size: 16px; font-weight: 600; line-height: 1.5; }
+  .mv-transfer-tool-id { display: block; margin-top: 2px; color: var(--gray); font-family: var(--font-mono); font-size: 14px; line-height: 1.5; }
+  .mv-transfer-more { margin-top: 8px; color: var(--gray); font-size: 14px; line-height: 1.5; }
+  .mv-transfer-card dl { display: grid; gap: 10px; margin: 16px 0 0; font-size: 16px; line-height: 1.5; }
+  .mv-transfer-people > div { display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 8px; }
+  .mv-transfer-card dt { color: var(--gray); font-size: 14px; }
+  .mv-transfer-card dd { min-width: 0; margin: 0; }
+  .mv-transfer-projects dt { margin-bottom: 2px; }
+  .mv-transfer-card-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .mv-transfer-date { min-width: 0; color: var(--gray); font-size: 14px; line-height: 1.5; }
+  .mv-transfer-card-footer .btn { min-height: 44px; font-size: 14px; white-space: normal; }
+}
 .mv-detail,.mv-scanner { margin:auto; width:min(760px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); padding:0; border:1px solid var(--line); border-radius:12px; color:var(--black); background:var(--white); overflow:auto; overscroll-behavior:contain; }
 .mv-detail::backdrop,.mv-scanner::backdrop{background:var(--overlay,rgba(0,0,0,.5))}
 .mv-detail [data-detail-body]{padding:0 22px 22px}

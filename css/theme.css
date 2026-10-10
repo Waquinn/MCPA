@@ -150,7 +150,7 @@ html.theme-transition::view-transition-new(root){
   #topbar .theme-toggle span{display:none}
   #topbar .bell-wrap{width:44px!important;height:44px!important}
   #topbar .mobile-menu-btn{width:44px;height:44px;margin-right:0}
-  #topbar .topbar-actions{flex-shrink:0;gap:6px}
+  #topbar .topbar-actions{flex-shrink:1;min-width:0;gap:6px}
   #topbar #account-menu{min-width:0;max-width:115px}
   #topbar #account-menu summary{min-height:44px}
   #topbar #account-menu .account-name{max-width:95px}

@@ -62,7 +62,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  const id=await evaluate("document.querySelector('[data-detail] h2').textContent");
  assert.equal((await f.db.query("select current_holder_id from equipment where asset_id='TOOL-002'")).rows[0].current_holder_id,f.actors.sky.id);
  await shot('portal-transfer-dialog-393',true);await key('Escape');await wait("!document.querySelector('[data-detail]').open");
- await click('[data-transfer-tab=history]');await click('[data-action=view]');await wait("document.querySelector('[data-detail]').open");await click('[data-action=close-detail]');
+ await click('[data-transfer-tab=history]');await click('.mv-transfer-card button[data-action=view]');await wait("document.querySelector('[data-detail]').open");await click('[data-action=close-detail]');
  // Navigation cancels even an in-flight camera and restores drawer/modal state.
  await click('[data-transfer-tab=send]');await click('[data-action=scan-receiver]');await wait('__scanners.at(-1).isScanning');await go('request');await wait("document.querySelector('[name=purpose]')");await wait('!__scanners.some(s=>s.isScanning)');
  assert.ok(await evaluate("document.querySelector('[name=toolIds][value=\"TOOL-001\"]')"),'Requestable catalog remains separate');
@@ -71,7 +71,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  await fill('[data-condition]','good');await fill('[data-condition-notes]','Inspected in isolated fixture');await click('[data-tested]');
  await evaluate('window.__confirm=window.confirm;window.__confirmCalls=0;window.confirm=()=>{window.__confirmCalls++;return false}');await key('Escape');assert.deepEqual(await evaluate("({open:document.querySelector('[data-detail]').open,notes:document.querySelector('[data-condition-notes]')?.value,confirm:window.__confirmCalls})"),{open:true,notes:'Inspected in isolated fixture',confirm:1});await evaluate('window.confirm=window.__confirm');
  await submit('[data-form=receive]');await wait("document.querySelector('[data-detail]').textContent.includes('Inspected / completed')");assert.equal((await f.db.query("select current_holder_id from equipment where asset_id='TOOL-002'")).rows[0].current_holder_id,f.actors.pau.id);
- await click('[data-action=close-detail]');await go('masterlist');await wait("document.querySelector('#overview-results').textContent.includes('TOOL-002')");assert.equal(await evaluate("document.querySelectorAll('#overview-results tbody tr').length"),1);
+ await click('[data-action=close-detail]');await go('masterlist');await wait("document.querySelector('#overview-results')?.textContent.includes('TOOL-002')");assert.equal(await evaluate("document.querySelectorAll('#overview-results tbody tr').length"),1);
  await click('[data-tool]');await wait("document.querySelector('dialog[open]')");assert.ok(await evaluate("document.querySelector('dialog[open]').textContent.includes("+JSON.stringify(id)+")"));
  console.log('PASS Assigned Projects, own-custody backend reads, no-project state, responsive drawer/tabs, clean recipients, QR generation/autofill/errors/camera cleanup, unchanged custody on scan/dispatch, modal dirty-close protection, authorized receipt and history');
 };

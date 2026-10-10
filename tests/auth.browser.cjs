@@ -80,6 +80,11 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--transfer-history')){
+  await require('./transfer-history.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,calls,shot});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Responsive Transfer History; isolated fixture, no live requests');return;
+ }
  if(process.argv.includes('--projects-errors')){
   await require('./projects-errors.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,go,login,logout,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');

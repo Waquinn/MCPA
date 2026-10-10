@@ -188,7 +188,7 @@
   function renderShell() {
     if (!current) return;
     const transfer=current.kind==='transfer';
-    const list=`<section class="card mv-records"><div class="mv-record-header"><h2>${transfer?'Transfer history':(admin()?'All':'Your')+' '+TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section>`;
+    const list=`<section class="card mv-records${transfer?' mv-transfer-history':''}"><div class="mv-record-header"><h2>${transfer?'Transfer history':(admin()?'All':'Your')+' '+TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section>`;
     const workspace=transfer?`${transferTabs()}<section role="tabpanel" id="mv-panel-send" aria-labelledby="mv-tab-send" data-transfer-panel="send"><div data-create-panel>${createForm()}</div></section>${operational()?`<section role="tabpanel" id="mv-panel-receive" aria-labelledby="mv-tab-receive" data-transfer-panel="receive"><div class="mv-receive-grid">${receivingQrPanel()}${transferLookup()}</div><section class="card card-pad"><h2>Incoming transfers awaiting confirmation</h2><div data-incoming></div></section></section>`:''}<section role="tabpanel" id="mv-panel-history" aria-labelledby="mv-tab-history" data-transfer-panel="history">${list}</section>`:`<div class="mv-workspace"><div data-create-panel>${createForm()}</div><div class="mv-record-area">${list}</div></div>`;
     current.root.innerHTML=`<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1><p class="sub">${descriptions()}</p></div></div><p class="sync-warning" data-sync-warning role="status"></p><div data-notice role="status" aria-live="polite"></div>${mode()==='demo'?'<div class="mv-demo-banner">Offline demo &middot; browser records</div>':''}<div data-summary class="mv-summary"></div>${workspace}<dialog class="mv-detail" data-detail aria-label="Movement details"><div data-detail-body></div></dialog><dialog class="mv-scanner" data-scanner-dialog aria-labelledby="mv-scanner-title"><div class="mv-section-heading"><h2 id="mv-scanner-title">Scan Receiver QR</h2>${button('Close','close-scanner')}</div><p class="mv-help">Ask the recipient to open Receive Transfer and generate their receiving QR.</p><div id="mv-receiver-camera"></div><p data-scanner-error role="alert"></p>${button('Try camera again','scan-receiver')}</dialog></div>`;
     const detail=current.root.querySelector('[data-detail]');
@@ -215,8 +215,9 @@
     const detail=current.root.querySelector('[data-detail]');
     const id=current.detailId;
     cancelTarget();current.detailId='';current.detailDirty=false;detail.close();syncModalLock();renderLists();
-    const focus=[...current.root.querySelectorAll('[data-action="view"]')].find(button=>button.dataset.id===id&&!button.closest('[hidden]'))||current.detailFocus;
-    if(focus?.isConnected&&!focus.closest('[hidden]'))focus.focus({preventScroll:true});
+    const visible=element=>element?.isConnected&&element.getClientRects().length>0;
+    const focus=[...current.root.querySelectorAll('button[data-action="view"]')].find(button=>button.dataset.id===id&&visible(button))||current.detailFocus;
+    if(visible(focus))focus.focus({preventScroll:true});
     else current.root.querySelector('[data-transfer-tab][aria-selected="true"], [data-record-search]')?.focus({preventScroll:true});
   }
 
@@ -234,6 +235,26 @@
     current.message = message;
     current.error = Boolean(error);
     renderNotice();
+  }
+
+  function transferCard(record) {
+    const toolIds=ids(record);
+    // Source projects come from the saved handover, never a tool's current site.
+    const sources=[...new Set((Array.isArray(record.source)?record.source:[]).map(item=>item?.site).filter(site=>typeof site==='string'&&site.trim()))];
+    const row=(label,value)=>`<div><dt>${esc(label)}</dt><dd>${esc(value||'—')}</dd></div>`;
+    const headingId=`mv-history-${record.id}`;
+    const created=new Date(record.createdAt);
+    return `<li><article class="mv-transfer-card${record.id===current.detailId?' mv-selected-row':''}" aria-labelledby="${esc(headingId)}" data-action="view" data-id="${esc(record.id)}">
+      <header class="mv-transfer-card-top"><h3 id="${esc(headingId)}"><span class="tool-id-chip">${esc(record.id)}</span></h3>${badge(recordStatus(record),'transfer')}</header>
+      <ul class="mv-transfer-equipment" aria-label="Equipment">${toolIds.slice(0,2).map(id=>{
+        const tool=toolById(id);
+        return `<li>${tool?.name?`<strong>${esc(tool.name)}</strong>`:''}<span class="mv-transfer-tool-id">${esc(id)}</span></li>`;
+      }).join('')}</ul>
+      ${toolIds.length>2?`<p class="mv-transfer-more">+ ${toolIds.length-2} more equipment items in details</p>`:''}
+      <dl class="mv-transfer-people">${row('From',record.sender)}${row('To',record.receiver)}</dl>
+      <dl class="mv-transfer-projects">${sources.length?row(sources.length>1?'Source projects':'Source project',sources.join(', ')):''}${row('Destination',record.destination)}</dl>
+      <footer class="mv-transfer-card-footer"><span class="mv-transfer-date"><span class="mv-sr">Transfer date: </span>${record.createdAt&&!isNaN(created.getTime())?`<time datetime="${esc(created.toISOString())}">${esc(date(record.createdAt))}</time>`:esc(date(record.createdAt))}</span><button type="button" class="btn btn-secondary" data-action="view" data-id="${esc(record.id)}" aria-label="View details for transfer ${esc(record.id)}">View details</button></footer>
+    </article></li>`;
   }
 
   function renderLists() {
@@ -256,7 +277,7 @@
     const query = current.search.toLowerCase();
     const filtered = records.filter(record => (!current.status || recordStatus(record) === current.status) && `${record.id} ${toolNames(record)} ${record.destination || ''} ${record.requester || record.sender || record.returnedBy || record.reportedBy || ''} ${record.receiver || ''} ${record.notes || ''}`.toLowerCase().includes(query)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     const list = current.root.querySelector('[data-list]');
-    list.innerHTML = filtered.length ? `<div class="table-wrap"><table><thead><tr><th>Movement / tools</th><th>Details</th><th>Status</th><th><span class="mv-sr">Actions</span></th></tr></thead><tbody>${filtered.map(record => `<tr${record.id === current.detailId ? ' class="mv-selected-row"' : ''}><td><span class="tool-id-chip">${esc(record.id)}</span><div class="cell-name mv-record-tools">${esc(toolNames(record))}</div><div class="cell-sub">${esc(date(record.createdAt))}</div></td><td><div class="cell-name">${esc(record.destination || toolById(record.toolId)?.site || '—')}</div><div class="cell-sub">${esc(record.requester || record.sender || record.returnedBy || record.reportedBy || '—')}</div>${record.receiver ? `<div class="cell-sub">To ${esc(record.receiver)}</div>` : ''}</td><td>${badge(recordStatus(record), current.kind)}</td><td>${button('View', 'view', record.id)}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty-state"><div class="t">${records.length ? 'No matching movements' : `No ${TITLES[current.kind].toLowerCase()} yet`}</div><div class="d">${records.length ? 'Try another search or status filter.' : current.kind === 'request' && admin() ? 'Submitted engineer requests will appear here for review.' : 'Create a movement to start its history here.'}</div></div>`;
+    list.innerHTML = filtered.length ? `<div class="table-wrap${current.kind==='transfer'?' mv-transfer-table':''}"><table><thead><tr><th>Movement / tools</th><th>Details</th><th>Status</th><th><span class="mv-sr">Actions</span></th></tr></thead><tbody>${filtered.map(record => `<tr${record.id === current.detailId ? ' class="mv-selected-row"' : ''}><td><span class="tool-id-chip">${esc(record.id)}</span><div class="cell-name mv-record-tools">${esc(toolNames(record))}</div><div class="cell-sub">${esc(date(record.createdAt))}</div></td><td><div class="cell-name">${esc(record.destination || toolById(record.toolId)?.site || '—')}</div><div class="cell-sub">${esc(record.requester || record.sender || record.returnedBy || record.reportedBy || '—')}</div>${record.receiver ? `<div class="cell-sub">To ${esc(record.receiver)}</div>` : ''}</td><td>${badge(recordStatus(record), current.kind)}</td><td>${button('View', 'view', record.id)}</td></tr>`).join('')}</tbody></table></div>${current.kind==='transfer'?`<ul class="mv-transfer-cards" aria-label="Transfer history">${filtered.map(transferCard).join('')}</ul>`:''}` : `<div class="empty-state"><div class="t">${records.length ? 'No matching movements' : `No ${TITLES[current.kind].toLowerCase()} yet`}</div><div class="d">${records.length ? 'Try another search or status filter.' : current.kind === 'request' && admin() ? 'Submitted engineer requests will appear here for review.' : 'Create a movement to start its history here.'}</div></div>`;
   }
 
   function detailRecord() {
