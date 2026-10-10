@@ -3,7 +3,7 @@ const path=require('node:path');
 const {randomUUID}=require('node:crypto');
 const {database}=require('./movement-test-db.cjs');
 const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610040001_authenticated_access.sql'),'utf8');
-async function authDatabase({accountManagement=true,engineerPortal=false}={}){
+async function authDatabase({accountManagement=true,engineerPortal=false,missingProjectHistory=false}={}){
   const fixture=await database(),{db,actors,sites}=fixture;
   await db.exec(`create role service_role nologin; grant usage on schema public to service_role;
     create schema auth;create table auth.users(id uuid primary key,email text,invited_at timestamptz,email_confirmed_at timestamptz,raw_user_meta_data jsonb default '{}'::jsonb,raw_app_meta_data jsonb default '{}'::jsonb);
@@ -22,6 +22,18 @@ async function authDatabase({accountManagement=true,engineerPortal=false}={}){
   for (const file of accountManagement ? ['202610060001_account_management.sql','202610060002_recipient_identity.sql','202610060003_development_accounts.sql'] : []) {
     await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations',file),'utf8'));
   }
+  // Isolated reproduction of the reviewed live schema, never run against Supabase.
+  if(missingProjectHistory)await db.exec(`
+    drop trigger project_history_capture on public.sites;
+    drop table public.project_history;
+    drop function public.project_record_history();
+    drop function public.project_history_immutable();
+    update public.sites set phase='Planning Phase';
+    alter table public.sites alter column phase set default 'Planning Phase';
+    alter table public.sites drop constraint sites_phase_check;
+    alter table public.sites add constraint sites_phase_check check(char_length(btrim(phase)) between 1 and 80);
+    alter table public.sites alter column is_active drop not null;
+  `);
   if(engineerPortal)await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610100001_engineer_portal.sql'),'utf8'));
   let queue=Promise.resolve();
   function query(actor,sql,params=[]){

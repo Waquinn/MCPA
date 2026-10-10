@@ -66,7 +66,7 @@
 
   function client() {
     if (!window.supabaseClient) {
-      if (!window.supabase?.createClient) throw new Error('The database connection could not load. Check your connection and try again.');
+      if (!window.supabase?.createClient) throw projectError('The project service could not load. Reload the page and try again.');
       // Same public project configuration as Masterlist. Reuse its client when loaded.
       window.supabaseClient = window.supabase.createClient(
         'https://zpqxlmiqwevhlstjirei.supabase.co',
@@ -76,15 +76,28 @@
     return window.supabaseClient;
   }
 
-  function databaseError(error) {
-    if (['PGRST202', '42883'].includes(error.code)) return 'Your project access is not configured yet. Contact your administrator.';
-    if (['PGRST205', '42703'].includes(error.code)) return 'Projects is not set up in the database yet. Contact your administrator, then retry.';
+  function projectError(message) {
+    return Object.assign(new Error(message), {projectUserMessage: message});
+  }
+
+  function databaseError(error = {}, operation = 'request') {
+    // Keep a diagnostic code in DevTools, never server messages, SQL, form values
+    // or response details. The Network response retains the original diagnostic.
+    const code = /^[A-Z0-9]{5,12}$/.test(error.code || '') ? error.code : 'UNKNOWN';
+    console.warn('[Projects] Request failed', {operation, code});
+    if (['42P01', '42703', '42883', 'PGRST200', 'PGRST202', 'PGRST204', 'PGRST205'].includes(code)) {
+      return 'Projects needs a database configuration update. Contact your administrator, then retry.';
+    }
     if (error.code === '23505') return 'A project with this name already exists. Please use a different name.';
     if (['23503', '23001'].includes(error.code)) return 'This project has linked records. Preserve its equipment and history by archiving it.';
-    if (error.code === '42501') return 'Project changes are blocked by database permissions. Ask your administrator to apply the Projects access update, then try again. Your entries have been kept.';
+    if (error.code === '42501') return 'Your account does not have permission to perform this project action. Contact your administrator if you need access.';
     if (['PGRST301', 'PGRST303'].includes(error.code)) return 'Your database session has expired or is invalid. Sign in again, then retry.';
     if (error.code === '23514') return 'Some project details are invalid. Please check the form and try again.';
-    return error.message || 'The database could not be reached. Please try again.';
+    if (error.projectUserMessage) return error.projectUserMessage;
+    if (navigator.onLine === false || /failed to fetch|networkerror|network request failed|load failed/i.test(error.message || '')) {
+      return 'The project service could not be reached. Check your connection and try again.';
+    }
+    return 'Projects could not complete this request. Try again. If the problem continues, contact your administrator.';
   }
 
   async function readAll(table, columns, order) {
@@ -105,7 +118,7 @@
       if (!demo && window.MCPAPermissions.operational(context().role)) {
         const {data:snapshot,error}=await client().rpc('mcpa_project_snapshot');
         if(error)throw error;
-        if(!Array.isArray(snapshot?.sites)||!Array.isArray(snapshot?.tools))throw new Error('Invalid project response. Please retry.');
+        if(!Array.isArray(snapshot?.sites)||!Array.isArray(snapshot?.tools)||!Array.isArray(snapshot?.history))throw projectError('Projects returned an unexpected response. Contact your administrator, then retry.');
         state.history=snapshot.history||[];
         return {sites:snapshot.sites,profiles:[],equipment:snapshot.tools.map(tool=>({...tool,id:tool.dbId,asset_id:tool.id,quantity:tool.qty,category:tool.cat,site_id:tool.siteId,current_holder_id:tool.holderId,holder:tool.holder||'Unassigned'}))};
       }
@@ -136,13 +149,13 @@
       };
     },
     async save(values, original) {
-      if (readOnly || isEngineer()) throw new Error('Only an Admin can edit live project records.');
+      if (readOnly || isEngineer()) throw projectError('Only an Admin can edit live project records.');
       let query = original
         ? client().from('sites').update(values).eq('id', original.id).eq('updated_at', original.updated_at)
         : client().from('sites').insert(values);
       const { data, error } = await query.select('*');
       if (error) throw error;
-      if (!data?.length) throw new Error('This project changed or is no longer editable. Close this form and retry after the next update.');
+      if (!data?.length) throw projectError('This project changed or is no longer editable. Close this form and retry after the next update.');
       return data[0];
     },
     async history(siteId) {
@@ -150,7 +163,8 @@
       if (window.MCPAPermissions.operational(context().role)) {
         const {data,error}=await client().rpc('mcpa_project_snapshot');
         if(error)throw error;
-        return (data.history||[]).filter(item=>item.project_id===siteId);
+        if(!Array.isArray(data?.history))throw projectError('Project history returned an unexpected response. Contact your administrator, then retry.');
+        return data.history.filter(item=>item.project_id===siteId);
       }
       const rows = [];
       for (let offset = 0; ; offset += 500) {
@@ -227,9 +241,10 @@
       state.ready = true;
     } catch (error) {
       if (!root.isConnected) return;
-      feedback(databaseError(error), true);
+      const message = databaseError(error, 'load');
+      feedback(message, true);
       if (!state.ready) {
-        root.querySelector('#sites-list').innerHTML = '<div class="card empty-state sites-full"><p class="t">Unable to load projects</p><p class="d">Please check the database connection and try again.</p><button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Try Again</button></div>';
+        root.querySelector('#sites-list').innerHTML = `<div class="card empty-state sites-full"><p class="t">Unable to load projects</p><p class="d">${escape(message)}</p><button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Try Again</button></div>`;
         root.querySelector('#site-detail-content').innerHTML = '<button type="button" class="sites-back eyebrow" data-action="all-sites">← All Projects</button><div class="card empty-state"><p class="t">Unable to load project details</p><button type="button" class="btn btn-secondary btn-sm" data-action="refresh">Try Again</button></div>';
       }
     } finally {
@@ -394,7 +409,7 @@
       if (original) renderDetail();
       feedback(`${saved.name} ${original ? 'updated' : 'created'} successfully.`);
     } catch (error) {
-      formError(databaseError(error));
+      formError(databaseError(error, 'save'));
     } finally { setSaving(false); }
   }
 
@@ -435,7 +450,7 @@
       closeDialog();
       showScreen('sites');
       feedback(`${site.name} ${saved.is_active === false ? 'archived' : 'restored'}. Its history has been preserved.`);
-    } catch (error) { formError(databaseError(error)); }
+    } catch (error) { formError(databaseError(error, 'archive')); }
     finally { setSaving(false); }
   }
 
@@ -473,7 +488,7 @@
   async function viewMovements() {
     const site = currentSite();
     if (!site) return;
-    const records = await repository.movements(site.id).catch(error => ({error: error.message}));
+    const records = await repository.movements(site.id).catch(error => ({error: databaseError(error, 'movements')}));
     if (!root.isConnected) return;
     openDialog(`Movement History — ${site.name}`, `<p class="sites-dialog-description">Equipment movement into and out of this project.</p><div class="card">${movementTable(records)}</div><div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true);
   }
@@ -483,7 +498,7 @@
     const item = site && siteEquipment(site).find(record => record.id === id);
     if (!item) return;
     const fromReview = dialog.open && dialog.dataset.view === 'review';
-    const records = await repository.movements(site.id, item.id).catch(error => ({error: error.message}));
+    const records = await repository.movements(site.id, item.id).catch(error => ({error: databaseError(error, 'tool-movements')}));
     if (!root.isConnected) return;
     const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Project', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
     openDialog(item.name, `
@@ -508,7 +523,7 @@
           const records = await repository.history(site.id);
           if (!root.isConnected) return;
           openDialog('Project History', records.length ? records.map(record => `<p>${escape(formatTimestamp(record.changed_at))} · ${escape(record.change_types.join(', '))}</p>`).join('') : '<p>No project changes recorded.</p>');
-        } catch (error) { feedback(databaseError(error), true); }
+        } catch (error) { feedback(databaseError(error, 'history'), true); }
       },
       'review-tools': reviewTools, 'view-tool': () => viewTool(button.dataset.id),
       'view-movements': viewMovements, 'close-dialog': closeDialog

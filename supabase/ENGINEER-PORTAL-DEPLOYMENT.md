@@ -25,6 +25,72 @@ or alter live accounts, projects, custody, requests, handovers or history.
 
 ## Backend migration
 
+### Current live Projects dependency issue
+
+The reported `relation "public.project_history" does not exist` comes from the
+history query inside `mcpa_project_snapshot()`. Its definition is in this migration,
+but the history table and capture trigger originate in
+`1-admin/modules/sites/setup.sql`, outside the numbered migrations. The authenticated
+access migration configures history permissions only if that table already exists.
+The portal migration neither creates the table nor checks that it exists.
+
+An isolated reproduction confirms that the portal migration can commit and its four
+installation checks can pass while the snapshot subsequently raises `42P01`. The
+earlier fixture always installed the full Projects setup, masking that dependency.
+No repository migration renames or removes the table. A successful transaction does
+not imply that every PL/pgSQL query has executed successfully.
+
+The supplied `Supabase Snippet Untitled query (5).csv` confirms that
+`public.project_history` is absent, the snapshot is installed and references it,
+and the review found no alternative project-history relation. The only custom site
+trigger is `sites_updated_at`; history capture and its functions are absent. Site
+RLS is enabled, anonymous access is denied, and authenticated site writes remain
+limited to Admin by the existing policies. This confirms an uninstalled history
+dependency in the current schema; it cannot prove whether it never existed earlier.
+
+**Current manual gate:** run the entire
+`supabase/migrations/202610100002_project_history.sql` once in the existing Supabase
+SQL Editor. Send back its single `project_history_repair_verification` result.
+Expected: table/RLS/capture/immutability/snapshot flags are true; `history_rows` is
+zero unless a real project change occurs after COMMIT. Both browser roles have
+`direct_write_granted=false` and `capture_function_execute=false`. Only authenticated
+has SELECT and snapshot EXECUTE; history SELECT remains restricted by the
+Admin/Tool Handler policy, while Engineers/Architects read only assigned-project
+history through the existing snapshot.
+
+The new migration creates the missing table and future-change audit triggers,
+adds the existing authenticated history-read policy, and revokes browser writes.
+Audit actors use permanent profile IDs resolved from authenticated login IDs.
+Update, delete and truncate of history are blocked; there is no baseline or backfill.
+All existing site records, defaults, constraints, policies and RPC definitions stay
+unchanged. The transaction has short lock/statement timeouts, checks the reviewed
+dependencies, and refuses to overwrite existing history or create a duplicate store.
+If it reports an error, stop and share the error; do not work around a guard.
+
+Do not rerun the portal migration or the old Projects setup. The old setup changes
+project metadata/assignments, inserts baseline history and restores permissive
+prototype policies. Its history actor lookup also predates the independent profile
+identity model. The prepared repair retains current authenticated permissions and
+resolves actors through the Auth-to-profile link. The snapshot's current history
+reference is correct and requires no rewrite.
+
+Local UI changes classify schema/RPC errors as configuration issues, sanitize
+unexpected server errors, and retain only operation/error codes in console diagnostics.
+The Network response remains available for development debugging. Desktop/mobile
+tests cover missing history, Admin history errors, retry, actual accountable names,
+Engineer A/B (assigned and unassigned) and Admin controls; database checks verify
+Admin metadata writes and denial of Engineer/Architect writes. These are isolated
+tests, not confirmation that the live Projects page is repaired. The repair was also
+tested against the reviewed missing-history schema, including no record rewrites,
+no invented history, future audit events, stable actor identity, transaction rollback,
+immutability and refusal of an alternative history store. No live schema, records
+or permissions were changed during this investigation. QR testing stays paused;
+frontend error-message deployment and live UI verification follow after SQL review.
+
+Run these focused local checks with `npm.cmd --prefix tests run test:projects`.
+
+### Original migration deployment
+
 Review `migrations/202610100001_engineer_portal.sql` after the existing account
 management migrations. Apply **only this new migration**, once, using the SQL Editor;
 do not rerun original setup scripts. It is transactional and leaves existing data

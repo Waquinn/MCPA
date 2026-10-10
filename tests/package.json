@@ -2,6 +2,7 @@
   "name": "mcpa-movement-tests",
   "private": true,
   "scripts": {
+    "test:projects": "node --test project-history-dependency.test.cjs project-history-repair.test.cjs && node auth.browser.cjs --projects-errors",
     "test:portal": "node --test engineer-portal.database.cjs && node auth.browser.cjs --portal",
     "test": "node --test movement-store.test.cjs movement-sync.test.cjs movement-navigation.test.cjs module-navigation.test.cjs inventory.test.cjs dashboard-view.test.cjs archive-database.test.cjs auth-database.test.cjs accounts-database.test.cjs accounts-edge.test.mjs development-accounts.test.mjs legacy-handover-lockdown.test.cjs profile-identity.test.cjs && node movement-database.test.cjs && node auth.browser.cjs",
     "test:auth": "node --test auth-database.test.cjs accounts-database.test.cjs accounts-edge.test.mjs development-accounts.test.mjs legacy-handover-lockdown.test.cjs profile-identity.test.cjs && node auth.browser.cjs",

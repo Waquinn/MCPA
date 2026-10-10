@@ -34,7 +34,7 @@ const server=http.createServer(async(req,res)=>{
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
- fixture=await authDatabase({engineerPortal:true});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ fixture=await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
  await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
  server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
@@ -80,6 +80,11 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--projects-errors')){
+  await require('./projects-errors.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,go,login,logout,shot});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Projects schema errors and authorized views; isolated database only');return;
+ }
  if(process.argv.includes('--portal')){
   await require('./engineer-portal.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');
