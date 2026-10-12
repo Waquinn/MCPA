@@ -136,11 +136,11 @@ test('receipt requires named receiver and complete inspections and cannot run tw
   assert.throws(() => env.api.receiveTransfer(transfer.id, { inspections: good(['GRD-002']) }), /already been received/);
 });
 
-test('good returns release custody; damaged and lost returns retain accountability and open reports', () => {
+test('Office returns release good/damaged custody; missing items retain accountability and open reports', () => {
   const env = browser(); env.activate();
   handover(env, ['GRD-002', 'BRN-001', 'JHM-003']);
   const returned = env.api.createReturn({
-    toolIds: ['GRD-002', 'BRN-001', 'JHM-003'], destination: 'Riverside Warehouse',
+    toolIds: ['GRD-002', 'BRN-001', 'JHM-003'], destination: 'Office',
     conditions: [
       { toolId: 'GRD-002', condition: 'good' },
       { toolId: 'BRN-001', condition: 'damaged', notes: 'Bent shaft' },
@@ -149,10 +149,10 @@ test('good returns release custody; damaged and lost returns retain accountabili
   });
   assert.equal(tool(env.api, 'GRD-002').holder, '—');
   assert.equal(tool(env.api, 'GRD-002').status, 'available');
-  assert.equal(tool(env.api, 'GRD-002').site, 'Riverside Warehouse');
+  assert.equal(tool(env.api, 'GRD-002').site, 'Office');
   for (const [id, status] of [['BRN-001', 'repair'], ['JHM-003', 'missing']]) {
-    assert.equal(tool(env.api, id).holder, 'Engr Sky');
-    assert.equal(tool(env.api, id).site, status === 'repair' ? 'Riverside Warehouse' : 'San Gabriel');
+    assert.equal(tool(env.api, id).holder, status === 'repair' ? '—' : 'Engr Sky');
+    assert.equal(tool(env.api, id).site, status === 'repair' ? 'Office' : 'San Gabriel');
     assert.equal(tool(env.api, id).status, status);
   }
   assert.equal(env.api.getState().repairs[0].sourceId, returned.id);

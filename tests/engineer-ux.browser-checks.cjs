@@ -17,7 +17,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
   for(const id of ['UX-001','UX-002'])await f.db.query("insert into equipment(id,asset_id,name,quantity,status) values($1,$2,$3,1,'AVAILABLE')",[randomUUID(),id,'Long equipment description for construction site — '+id]);
   await logout();await login('pau');await wait("MCPAAuth.profile?.id==="+JSON.stringify(f.actors.pau.id));await go('request');await wait("document.querySelector('#mv-destination')");
   assert.deepEqual(await options(),[]);assert.ok(await evaluate("document.querySelector('#mv-destination').disabled && document.querySelector('[data-form=create] [type=submit]').disabled"));
-  assert.ok(await evaluate("document.querySelector('#mv-project-help').textContent==='No active projects are assigned to your account. Please contact your administrator.'"));
+  assert.ok(await evaluate("document.querySelector('#mv-request-project-status').textContent==='No assigned project site. Please contact your administrator.'"));
   assert.ok(await evaluate("document.querySelector('[data-list]').textContent.includes('No requests yet')"));
   await logout();await login('architect');await wait("MCPAAuth.profile?.role==='architect'");await go('request');await wait("document.querySelector('#mv-destination')");
   assert.deepEqual(await options(),['Architect assigned project']);assert.equal(await evaluate("document.querySelector('#mv-destination').value"),'Architect assigned project');
@@ -32,6 +32,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
   await submit('[data-form=create]');await wait("document.querySelector('[data-detail][open]')");
   const request=await evaluate('MovementStore.getState().requests[0]');assert.equal(request.purpose,'');assert.equal(request.destinationId,projectId);
   await click('[data-action=close-detail]');
+  assert.equal(await evaluate("document.querySelector('[data-request-submit]').disabled"),false,'A completed save re-enables the eligible request form');
   await act('sky','createRequest',{toolIds:['TOOL-001'],destination:'Casa Buena',purpose:'Entered purpose preserved'});
   await evaluate('MovementStore.refresh()');
   // Removing the saved assignment invalidates the option even while the form is dirty.

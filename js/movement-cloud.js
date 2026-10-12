@@ -81,6 +81,17 @@
     get mode() { return mode; },
     getState() { return mode === 'demo' ? window.MovementDemoStore.getState() : clone(state); },
     getContext: context,
+    async returnDestination() {
+      if (mode === 'demo') return window.MovementDemoStore.returnDestination();
+      window.MCPAAuth.requireLive();
+      const {data,error} = await client().rpc('mcpa_return_destination');
+      if (error) {
+        if (['PGRST202','42883','42P01'].includes(error.code)) throw new Error('Office returns are not configured yet. Contact Admin.');
+        throw explain(error);
+      }
+      if (!data?.id || typeof data.name !== 'string' || !data.name.trim()) throw new Error('The Office destination could not be verified. Contact Admin.');
+      return data;
+    },
     async initialize() { if (mode === 'demo') return window.MovementDemoStore.activate(); return ready ? clone(state) : refresh(); },
     refresh,
     clear() {

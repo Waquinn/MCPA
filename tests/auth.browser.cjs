@@ -85,46 +85,23 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
  fixture=await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
  console.log('Browser fixture ready; isolated local database');
- if (turnoverRun) {
-  for (const file of [
-    '202610100004_movement_cancellation.sql',
-    '202610100006_monitoring.sql',
-    '202610120001_request_turnover_notifications.sql'
-  ]) {
-    await fixture.db.exec(
-      fs.readFileSync(
-        path.join(root, 'supabase/migrations', file),
-        'utf8'
-      )
-    );
-  }
-}
-
-await fixture.db.exec(
-  fs.readFileSync(
-    path.join(
-      root,
-      'supabase/migrations/202610120003_optional_request_purpose.sql'
-    ),
-    'utf8'
-  )
-);
-
-if (!turnoverRun && (process.argv.includes('--engineer-ux') || process.argv.length === 2)) {
-  await fixture.db.exec(
-    fs.readFileSync(
-      path.join(root, 'supabase/migrations/202610100006_monitoring.sql'),
-      'utf8'
-    )
-  );
-}
+ // Compose each fixture dependency once, then install Office returns after the
+ // existing optional-purpose patch to reproduce the already-deployed SQL order.
+ const fixtureMigrations=new Set();
+ if(turnoverRun||process.argv.includes('--request-projects')){
+  for(const file of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610120001_request_turnover_notifications.sql'])fixtureMigrations.add(file);
+ }
+ if(process.argv.includes('--engineer-ux')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
+ fixtureMigrations.add('202610120003_optional_request_purpose.sql');
  if(process.argv.includes('--feature-completion')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
    alter table storage.objects enable row level security;grant usage on schema storage to authenticated,anon;grant select,insert,update,delete on storage.objects to authenticated,anon;
    alter table equipment alter column id set default gen_random_uuid();`);
-  for(const file of ['202610100003_feature_storage.sql','202610100004_movement_cancellation.sql','202610100005_purchase_ledger.sql','202610100006_monitoring.sql'])await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
+  for(const file of ['202610100003_feature_storage.sql','202610100004_movement_cancellation.sql','202610100005_purchase_ledger.sql','202610100006_monitoring.sql'])fixtureMigrations.add(file);
  }
+ for(const file of [...fixtureMigrations].sort())await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
+ await require('./office-return-fixture.cjs').configure(fixture);
  await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
  server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new',...(process.env.MCPA_CHROME_NO_SANDBOX==='1'?['--no-sandbox','--disable-gpu','--disable-gpu-sandbox']:[]),'--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
@@ -179,6 +156,14 @@ if (!turnoverRun && (process.argv.includes('--engineer-ux') || process.argv.leng
  if(turnoverRun){
   await require('./request-turnover.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,port,base,errors});
   assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS Request turnover synchronization; isolated independent sessions, no live requests');return;
+ }
+ if(process.argv.includes('--office-returns')){
+  await require('./office-return.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
+  assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS Office returns; isolated local records, no live writes');return;
+ }
+ if(process.argv.includes('--request-projects')){
+  await require('./request-projects.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,port,base,errors,artifactDirectory:profile});
+  assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS Assigned request projects; isolated Engineer A/B/Architect sessions, no live writes');return;
  }
  if(process.argv.includes('--feature-completion')){
   await require('./feature-frontend.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
@@ -381,7 +366,7 @@ if (!turnoverRun && (process.argv.includes('--engineer-ux') || process.argv.leng
  const transfer=await evaluate('MovementStore.getState().transfers.find(t=>t.requestId==='+JSON.stringify(request.id)+')');assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='TOOL-001').holder"),'');
  await logout();await login('sky');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await go('transfer');await wait("document.querySelector('[data-form=lookup]')");await click('[data-transfer-tab=receive]');await fill('[name=code]',transfer.code);await submit('[data-form=lookup]');await wait("document.querySelector('[data-form=receive]')");await fill('[data-condition]','good');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Test each')");await click('[data-tested]');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Receipt confirmed')");
  assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='TOOL-001').holder"),'Engr Sky');
- await go('return');await wait("document.querySelector('[data-form=create]')");await click('[name="toolIds"][value="TOOL-001"]');await fill('[name=destination]','Main Warehouse');await fill('[data-condition]','damaged');await fill('[data-condition-notes]','Guard broken');await submit('[data-form=create]');await wait("MovementStore.getState().repairs.some(r=>r.toolId==='TOOL-001')");
+ await go('return');await wait("document.querySelector('[data-form=create]')");await click('[name="toolIds"][value="TOOL-001"]');await fill('[data-condition]','damaged');await fill('[data-condition-notes]','Guard broken');await submit('[data-form=create]');await wait("MovementStore.getState().repairs.some(r=>r.toolId==='TOOL-001')");
  await go('dashboard');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));await shot('engineer-mobile-dark');
  await evaluate('__expire()');await wait("document.querySelector('#auth-email')");assert.equal(await evaluate('MovementStore.getState().tools.length'),0);
  await login('architect');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");assert.equal(await evaluate('MCPAAuth.profile.role'),'architect');await logout();
