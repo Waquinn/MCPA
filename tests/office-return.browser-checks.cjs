@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
-const {migration}=require('./office-return-fixture.cjs');
+const {withOfficeId}=require('./office-return-fixture.cjs');
 exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot})=>{
  const a=f.actors,office=f.sites.office;
  const writes=()=>calls.filter(c=>c.rpc==='mcpa_movement_action').length;
@@ -14,7 +14,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  assert.ok(await evaluate('!document.querySelector("[data-form=create] [name=destination]")'));
  await click('[name=toolIds][value="TOOL-002"]');await fill('[data-condition]','good');await fill('#mv-notes','Preserve this draft during Office connection retry');
  const writesBeforeMissing=writes();await submit('[data-form=create]');assert.equal(writes(),writesBeforeMissing);
- await f.db.exec(migration.replace('null; -- OFFICE_ID_FROM_PREFLIGHT',"'"+office+"'; -- OFFICE_ID_FROM_PREFLIGHT"));
+ await f.db.exec(withOfficeId(office));
  await click('[data-action=retry-office]');await wait('!document.querySelector("[data-return-submit]").disabled');
  assert.equal(await evaluate('document.querySelector("#mv-notes").value'),'Preserve this draft during Office connection retry');
  assert.equal(await evaluate('document.querySelector("[data-condition]").value'),'good');

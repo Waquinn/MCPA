@@ -1,14 +1,14 @@
 # Office-only Engineer/Architect returns
 
-October 12, 2026. Implemented and tested locally. **Not deployed.** The user-provided live preflight shows no Office location. No live location was created, no live RPC was replaced, no existing custody/transfer/request/history record was changed, and no commit, push or publication was performed.
+October 12, 2026. Implemented and tested locally. **Office backend deployment is pending.** The latest user-provided live preflight verifies an active Office location and confirms the Office return RPC is not installed. This agent created no live location, replaced no live RPC, changed no existing custody/transfer/request/history record, and performed no commit, push or publication. Frontend publication was not independently checked.
 
 ## Confirmed cause and live configuration
 
 `js/movement-ui.js` used `siteField()` for Return destination. That helper combines location names from the authorized movement snapshot with equipment location names and renders an ordinary project selector. The underlying return engine resolves any supplied destination by `public.sites.name`; it had no company Office designation or Office-only check.
 
-The live preflight lists Casa Buena, Casa Plan and four development receiving/transfer locations. **None is a verified company Office.** The deployed gateway source hash `582ea68af753d0fdd81461c537dbf9ab` and return implementation hash `5b94b3b5642f26981a80382a2b1b6be7` match the reviewed Engineer portal and return implementation. The cancellation gateway is not installed; this change supports that existing deployment without requiring cancellation or unrelated migrations.
+The latest live preflight verifies **Office**, UUID **`ba8bef8c-139a-43b9-ae2b-5857293b7f33`**, at **2826 Cagayan Valley Rd., Plaridel, Bulacan**, with `is_active=true`. The deployed gateway source hash `582ea68af753d0fdd81461c537dbf9ab` and return implementation hash `5b94b3b5642f26981a80382a2b1b6be7` match the reviewed Engineer portal and return implementation. The cancellation gateway is not installed; this change supports that existing deployment without requiring cancellation or unrelated migrations.
 
-No production Office UUID has been selected. The migration's `OFFICE_ID_FROM_PREFLIGHT` remains `null` deliberately, so it refuses deployment before a real existing Office record is verified. Local tests use randomly generated disposable fixture IDs; those IDs are never written into deployment SQL.
+The migration's `OFFICE_ID_FROM_PREFLIGHT` is now bound to that verified existing Office UUID. It validates that the same record remains active and refuses a conflicting designation; no location is created or inferred from a development project. Local tests explicitly replace the deployment UUID/address with disposable fixture values, so filling real configuration cannot make tests depend on production identities or metadata.
 
 ## Frontend changes
 
@@ -50,15 +50,15 @@ The inspected deployed implementation has **no separate pending return or Admin/
 
 Before validation succeeds, equipment custody and availability remain unchanged. A failure/transaction rollback reverses the complete return and any generated notification. Original source project/site/holder IDs stay in the new movement's source snapshot and its linked site history. Existing history is not rewritten. Admin can review the saved Office destination, inspections and linked repair/missing follow-up through the existing Return/history modules. No new receiving stage is claimed or bypassed.
 
-## Configuration prerequisite and next manual step
+## Verified configuration and next manual step
 
-The prepared **`supabase/office-location-configuration.sql`** addresses the actual missing location safely. Its address is deliberately `null` until the real company equipment-receiving Office address/location is supplied. The current Admin project editor requires an Engineer/Architect assignment for a new project; this narrow manual Office configuration instead leaves `assigned_engineer_id=null` and records the existing metadata label `Unassigned`, creating no invented employee or project assignment.
+The Office location prerequisite is now satisfied by the latest preflight. The earlier `supabase/office-location-configuration.sql` has the supplied address and is **not required again**. No new Office creation or project/employee assignment is requested.
 
-When manually reviewed and run with the actual Office address, the script creates at most one `Office` location using the database's normal UUID default. It preserves existing projects and equipment. It refuses ambiguous Office-like records and does not automatically rename/reactivate/reassign any existing record. Repeating the same configuration returns the existing Office UUID. The normal location-creation history trigger, where installed, may record that legitimate new Office creation; no historical events are fabricated.
+**Next manual step:** review and run **`supabase/migrations/202610120002_office_returns.sql`** in the Supabase SQL Editor. It already contains the verified UUID. It creates only the private destination configuration and RPC definitions, preserving existing equipment, custody and movement/history rows. It needs no reset or unrelated migration.
 
-**Only the next manual action is being requested:** provide the real address in that configuration script, run it in the Supabase SQL Editor, and return its `receiving_office` JSON result. Do not run the Office return migration or deploy the frontend yet. Once that result identifies the actual existing Office record, the migration can be bound to its verified UUID and the next deployment step reviewed. No Office UUID is invented or inferred from a development project.
+Return its `office_return_verification` JSON. Expected values: `office_configured`, `office_destination_rpc` and `office_gateway` are true; `anonymous_movement_execute` and `authenticated_private_execute` are false. If a guard/SQL error occurs, stop and retain the error rather than resetting data. The read-only `supabase/office-return-preflight.sql` can then confirm `office_return_installed=true` and the new gateway hash `c26d3585fe9e140e072b12a273f7bb19`.
 
-The existing branch is `Updated-MCPARole`; GitHub Pages `/(root)` settings remain unchanged. Live return enforcement remains pending the guarded RPC deployment and frontend publication.
+The existing branch is `Updated-MCPARole`; GitHub Pages `/(root)` settings remain unchanged. The frontend changes are already in the current checkout. Live Office-only enforcement remains pending the guarded RPC deployment; frontend publication and a deployed development-account smoke test must be verified after database installation.
 
 ## Tests performed
 
@@ -79,7 +79,7 @@ All database checks used isolated PGlite PostgreSQL fixtures. Browser checks use
 | Desktop/mobile and themes | 1440px and 393px Return form in Light/Night modes passed no-horizontal-overflow and 44px condition-control checks. Long equipment names wrapped; fixed Office field visually reviewed. Existing flow regressions also exercised 375–1440px. |
 | Auth/role/security regression | Existing all-five-role login/session/direct-route guards, approval/release/receipt/return, outage recovery, drafts and subscription cleanup passed. Private Office functions/configuration denied client access in SQL. |
 
-Completed verification: **24 Node tests** (7 Office database/configuration checks and 17 demo movement checks), the dedicated Office return browser workflow, existing `--portal` browser checks and existing `--flows-only` browser checks. Syntax and whitespace checks passed.
+Completed verification: **24 Node tests** (7 Office database/configuration checks and 17 demo movement checks) and the dedicated Office return browser workflow were rerun after binding the verified Office UUID and isolating tests from the supplied address. Existing `--portal` and `--flows-only` browser checks passed during the implementation; their application code has not changed since. Syntax and whitespace checks passed.
 
 Reproduce with `npm --prefix tests run test:office-returns`. This restricted Windows host needed the existing opt-in `MCPA_CHROME_NO_SANDBOX=1` setting. Browser transport is modeled; real SQL/RLS/transaction behavior runs in the fixture.
 

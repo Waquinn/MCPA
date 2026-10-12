@@ -1,7 +1,7 @@
 // Real PostgreSQL/RLS in disposable local fixtures. Never calls live Supabase.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),{randomUUID}=require('node:crypto');
-const {authDatabase}=require('./auth-test-db.cjs'),{configure,migration}=require('./office-return-fixture.cjs');
+const {authDatabase}=require('./auth-test-db.cjs'),{configure,withOfficeId}=require('./office-return-fixture.cjs');
 const act=(f,a,p,id=randomUUID())=>f.rpc(a,'mcpa_movement_action',{p_action:'createReturn',p_payload:p,p_operation_id:id});
 const inspect=(id,condition='good',notes='')=>({toolId:id,condition,notes});
 const tables=['profiles','sites','equipment','mcpa_movements','mcpa_movement_assets','mcpa_movement_sites','mcpa_movement_operations'];
@@ -13,7 +13,7 @@ test('unconfigured Office refuses installation without creating a location or re
  const f=await authDatabase({engineerPortal:true});
  try{
   const before=await snapshot(f);
-  await assert.rejects(f.db.exec(migration),/verified existing Office UUID/);await f.db.exec('rollback');
+  await assert.rejects(f.db.exec(withOfficeId(null)),/verified existing Office UUID/);await f.db.exec('rollback');
   assert.deepEqual(await snapshot(f),before);
   assert.equal((await f.db.query("select to_regclass('mcpa_auth_private.return_office') as relation")).rows[0].relation,null);
   const preflight=(await f.db.query(fs.readFileSync(path.join(__dirname,'../supabase/office-return-preflight.sql'),'utf8'))).rows[0].office_return_preflight;
@@ -26,7 +26,8 @@ test('unconfigured Office refuses installation without creating a location or re
 test('manual Office location configuration requires a real address and creates no duplicate or person assignment',async()=>{
  const f=await authDatabase({engineerPortal:true,missingProjectHistory:true});
  try{
-  const configuration=fs.readFileSync(path.join(__dirname,'../supabase/office-location-configuration.sql'),'utf8'),before=await snapshot(f);
+  const configuration=fs.readFileSync(path.join(__dirname,'../supabase/office-location-configuration.sql'),'utf8')
+    .replace(/verified_office_address constant text := [^\r\n]*; -- ACTUAL_OFFICE_ADDRESS/,'verified_office_address constant text := null; -- ACTUAL_OFFICE_ADDRESS'),before=await snapshot(f);
   await assert.rejects(f.db.exec(configuration),/actual company equipment-receiving Office address/);await f.db.exec('rollback');assert.deepEqual(await snapshot(f),before);
   const supplied=configuration.replace('null; -- ACTUAL_OFFICE_ADDRESS',"'Local receiving Office fixture'; -- ACTUAL_OFFICE_ADDRESS");
   await f.db.exec(supplied);
@@ -85,7 +86,7 @@ test('migration preserves historical returns/retries; new retries survive Office
   const oldPayload={toolIds:['TOOL-002'],destination:'Main Warehouse',conditions:[inspect('TOOL-002')]},oldOperation=randomUUID();
   const old=await act(f,a.sky,oldPayload,oldOperation);
   const officeId=randomUUID();await f.db.query("insert into sites(id,name,location,assigned_engineer) values($1,'Office','Local receiving fixture','Office test receiver')",[officeId]);
-  const bound=migration.replace('null; -- OFFICE_ID_FROM_PREFLIGHT',"'"+officeId+"'; -- OFFICE_ID_FROM_PREFLIGHT"),before=await snapshot(f);
+  const bound=withOfficeId(officeId),before=await snapshot(f);
   await f.db.exec(bound);assert.deepEqual(await snapshot(f),before,'Migration changes definitions/configuration only');
   assert.deepEqual(await act(f,a.sky,oldPayload,oldOperation),old);assert.deepEqual(await snapshot(f),before,'Legacy retry neither rewrites result nor touches current custody');
   const payload={toolIds:['TOOL-003'],conditions:[inspect('TOOL-003')]},operation=randomUUID(),returned=await act(f,a.sky,payload,operation);
