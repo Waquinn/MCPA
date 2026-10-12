@@ -269,10 +269,11 @@ test('validation rejects malformed selection, nonexistent destinations, receiver
   assert.throws(() => env.api.createTransfer({ ...transferInput(), destination: 'Phantom site' }), /existing destination/);
   assert.throws(() => env.api.createTransfer({ ...transferInput(), receiver: '' }), /Receiver is required/);
   assert.throws(() => env.api.createTransfer({ ...transferInput(), receiver: 'Unknown person' }), /existing receiver/);
-  assert.throws(() => env.api.createRequest({ ...transferInput(), purpose: '' }), /Purpose is required/);
+  assert.throws(() => env.api.createRequest({ ...transferInput(), purpose: 'x'.repeat(2001) }), /2,000/);
   assert.throws(() => env.api.createRequest({ ...transferInput(), purpose: 'Work', neededUntil: '2000-01-01' }), /in the past/);
   assert.throws(() => env.api.createRequest({ ...transferInput(), purpose: 'Work', neededUntil: '2099-02-31' }), /valid needed-until/);
   assert.equal(env.api.getState().revision, 0);
+  assert.equal(env.api.createRequest({ ...transferInput(), purpose: '' }).purpose, '');
 });
 
 test('tracked bulk sets move in full and returned snapshots cannot mutate saved state', () => {

@@ -65,6 +65,8 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
  fixture=await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
  console.log('Browser fixture ready; isolated local database');
+ await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations/202610120001_optional_request_purpose.sql'),'utf8'));
+ if(process.argv.includes('--engineer-ux'))await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations/202610100006_monitoring.sql'),'utf8'));
  if(process.argv.includes('--feature-completion')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
@@ -118,6 +120,11 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--engineer-ux')){
+  await require('./engineer-ux.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,enter});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Engineer UX browser checks; isolated database, no live writes');return;
+ }
  if(process.argv.includes('--feature-completion')){
   await require('./feature-frontend.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
   await require('./procurement-monitoring.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});

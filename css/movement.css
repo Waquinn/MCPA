@@ -37,6 +37,11 @@
 .mv-record-area { min-width: 0; }
 .mv-workspace > *, .movement-ui .field { min-width: 0; }
 .movement-ui .field select { min-width: 0; max-width: 100%; min-height: 44px; }
+.movement-ui .field select { background-color: var(--input-background); border-color: var(--border-strong); border-radius: var(--radius-sm); padding: 12px 36px 12px 12px; color: var(--text-primary); line-height: 1.5; }
+.movement-ui .field select:disabled { opacity: 1; color: var(--text-secondary); cursor: not-allowed; }
+.movement-ui .field select option:checked { background: var(--gold); color: var(--black-deep); }
+.mv-project-selection { font-size: 13px; line-height: 1.6; color: var(--text-primary); overflow-wrap: anywhere; margin: 8px 0 16px; }
+.mv-project-selection:empty { display: none; }
 @media (max-width: 768px) { .movement-ui .field select { font-size: 16px; } }
 .mv-record-header { padding: 20px 20px 16px; }
 .mv-record-header h2 { margin-bottom: 15px; }

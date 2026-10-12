@@ -302,7 +302,7 @@
         assertMovable(tools);
         assertUnlocked(next, tools);
         if (context().role !== 'admin' && input.receiver && receiver(next, input.receiver) !== context().name) fail('Engineers can only request equipment for themselves.');
-        var record = { id: id(next, 'REQ'), toolIds: tools.map(function (tool) { return tool.id; }), source: tools.map(snapshot), destination: site(next, input.destination, true), receiver: receiver(next, input.receiver || context().name), purpose: text(input.purpose, 'Purpose', true), neededUntil: requestDate(input.neededUntil), requester: context().name, status: 'pending', createdAt: now(), updatedAt: now() };
+        var record = { id: id(next, 'REQ'), toolIds: tools.map(function (tool) { return tool.id; }), source: tools.map(snapshot), destination: site(next, input.destination, true), receiver: receiver(next, input.receiver || context().name), purpose: text(input.purpose, 'Purpose', false), neededUntil: requestDate(input.neededUntil), requester: context().name, status: 'pending', createdAt: now(), updatedAt: now() };
         next.requests.unshift(record);
         activity(next, 'request_created', record, record.toolIds, record.id + ' requested for ' + record.destination);
         return record;

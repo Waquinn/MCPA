@@ -19,7 +19,7 @@
   const ids = record => record.toolIds || (record.toolId ? [record.toolId] : []);
   const canAdjust = (record, action) => window.MCPAPermissions.movementAction(context().role, action, record, context(), mode(), state());
   const recordStatus = record => record.status || 'returned';
-  const date = value => { const d = new Date(value); return value && !isNaN(d.getTime()) ? d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'; };
+  const date = value => { const d = new Date(value); return value && !isNaN(d.getTime()) ? d.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' }) : '—'; };
   const button = (label, action, id, style) => `<button type="button" class="btn ${style || 'btn-secondary'} btn-sm" data-action="${esc(action)}"${id ? ` data-id="${esc(id)}"` : ''}>${esc(label)}</button>`;
   const badge = (status, kind) => {
     const tones = { pending: 'pending', approved: 'verified', rejected: 'discrepancy', withdrawn: 'pending', canceled: 'pending', refused: 'discrepancy', discrepancy: 'discrepancy', released: 'inuse', received: 'verified', reported: 'repair', underrepair: 'underrepair', completed: 'verified', missing: 'missing', recovered: 'verified', returned: 'verified' };
@@ -47,7 +47,39 @@
     });
   }
 
+  const assignedRequestSites = () => (state().sites || []).filter(site => site && site.is_active === true && site.assigned_engineer_id === context().id);
+  const scopedRequest = () => current?.kind === 'request' && operational() && mode() === 'live';
+  const projectPreferenceKey = () => 'mcpa.request-project.' + context().id;
+  function requestProjectValue() {
+    let saved = '';
+    try { saved = sessionStorage.getItem(projectPreferenceKey()) || ''; } catch (_) { /* Storage can be unavailable. */ }
+    const sites = assignedRequestSites();
+    return sites.find(site => site.id === saved)?.name || (sites.length === 1 ? sites[0].name : '');
+  }
+  function projectCaption(select) {
+    const caption = select?.parentElement.querySelector('[data-project-caption]');
+    if (caption) caption.textContent = select.value ? 'Selected project: ' + select.selectedOptions[0].textContent : '';
+    if (select) select.title = select.selectedOptions[0]?.textContent || '';
+  }
+  function syncRequestProject() {
+    if (!scopedRequest()) return;
+    const select = current.root.querySelector('#mv-destination');
+    if (!select) return;
+    const sites = assignedRequestSites(), value = requestProjectValue();
+    const options = `<option value="">${sites.length ? 'Choose your assigned project' : 'No assigned active projects'}</option>${sites.map(site => `<option value="${esc(site.name)}">${esc(site.name)}</option>`).join('')}`;
+    if (select.innerHTML !== options) select.innerHTML = options;
+    select.value = value;
+    select.disabled = !sites.length;
+    select.parentElement.querySelector('#mv-project-help').textContent = sites.length ? 'Active projects assigned to your account.' : 'No active projects are assigned to your account. Please contact your administrator.';
+    const submit = select.form.querySelector('[type="submit"]');
+    submit.disabled = !sites.length || !eligibleTools('request').length;
+    projectCaption(select);
+  }
   function siteField(name, label, required, value) {
+    if (name === 'destination' && scopedRequest()) {
+      const sites = assignedRequestSites(), selected = requestProjectValue();
+      return `<div class="field mv-project-field"><label for="mv-destination">${esc(label)}</label><select id="mv-destination" name="destination" required aria-describedby="mv-project-help mv-project-selection" ${sites.length ? '' : 'disabled'}><option value="">${sites.length ? 'Choose your assigned project' : 'No assigned active projects'}</option>${sites.map(site => `<option value="${esc(site.name)}"${site.name === selected ? ' selected' : ''}>${esc(site.name)}</option>`).join('')}</select><p id="mv-project-help" class="mv-help">${sites.length ? 'Active projects assigned to your account.' : 'No active projects are assigned to your account. Please contact your administrator.'}</p><p id="mv-project-selection" class="mv-project-selection" data-project-caption aria-live="polite">${selected ? 'Selected project: ' + esc(selected) : ''}</p></div>`;
+    }
     const sites = [...new Set([...(state().sites || []).map(site => typeof site === 'string' ? site : site.name), ...tools().map(tool => tool.site)].filter(Boolean))];
     return `<div class="field"><label for="mv-${esc(name)}">${esc(label)}</label><select id="mv-${esc(name)}" name="${esc(name)}" ${required ? 'required' : ''}><option value="">Choose an existing project</option>${sites.map(site => `<option value="${esc(site)}"${site === value ? ' selected' : ''}>${esc(site)}</option>`).join('')}</select></div>`;
   }
@@ -90,14 +122,14 @@
     const title = { request: 'Request tools', transfer: 'Create a transfer', return: 'Return tools', repair: 'Report a repair', missing: 'Report a missing tool' }[kind];
     const submit = { request: 'Submit request', transfer: 'Create transfer', return: 'Confirm return', repair: 'Submit repair report', missing: 'Submit missing report' }[kind];
     let fields = '';
-    if (kind === 'request') fields = `${siteField('destination', 'Destination project', true)}<div class="field"><label for="mv-needed-until">Needed until (optional)</label><input id="mv-needed-until" name="neededUntil" type="date"></div><div class="field"><label for="mv-purpose">Purpose</label><textarea id="mv-purpose" name="purpose" rows="3" required maxlength="2000" placeholder="What work are these tools needed for?"></textarea></div>`;
+    if (kind === 'request') fields = `${siteField('destination', 'Destination project', true)}<div class="field"><label for="mv-needed-until">Needed until (optional)</label><input id="mv-needed-until" name="neededUntil" type="date"></div><div class="field"><label for="mv-purpose">Purpose (optional)</label><textarea id="mv-purpose" name="purpose" rows="3" maxlength="2000" placeholder="What work are these tools needed for?"></textarea></div>`;
     if (kind === 'transfer') fields = `<div data-receiver-fields ${mode()==='live'?'hidden':''}>${siteField('destination', 'Destination project', true)}${receiverField()}</div><div class="field"><label for="mv-notes">Handover notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000" placeholder="Instructions for the receiver"></textarea></div>`;
     if (kind === 'return') fields = `${siteField('destination', 'Return destination', true, 'Riverside Warehouse')}<div data-return-conditions></div><div class="field"><label for="mv-notes">Return notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000"></textarea></div><p class="mv-help">Good tools become available. Damaged and missing tools open a report for admin follow-up.</p>`;
     if (kind === 'repair' || kind === 'missing') fields = `<div class="field"><label for="mv-notes">${kind === 'repair' ? 'Damage / issue details' : 'Last seen and circumstances'}</label><textarea id="mv-notes" name="notes" required rows="4" maxlength="2000" placeholder="${kind === 'repair' ? 'Describe the fault and when it occurred' : 'Describe the last known location and what happened'}"></textarea></div><p class="mv-help">Submitting updates the tool's status and adds it to the admin ${kind === 'repair' ? 'repair queue' : 'missing tools register'}.</p>`;
     // Hidden manual fields cannot receive native validation focus. Require them
     // when revealed, and explicitly require a receiver before submission below.
     if(kind==='transfer'&&mode()==='live')fields=fields.replaceAll(' required','');
-    return `<section class="card card-pad mv-create"><h2>${title}</h2><p class="mv-help mv-identity">${esc(context().name ? `Submitting as ${context().name}` : 'Sign in to submit movements.')}</p><form data-form="create">${kind==='transfer'?`${mode()==='live'?`<div class="mv-receiver-assist">${button('Scan Receiver QR','scan-receiver',null,'btn-accent')}<p class="mv-help">Scan the receiving person's QR to fill their name and assigned project. Scanning does not move equipment.</p><p data-receiver-context role="status"></p><button type="button" class="btn btn-secondary btn-sm" data-action="manual-receiver">Enter Details Manually</button></div>`:''}`:""}${toolPicker(kind)}${fields}<button class="btn btn-primary btn-block" type="submit"${!eligibleTools(kind).length ? ' disabled' : ''}>${submit}</button></form></section>`;
+    return `<section class="card card-pad mv-create"><h2>${title}</h2><p class="mv-help mv-identity">${esc(context().name ? `Submitting as ${context().name}` : 'Sign in to submit movements.')}</p><form data-form="create">${kind==='transfer'?`${mode()==='live'?`<div class="mv-receiver-assist">${button('Scan Receiver QR','scan-receiver',null,'btn-accent')}<p class="mv-help">Scan the receiving person's QR to fill their name and assigned project. Scanning does not move equipment.</p><p data-receiver-context role="status"></p><button type="button" class="btn btn-secondary btn-sm" data-action="manual-receiver">Enter Details Manually</button></div>`:''}`:""}${toolPicker(kind)}${fields}<button class="btn btn-primary btn-block" type="submit"${!eligibleTools(kind).length || (scopedRequest() && !assignedRequestSites().length) ? ' disabled' : ''}>${submit}</button></form></section>`;
   }
 
   function transferLookup() {
@@ -190,7 +222,7 @@
   function renderShell() {
     if (!current) return;
     const transfer=current.kind==='transfer';
-    const list=`<section class="card mv-records${transfer?' mv-transfer-history':''}"><div class="mv-record-header"><h2>${transfer?'Transfer history':(admin()?'All':'Your')+' '+TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section>`;
+    const list=`<section class="card mv-records${transfer || current.kind==='request'?' mv-transfer-history':''}"><div class="mv-record-header"><h2>${transfer?'Transfer history':(admin()?'All':'Your')+' '+TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section>`;
     const workspace=transfer?`${transferTabs()}<section role="tabpanel" id="mv-panel-send" aria-labelledby="mv-tab-send" data-transfer-panel="send"><div data-create-panel>${createForm()}</div></section>${operational()?`<section role="tabpanel" id="mv-panel-receive" aria-labelledby="mv-tab-receive" data-transfer-panel="receive"><div class="mv-receive-grid">${receivingQrPanel()}${transferLookup()}</div><section class="card card-pad"><h2>Incoming transfers awaiting confirmation</h2><div data-incoming></div></section></section>`:''}<section role="tabpanel" id="mv-panel-history" aria-labelledby="mv-tab-history" data-transfer-panel="history">${list}</section>`:`<div class="mv-workspace"><div data-create-panel>${createForm()}</div><div class="mv-record-area">${list}</div></div>`;
     current.root.innerHTML=`<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1><p class="sub">${descriptions()}</p></div></div><p class="sync-warning" data-sync-warning role="status"></p><div data-notice role="status" aria-live="polite"></div>${mode()==='demo'?'<div class="mv-demo-banner">Offline demo &middot; browser records</div>':''}<div data-summary class="mv-summary"></div>${workspace}<dialog class="mv-detail" data-detail aria-label="Movement details"><div data-detail-body></div></dialog><dialog class="mv-scanner" data-scanner-dialog aria-labelledby="mv-scanner-title"><div class="mv-section-heading"><h2 id="mv-scanner-title">Scan Receiver QR</h2>${button('Close','close-scanner')}</div><p class="mv-help">Ask the recipient to open Receive Transfer and generate their receiving QR.</p><div id="mv-receiver-camera"></div><p data-scanner-error role="alert"></p>${button('Try camera again','scan-receiver')}</dialog></div>`;
     const detail=current.root.querySelector('[data-detail]');
@@ -240,6 +272,7 @@
   }
 
   function transferCard(record) {
+    const request = current.kind === 'request';
     const toolIds=ids(record);
     // Source projects come from the saved handover, never a tool's current site.
     const sources=[...new Set((Array.isArray(record.source)?record.source:[]).map(item=>item?.site).filter(site=>typeof site==='string'&&site.trim()))];
@@ -247,20 +280,21 @@
     const headingId=`mv-history-${record.id}`;
     const created=new Date(record.createdAt);
     return `<li><article class="mv-transfer-card${record.id===current.detailId?' mv-selected-row':''}" aria-labelledby="${esc(headingId)}" data-action="view" data-id="${esc(record.id)}">
-      <header class="mv-transfer-card-top"><h3 id="${esc(headingId)}"><span class="tool-id-chip">${esc(record.id)}</span></h3>${badge(recordStatus(record),'transfer')}</header>
+      <header class="mv-transfer-card-top"><h3 id="${esc(headingId)}"><span class="tool-id-chip">${esc(record.id)}</span></h3>${badge(recordStatus(record),current.kind)}</header>
       <ul class="mv-transfer-equipment" aria-label="Equipment">${toolIds.slice(0,2).map(id=>{
         const tool=toolById(id);
         return `<li>${tool?.name?`<strong>${esc(tool.name)}</strong>`:''}<span class="mv-transfer-tool-id">${esc(id)}</span></li>`;
       }).join('')}</ul>
       ${toolIds.length>2?`<p class="mv-transfer-more">+ ${toolIds.length-2} more equipment items in details</p>`:''}
-      <dl class="mv-transfer-people">${row('From',record.sender)}${row('To',record.receiver)}</dl>
+      ${request ? `<dl class="mv-transfer-projects">${row('Requested by',record.requester)}</dl>` : `<dl class="mv-transfer-people">${row('From',record.sender)}${row('To',record.receiver)}</dl>`}
       <dl class="mv-transfer-projects">${sources.length?row(sources.length>1?'Source projects':'Source project',sources.join(', ')):''}${row('Destination',record.destination)}</dl>
-      <footer class="mv-transfer-card-footer"><span class="mv-transfer-date"><span class="mv-sr">Transfer date: </span>${record.createdAt&&!isNaN(created.getTime())?`<time datetime="${esc(created.toISOString())}">${esc(date(record.createdAt))}</time>`:esc(date(record.createdAt))}</span><button type="button" class="btn btn-secondary" data-action="view" data-id="${esc(record.id)}" aria-label="View details for transfer ${esc(record.id)}">View details</button></footer>
+      <footer class="mv-transfer-card-footer"><span class="mv-transfer-date"><span class="mv-sr">${request ? 'Submitted' : 'Transfer date'}: </span>${record.createdAt&&!isNaN(created.getTime())?`<time datetime="${esc(created.toISOString())}">${esc(date(record.createdAt))}</time>`:esc(date(record.createdAt))}</span><button type="button" class="btn btn-secondary" data-action="view" data-id="${esc(record.id)}" aria-label="View details for ${request ? 'request' : 'transfer'} ${esc(record.id)}">View details</button></footer>
     </article></li>`;
   }
 
   function renderLists() {
     if (!current?.root.isConnected) return;
+    syncRequestProject();
     const records = visibleRecords();
     const incoming=current.root.querySelector('[data-incoming]');
     if(incoming){
@@ -279,7 +313,7 @@
     const query = current.search.toLowerCase();
     const filtered = records.filter(record => (!current.status || recordStatus(record) === current.status) && `${record.id} ${toolNames(record)} ${record.destination || ''} ${record.requester || record.sender || record.returnedBy || record.reportedBy || ''} ${record.receiver || ''} ${record.notes || ''}`.toLowerCase().includes(query)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     const list = current.root.querySelector('[data-list]');
-    list.innerHTML = filtered.length ? `<div class="table-wrap${current.kind==='transfer'?' mv-transfer-table':''}"><table><thead><tr><th>Movement / tools</th><th>Details</th><th>Status</th><th><span class="mv-sr">Actions</span></th></tr></thead><tbody>${filtered.map(record => `<tr${record.id === current.detailId ? ' class="mv-selected-row"' : ''}><td><span class="tool-id-chip">${esc(record.id)}</span><div class="cell-name mv-record-tools">${esc(toolNames(record))}</div><div class="cell-sub">${esc(date(record.createdAt))}</div></td><td><div class="cell-name">${esc(record.destination || toolById(record.toolId)?.site || '—')}</div><div class="cell-sub">${esc(record.requester || record.sender || record.returnedBy || record.reportedBy || '—')}</div>${record.receiver ? `<div class="cell-sub">To ${esc(record.receiver)}</div>` : ''}</td><td>${badge(recordStatus(record), current.kind)}</td><td>${button('View', 'view', record.id)}</td></tr>`).join('')}</tbody></table></div>${current.kind==='transfer'?`<ul class="mv-transfer-cards" aria-label="Transfer history">${filtered.map(transferCard).join('')}</ul>`:''}` : `<div class="empty-state"><div class="t">${records.length ? 'No matching movements' : `No ${TITLES[current.kind].toLowerCase()} yet`}</div><div class="d">${records.length ? 'Try another search or status filter.' : current.kind === 'request' && admin() ? 'Submitted engineer requests will appear here for review.' : 'Create a movement to start its history here.'}</div></div>`;
+    list.innerHTML = filtered.length ? `<div class="table-wrap${['request','transfer'].includes(current.kind)?' mv-transfer-table':''}"><table><thead><tr><th>Movement / tools</th><th>Details</th><th>Status</th><th><span class="mv-sr">Actions</span></th></tr></thead><tbody>${filtered.map(record => `<tr${record.id === current.detailId ? ' class="mv-selected-row"' : ''}><td><span class="tool-id-chip">${esc(record.id)}</span><div class="cell-name mv-record-tools">${esc(toolNames(record))}</div><div class="cell-sub">${esc(date(record.createdAt))}</div></td><td><div class="cell-name">${esc(record.destination || toolById(record.toolId)?.site || '—')}</div><div class="cell-sub">${esc(record.requester || record.sender || record.returnedBy || record.reportedBy || '—')}</div>${record.receiver ? `<div class="cell-sub">To ${esc(record.receiver)}</div>` : ''}</td><td>${badge(recordStatus(record), current.kind)}</td><td>${button('View', 'view', record.id)}</td></tr>`).join('')}</tbody></table></div>${['request','transfer'].includes(current.kind)?`<ul class="mv-transfer-cards" aria-label="${current.kind==='request'?'Request':'Transfer'} history">${filtered.map(transferCard).join('')}</ul>`:''}` : `<div class="empty-state"><div class="t">${records.length ? 'No matching movements' : `No ${TITLES[current.kind].toLowerCase()} yet`}</div><div class="d">${records.length ? 'Try another search or status filter.' : current.kind === 'request' && admin() ? 'Submitted engineer requests will appear here for review.' : 'Create a movement to start its history here.'}</div></div>`;
   }
 
   function detailRecord() {
@@ -412,6 +446,7 @@
         const kind = current.kind;
         const toolIds = data.getAll('toolIds');
         if (['request', 'transfer', 'return'].includes(kind) && !toolIds.length) throw new Error('Select at least one tool.');
+        if (kind === 'request' && scopedRequest() && !assignedRequestSites().some(site => site.name === value('destination'))) throw new Error('Choose an active project assigned to your account.');
         const payload = { toolIds, destination: value('destination'), receiver: value('receiver'), purpose: value('purpose'), notes: value('notes'), toolId: value('toolId'), neededUntil: value('neededUntil') };
         if (store().mode === 'live') { delete payload.receiver; if (kind === 'transfer') {payload.receiverId = value('receiverId');if(current.receivingToken)payload.receivingToken=current.receivingToken;} }
         if (kind === 'return') payload.conditions = readConditions(form);
@@ -544,6 +579,14 @@
 
   async function change(event) {
     const target = event.target;
+    if (target.matches('#mv-destination')) {
+      projectCaption(target);
+      if (scopedRequest()) {
+        const project = assignedRequestSites().find(site => site.name === target.value);
+        current.requestProjectId = project?.id || '';
+        try { if (project) sessionStorage.setItem(projectPreferenceKey(), project.id); else sessionStorage.removeItem(projectPreferenceKey()); } catch (_) {}
+      }
+    }
     if(current.kind==='transfer'&&target.matches('[name="receiverId"],[name="destination"]')){
       current.receivingToken=null;current.createDirty=true;
       const message=current.root.querySelector('[data-receiver-context]');if(message)message.textContent='Details entered manually. The receiving account and project will be verified when you create the transfer.';
