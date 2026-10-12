@@ -85,7 +85,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
  fixture=await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
  console.log('Browser fixture ready; isolated local database');
- if(turnoverRun)for(const file of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610120001_request_turnover_notifications.sql'])await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
+ if(turnoverRun||process.argv.includes('--request-projects'))for(const file of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610120001_request_turnover_notifications.sql'])await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
  if(process.argv.includes('--feature-completion')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
@@ -147,6 +147,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(process.argv.includes('--office-returns')){
   await require('./office-return.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS Office returns; isolated local records, no live writes');return;
+ }
+ if(process.argv.includes('--request-projects')){
+  await require('./request-projects.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,port,base,errors,artifactDirectory:profile});
+  assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS Assigned request projects; isolated Engineer A/B/Architect sessions, no live writes');return;
  }
  if(process.argv.includes('--feature-completion')){
   await require('./feature-frontend.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});

@@ -55,6 +55,38 @@
     return `<div class="field"><label for="mv-${esc(name)}">${esc(label)}</label><select id="mv-${esc(name)}" name="${esc(name)}" ${required ? 'required' : ''}><option value="">Choose an existing project</option>${sites.map(site => `<option value="${esc(site)}"${site === value ? ' selected' : ''}>${esc(site)}</option>`).join('')}</select></div>`;
   }
 
+  const noRequestProject = 'No assigned project site. Please contact your administrator.';
+  function requestSites() {
+    const person=context().id;
+    return (state().sites||[]).filter(site=>person && site && site.is_active===true &&
+      site.assigned_engineer_id===person && site.id && typeof site.name==='string' && site.name.trim())
+      .sort((a,b)=>a.name.localeCompare(b.name));
+  }
+  function requestDestinationOptions(sites,value) {
+    return (sites.length===1?'':'<option value="">Choose your assigned project</option>')+
+      sites.map(site=>`<option value="${esc(site.name)}"${sites.length===1||site.name===value?' selected':''}>${esc(site.name)}</option>`).join('');
+  }
+  function requestDestinationField() {
+    if(mode()!=='live')return siteField('destination','Destination project',true);
+    const sites=requestSites();
+    return `<div class="field"><label for="mv-destination">Destination project</label><select id="mv-destination" name="destination" required aria-describedby="mv-request-project-status"${sites.length?'':' disabled'}>${requestDestinationOptions(sites,'')}</select><p class="mv-help" id="mv-request-project-status" role="status"${sites.length?' hidden':''}>${sites.length?'':noRequestProject}</p></div>`;
+  }
+  function syncRequestDestination() {
+    if(current?.kind!=='request'||mode()!=='live'||!operational())return;
+    const select=current.root.querySelector('[data-form="create"] [name="destination"]');
+    if(!select)return;
+    const sites=requestSites(),value=select.value;
+    const choices=[...(sites.length===1?[]:[['','Choose your assigned project']]),...sites.map(site=>[site.name,site.name])];
+    if(JSON.stringify(Array.from(select.options,option=>[option.value,option.textContent]))!==JSON.stringify(choices))select.innerHTML=requestDestinationOptions(sites,value);
+    if(sites.length===1)select.value=sites[0].name;
+    else if(!sites.some(site=>site.name===value))select.value='';
+    select.disabled=!sites.length;
+    const message=current.root.querySelector('#mv-request-project-status');
+    if(message){message.hidden=Boolean(sites.length);message.textContent=sites.length?'':noRequestProject;}
+    const submit=current.root.querySelector('[data-request-submit]');
+    if(submit)submit.disabled=current.busy||!sites.length||!eligibleTools('request').length;
+  }
+
   function receiverField() {
     const users = state().users || state().profiles || [];
     if (store().mode === 'live') {
@@ -116,14 +148,14 @@
     const title = { request: 'Request tools', transfer: 'Create a transfer', return: 'Return tools', repair: 'Report a repair', missing: 'Report a missing tool' }[kind];
     const submit = { request: 'Submit request', transfer: 'Create transfer', return: 'Confirm return', repair: 'Submit repair report', missing: 'Submit missing report' }[kind];
     let fields = '';
-    if (kind === 'request') fields = `${siteField('destination', 'Destination project', true)}<div class="field"><label for="mv-needed-until">Needed until (optional)</label><input id="mv-needed-until" name="neededUntil" type="date"></div><div class="field"><label for="mv-purpose">Purpose</label><textarea id="mv-purpose" name="purpose" rows="3" required maxlength="2000" placeholder="What work are these tools needed for?"></textarea></div>`;
+    if (kind === 'request') fields = `${requestDestinationField()}<div class="field"><label for="mv-needed-until">Needed until (optional)</label><input id="mv-needed-until" name="neededUntil" type="date"></div><div class="field"><label for="mv-purpose">Purpose</label><textarea id="mv-purpose" name="purpose" rows="3" required maxlength="2000" placeholder="What work are these tools needed for?"></textarea></div>`;
     if (kind === 'transfer') fields = `<div data-receiver-fields ${mode()==='live'?'hidden':''}>${siteField('destination', 'Destination project', true)}${receiverField()}</div><div class="field"><label for="mv-notes">Handover notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000" placeholder="Instructions for the receiver"></textarea></div>`;
     if (kind === 'return') fields = `<div class="field" data-return-destination>${returnDestinationField()}</div><div data-return-conditions></div><div class="field"><label for="mv-notes">Return notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000"></textarea></div><p class="mv-help">Confirm after delivering the equipment to Office and inspecting it. Good tools become available; damaged tools go to repair. Missing items retain their last holder and location for follow-up.</p>`;
     if (kind === 'repair' || kind === 'missing') fields = `<div class="field"><label for="mv-notes">${kind === 'repair' ? 'Damage / issue details' : 'Last seen and circumstances'}</label><textarea id="mv-notes" name="notes" required rows="4" maxlength="2000" placeholder="${kind === 'repair' ? 'Describe the fault and when it occurred' : 'Describe the last known location and what happened'}"></textarea></div><p class="mv-help">Submitting updates the tool's status and adds it to the admin ${kind === 'repair' ? 'repair queue' : 'missing tools register'}.</p>`;
     // Hidden manual fields cannot receive native validation focus. Require them
     // when revealed, and explicitly require a receiver before submission below.
     if(kind==='transfer'&&mode()==='live')fields=fields.replaceAll(' required','');
-    return `<section class="card card-pad mv-create"><h2>${title}</h2><p class="mv-help mv-identity">${esc(context().name ? `Submitting as ${context().name}` : 'Sign in to submit movements.')}</p><form data-form="create">${kind==='transfer'?`${mode()==='live'?`<div class="mv-receiver-assist">${button('Scan Receiver QR','scan-receiver',null,'btn-accent')}<p class="mv-help">Scan the receiving person's QR to fill their name and assigned project. Scanning does not move equipment.</p><p data-receiver-context role="status"></p><button type="button" class="btn btn-secondary btn-sm" data-action="manual-receiver">Enter Details Manually</button></div>`:''}`:""}${toolPicker(kind)}${fields}<button class="btn btn-primary btn-block" type="submit"${kind==='return'?' data-return-submit':''}${!eligibleTools(kind).length || (kind==='return'&&!current.returnOffice) ? ' disabled' : ''}>${submit}</button></form></section>`;
+    return `<section class="card card-pad mv-create"><h2>${title}</h2><p class="mv-help mv-identity">${esc(context().name ? `Submitting as ${context().name}` : 'Sign in to submit movements.')}</p><form data-form="create">${kind==='transfer'?`${mode()==='live'?`<div class="mv-receiver-assist">${button('Scan Receiver QR','scan-receiver',null,'btn-accent')}<p class="mv-help">Scan the receiving person's QR to fill their name and assigned project. Scanning does not move equipment.</p><p data-receiver-context role="status"></p><button type="button" class="btn btn-secondary btn-sm" data-action="manual-receiver">Enter Details Manually</button></div>`:''}`:""}${toolPicker(kind)}${fields}<button class="btn btn-primary btn-block" type="submit"${kind==='return'?' data-return-submit':kind==='request'?' data-request-submit':''}${!eligibleTools(kind).length || (kind==='return'&&!current.returnOffice) || (kind==='request'&&mode()==='live'&&!requestSites().length) ? ' disabled' : ''}>${submit}</button></form></section>`;
   }
 
   function transferLookup() {
@@ -439,6 +471,7 @@
         const toolIds = data.getAll('toolIds');
         if (['request', 'transfer', 'return'].includes(kind) && !toolIds.length) throw new Error('Select at least one tool.');
         const payload = { toolIds, destination: value('destination'), receiver: value('receiver'), purpose: value('purpose'), notes: value('notes'), toolId: value('toolId'), neededUntil: value('neededUntil') };
+        if(kind==='request'&&mode()==='live'&&!requestSites().some(site=>site.name===payload.destination))throw new Error(requestSites().length?'Choose a project assigned to your account.':noRequestProject);
         if (store().mode === 'live') { delete payload.receiver; if (kind === 'transfer') {payload.receiverId = value('receiverId');if(current.receivingToken)payload.receivingToken=current.receivingToken;} }
         if (kind === 'return') {
           if(!current.returnOffice)throw new Error('The company Office destination is unavailable. Retry the Office connection or contact Admin.');
@@ -637,6 +670,7 @@
       if (current !== active || active.busy) return;
       await store().refresh();
       if (current !== active) return;
+      syncRequestDestination();
       await loadReturnOffice(active);
       if (current !== active) return;
       if (!root.querySelector('[data-list]')) renderShell();
@@ -688,6 +722,7 @@
       const host = current.root.querySelector('[data-create-panel]');
       if (host) host.innerHTML = createForm();
     }
+    syncRequestDestination();
     if (!current.detailDirty && !document.activeElement?.closest('[data-detail] form')) renderDetail();
   });
   function cancelTarget() {
