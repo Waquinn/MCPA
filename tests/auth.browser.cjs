@@ -110,7 +110,7 @@ await fixture.db.exec(
   )
 );
 
-if (process.argv.includes('--engineer-ux') && !turnoverRun) {
+if (!turnoverRun && (process.argv.includes('--engineer-ux') || process.argv.length === 2)) {
   await fixture.db.exec(
     fs.readFileSync(
       path.join(root, 'supabase/migrations/202610100006_monitoring.sql'),
