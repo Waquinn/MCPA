@@ -99,6 +99,15 @@
         return;
       }
       let movementError;
+      // A field Dashboard must retain requests and unreceived handovers from
+      // the authorized movement snapshot, distinct from confirmed custody.
+      if (sourceMode === 'live' && screen === 'dashboard' && window.MCPAPermissions.operational(store().getContext().role)) {
+        const data = await store().refresh();
+        if (root !== owner || !owner.isConnected || store().mode !== sourceMode) return;
+        inventory = {tools:data.tools,sites:data.sites,activeProjects:data.sites.filter(site=>site.is_active!==false)};
+        if (!owner.querySelector('dialog[open]')) render();
+        return;
+      }
       const [, latest] = await Promise.all([
         store().refresh().catch(error => { movementError = error; }),
         store().mode === 'live' && screen !== 'activity' ? window.EquipmentTracking.snapshot() : Promise.resolve(null)
@@ -129,7 +138,7 @@
     stopWatching?.(); stopWatching = null;
     if (store().mode === 'live') stopWatching = window.EquipmentTracking.watch(() => load(true), message => {
       const label = root?.querySelector('[data-sync-warning]'); if (label) label.textContent = message;
-    });
+    }, {tables: ['equipment','sites','mcpa_notifications']});
   }
   async function mount(id) {
     const target = document.getElementById('screen-' + id); if (!target) return;
@@ -138,6 +147,7 @@
     root.classList.add('movement-overview'); controller = new AbortController(); const signal = controller.signal;
     root.addEventListener('click', async event => {
       const el = event.target.closest('button'); if (!el) return;
+      if (el.hasAttribute('data-turnover-inbox')) {showScreen('transfer',()=>void window.MovementUI?.showTransferView('receive'));return;}
       if (el.hasAttribute('data-status')) {status = el.dataset.status; render(); root.querySelector('[data-status="' + status + '"]')?.focus({preventScroll:true}); return;}
       if (el.dataset.go) {showScreen(el.dataset.go); return;}
       if (el.dataset.tool) {detail(el.dataset.tool); return;}

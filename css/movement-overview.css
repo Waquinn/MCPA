@@ -78,6 +78,28 @@
 .command-panel-head h2{font-family:var(--font-body);font-size:13px;line-height:1.4;font-weight:650}
 .command-panel-head>.btn{border:0;padding:4px 0;color:var(--gold-dim);background:transparent;font-size:10px;min-height:28px}
 .panel-note{font-size:10px;color:var(--text-muted);line-height:1.6;margin-top:auto;padding-top:14px}
+.dashboard-workflow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:var(--dashboard-gap);margin-bottom:var(--dashboard-gap);scroll-margin-top:80px}
+.workflow-list,.turnover-equipment{list-style:none;margin:0;padding:0}
+.workflow-list>li{padding:14px 0;border-top:1px solid var(--border);min-width:0}
+.workflow-list>li:first-child{padding-top:0;border-top:0}
+.workflow-row-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-size:12px}
+.workflow-row-head .badge{font-size:10px;white-space:normal;line-height:1.4}
+.turnover-equipment{display:flex;gap:6px 18px;flex-wrap:wrap;font-size:12px;line-height:1.6;margin-bottom:10px}
+.turnover-equipment li{min-width:0;overflow-wrap:anywhere}
+.turnover-equipment strong{font-weight:550}
+.turnover-context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 16px;margin:0 0 12px;font-size:11px;line-height:1.5}
+.turnover-context div{min-width:0}.turnover-context dt{color:var(--text-secondary)}.turnover-context dd{margin:2px 0 0;color:var(--text-primary);overflow-wrap:anywhere}
+.dashboard-workflow .command-panel-head{align-items:flex-start;flex-wrap:wrap}
+.dashboard-workflow .command-panel-head>.btn{font-size:11px;min-height:36px}
+.dashboard-workflow .workflow-list .btn{min-height:40px}
+.dashboard-request p{font-size:11px;line-height:1.5;color:var(--text-secondary);margin:0 0 8px;overflow-wrap:anywhere}
+.request-phase-summary{display:flex;gap:6px 16px;flex-wrap:wrap;margin-bottom:16px;font-size:11px;line-height:1.5;color:var(--text-secondary)}
+.request-phase-summary strong{color:var(--text-primary);font-variant-numeric:tabular-nums}
+.monitoring-dialog h3,.monitoring-dialog p{overflow-wrap:anywhere}
+.monitoring-dialog{margin:auto}
+.monitoring-dialog .btn{min-height:44px;white-space:normal}
+@media(max-width:1050px){.dashboard-workflow{grid-template-columns:1fr}}
+@media(max-width:600px){.dashboard-workflow .workflow-list .btn,.dashboard-workflow .command-panel-head>.btn{min-height:44px}.turnover-context{grid-template-columns:1fr}.turnover-equipment{display:block}.turnover-equipment li+li{margin-top:6px}}
 .status-chart{display:flex;align-items:center;gap:18px;flex:1}
 .status-ring{position:relative;width:122px;flex:0 0 122px}
 .status-ring>svg{width:100%;display:block;transform:rotate(-90deg)}

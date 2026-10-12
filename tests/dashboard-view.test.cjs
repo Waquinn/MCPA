@@ -70,3 +70,31 @@ test('live dashboard custody and incoming transfers distinguish duplicate displa
   const inventory=view.inventory(data,{id:'person-a',name:'Engineer',role:'engineer'},state,rows=>rows.map(t=>t.id).join(','));
   assert.ok(inventory.startsWith('A<'));
 });
+
+test('Engineer dashboard preserves each request phase and opens released turnover by stable reference',()=>{
+  const {data,render,context}=setup();
+  context.window.MCPAAuth={isDemo:false};
+  const person={id:'person-a',name:'Engineer',role:'engineer'};
+  data.requests=['pending','approved','rejected','released','received'].map((status,i)=>({id:'REQ-PHASE-'+i,status,receiverId:person.id,requester:person.name,toolIds:['B'],destination:'Site One',createdAt:'2026-10-12T08:00:00Z'}));
+  data.requests.push({id:'REQ-OTHER-PERSON',status:'released',receiverId:'person-b',requester:person.name,toolIds:['C']});
+  data.transfers=[{id:'TRF-TURNOVER',requestId:'REQ-PHASE-3',status:'pending',receiverId:person.id,receiver:person.name,toolIds:['B'],destination:'Site One',source:[{site:'Main warehouse'}],createdAt:'2026-10-12T08:00:00Z'}];
+  const before=JSON.stringify(data),html=render(person);
+  for(const request of data.requests.slice(0,5))assert.ok(html.includes(request.id),'Request stays visible: '+request.status);
+  assert.match(html,/Pending Equipment Turnover/);
+  assert.match(html,/View Turnover/);
+  assert.match(html,/data-go="transfer\?record=TRF-TURNOVER"/);
+  assert.match(html,/Released \/ awaiting receipt/);
+  assert.match(html,/Received \/ completed/);
+  assert.doesNotMatch(html,/REQ-OTHER-PERSON/);
+  assert.equal(JSON.stringify(data),before,'Dashboard does not alter backend state');
+});
+
+test('turnover panel excludes another receiver and received/canceled handovers; Architect empty state remains usable',()=>{
+  const {data,render,context}=setup();context.window.MCPAAuth={isDemo:false};
+  const person={id:'person-a',name:'Engineer',role:'architect'};
+  data.transfers=[{id:'TRF-OTHER',status:'pending',receiverId:'person-b',receiver:person.name,toolIds:['C']},{id:'TRF-DONE',status:'received',receiverId:person.id,toolIds:['B']},{id:'TRF-CANCELED',status:'canceled',receiverId:person.id,toolIds:['B']}];
+  const html=render(person);
+  assert.match(html,/No equipment is currently awaiting your confirmation/);
+  assert.doesNotMatch(html,/data-go="transfer\?record=TRF-(OTHER|DONE|CANCELED)"/);
+  assert.doesNotMatch(render({id:'admin-id',role:'admin'}),/Pending Equipment Turnover/);
+});

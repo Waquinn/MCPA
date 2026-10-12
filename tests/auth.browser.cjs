@@ -5,6 +5,7 @@ const {spawn}=require('node:child_process'),{once}=require('node:events'),{authD
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'mcpa-auth-'));
 let fixture,chrome,socket,passwordLogged=false;const errors=[],calls=[];
 const storedFiles=new Map(),signedFiles=new Map();
+const turnoverRun=process.argv.includes('--turnover-sync'),fixtureStreams=new Map(),fixtureEvents=new Set();
 const sdk=`window.__syncTimers=new Map();const realInterval=window.setInterval,realClear=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=realInterval(fn,ms,...args);if(ms===30000)__syncTimers.set(id,fn);return id;};window.clearInterval=id=>{__syncTimers.delete(id);realClear(id);};window.__tickSync=()=>__syncTimers.forEach(fn=>fn());window.__channels=new Set();
 window.supabase={createClient(){let listener;const session=()=>{const key=localStorage.getItem('fixture.account');return key?{user:{id:key},access_token:key}:null};const request=q=>window.__failReads&&q.rpc==='mcpa_movement_snapshot'?Promise.resolve({error:{code:'TEST'}}):fetch('/__db',{method:'POST',headers:{'Authorization':session()?.access_token||''},body:JSON.stringify(q)}).then(r=>r.json());window.__authEvent=event=>listener?.(event,session());window.__expire=()=>{localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null)};return {
  channel(){const c={tables:[],on(_type,filter,fn){this.tables.push(filter.table);this.notify=fn;return this},subscribe(){return this}};__channels.add(c);return c;},removeChannel(c){__channels.delete(c);return Promise.resolve();},
@@ -14,7 +15,18 @@ window.supabase={createClient(){let listener;const session=()=>{const key=localS
  rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},insert(values){q.write='insert';q.values=values;return this},update(values){q.write='update';q.values=values;return this},single(){q.single=true;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
 }}};`;
 const server=http.createServer(async(req,res)=>{
- if(req.url==='/__sdk.js'){res.setHeader('Content-Type','text/javascript');res.end(sdk);return;}
+ if(req.url==='/__sdk.js'){res.setHeader('Content-Type','text/javascript');res.end(sdk+(turnoverRun?`
+  const originalFixtureClient=window.supabase.createClient;
+  window.supabase.createClient=(...args)=>{const client=originalFixtureClient(...args);let stream=null;const channel=client.channel.bind(client),remove=client.removeChannel.bind(client);
+    client.channel=(...values)=>{const current=channel(...values),subscribe=current.subscribe.bind(current);current.subscribe=(...subscriptions)=>{if(!stream){stream=new EventSource('/__events?account='+encodeURIComponent(localStorage.getItem('fixture.account')||''));stream.onopen=()=>window.__fixtureRealtimeReady=true;stream.onmessage=event=>{if(window.__fixtureRealtime===false)return;const notice=JSON.parse(event.data);for(const c of __channels)if(c.tables.includes(notice.table))c.notify?.({eventType:'INSERT'});};}return subscribe(...subscriptions);};return current;};
+    client.removeChannel=current=>{const result=remove(current);if(!__channels.size){stream?.close();stream=null;window.__fixtureRealtimeReady=false;}return result;};return client;};
+ `:''));return;}
+ if(turnoverRun&&req.url.startsWith('/__events?')){
+  const account=new URL(req.url,'http://localhost').searchParams.get('account'),actor=fixture.actors[account];
+  if(!actor){res.writeHead(403);res.end();return;}
+  res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-store','Connection':'keep-alive'});res.write(': connected\n\n');
+  fixtureStreams.set(res,actor);req.on('close',()=>fixtureStreams.delete(res));return;
+ }
  if(req.url.startsWith('/__stored/')){
   const signed=signedFiles.get(req.url.slice('/__stored/'.length));
   if(!signed||signed.expires<Date.now()){res.writeHead(403);res.end();return;}
@@ -36,7 +48,15 @@ const server=http.createServer(async(req,res)=>{
      const token=require('node:crypto').randomUUID();signedFiles.set(token,{...file,expires:Date.now()+Math.min(q.expires,3600)*1000});data={signedUrl:'/__stored/'+token};
     }else throw new Error('Unsupported isolated storage operation');
    }
-   else if(q.rpc){data=await fixture.rpc(actor,q.rpc,q.args||{});}
+   else if(q.rpc){
+    data=await fixture.rpc(actor,q.rpc,q.args||{});
+    if(turnoverRun&&q.rpc==='mcpa_movement_action'&&!fixtureEvents.has(q.args.p_operation_id)){
+     fixtureEvents.add(q.args.p_operation_id);
+     // A local transport hint models own-recipient Realtime. Real RPCs/RLS
+     // remain authoritative; no notification/record contents are broadcast.
+     for(const [response,recipient]of fixtureStreams)if(recipient.id!==actor?.id&&(recipient.role==='admin'||recipient.id===data?.receiverId))response.write('data: '+JSON.stringify({table:'mcpa_notifications'})+'\n\n');
+    }
+   }
    else if(q.write){
     if(q.table!=='equipment')throw new Error('Unsupported isolated write');
     const values=Array.isArray(q.values)?q.values[0]:q.values,keys=Object.keys(values);
@@ -65,8 +85,39 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
  fixture=await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
  console.log('Browser fixture ready; isolated local database');
- await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations/202610120001_optional_request_purpose.sql'),'utf8'));
- if(process.argv.includes('--engineer-ux'))await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations/202610100006_monitoring.sql'),'utf8'));
+ if (turnoverRun) {
+  for (const file of [
+    '202610100004_movement_cancellation.sql',
+    '202610100006_monitoring.sql',
+    '202610120001_request_turnover_notifications.sql'
+  ]) {
+    await fixture.db.exec(
+      fs.readFileSync(
+        path.join(root, 'supabase/migrations', file),
+        'utf8'
+      )
+    );
+  }
+}
+
+await fixture.db.exec(
+  fs.readFileSync(
+    path.join(
+      root,
+      'supabase/migrations/202610120002_optional_request_purpose.sql'
+    ),
+    'utf8'
+  )
+);
+
+if (process.argv.includes('--engineer-ux') && !turnoverRun) {
+  await fixture.db.exec(
+    fs.readFileSync(
+      path.join(root, 'supabase/migrations/202610100006_monitoring.sql'),
+      'utf8'
+    )
+  );
+}
  if(process.argv.includes('--feature-completion')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
@@ -76,7 +127,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  }
  await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
  server.listen(0,'127.0.0.1');await once(server,'listening');
- chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new','--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
+ chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new',...(process.env.MCPA_CHROME_NO_SANDBOX==='1'?['--no-sandbox','--disable-gpu','--disable-gpu-sandbox']:[]),'--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
  let port;for(let i=0;i<100;i++){const p=path.join(profile,'DevToolsActivePort');if(fs.existsSync(p)){port=fs.readFileSync(p,'utf8').split('\n')[0];break;}await pause(100);}assert.ok(port);
  const targets=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();socket=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await once(socket,'open');
  let next=0;const pending=new Map();socket.addEventListener('message',event=>{const m=JSON.parse(event.data);if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails);if(m.method==='Runtime.consoleAPICalled'&&JSON.stringify(m.params.args).includes('Local-browser-fixture'))passwordLogged=true;const p=pending.get(m.id);if(p){pending.delete(m.id);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);}});
@@ -124,6 +175,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   await require('./engineer-ux.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,enter});
   assert.deepEqual(errors,[],'No uncaught browser errors');
   console.log('PASS Engineer UX browser checks; isolated database, no live writes');return;
+ }
+ if(turnoverRun){
+  await require('./request-turnover.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,port,base,errors});
+  assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS Request turnover synchronization; isolated independent sessions, no live requests');return;
  }
  if(process.argv.includes('--feature-completion')){
   await require('./feature-frontend.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
