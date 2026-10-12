@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{randomUUID}=require('node:crypto');
 const {authDatabase}=require('./auth-test-db.cjs');
-const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610120002_optional_request_purpose.sql'),'utf8');
+const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610120003_optional_request_purpose.sql'),'utf8');
 test('Optional purpose preserves authenticated assignment, validation, history, review and receipt',async()=>{
   const f=await authDatabase({engineerPortal:true}),{db,actors:a}=f;
   const act=(person,action,payload,id=randomUUID())=>f.rpc(person,'mcpa_movement_action',{p_action:action,p_payload:payload,p_operation_id:id});

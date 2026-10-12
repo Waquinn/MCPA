@@ -104,7 +104,7 @@ await fixture.db.exec(
   fs.readFileSync(
     path.join(
       root,
-      'supabase/migrations/202610120002_optional_request_purpose.sql'
+      'supabase/migrations/202610120003_optional_request_purpose.sql'
     ),
     'utf8'
   )
