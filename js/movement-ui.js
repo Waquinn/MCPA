@@ -21,9 +21,12 @@
   const recordStatus = record => record.status || 'returned';
   const date = value => { const d = new Date(value); return value && !isNaN(d.getTime()) ? d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'; };
   const button = (label, action, id, style) => `<button type="button" class="btn ${style || 'btn-secondary'} btn-sm" data-action="${esc(action)}"${id ? ` data-id="${esc(id)}"` : ''}>${esc(label)}</button>`;
+  const statusLabel = (status,kind) => kind === 'request' && status === 'released' ? 'Released / awaiting receipt'
+    : kind === 'request' && status === 'received' ? 'Received / completed'
+    : kind === 'transfer' && status === 'pending' ? 'Awaiting receipt' : STATUS[status] || status;
   const badge = (status, kind) => {
     const tones = { pending: 'pending', approved: 'verified', rejected: 'discrepancy', withdrawn: 'pending', canceled: 'pending', refused: 'discrepancy', discrepancy: 'discrepancy', released: 'inuse', received: 'verified', reported: 'repair', underrepair: 'underrepair', completed: 'verified', missing: 'missing', recovered: 'verified', returned: 'verified' };
-    return `<span class="badge badge-${tones[status] || 'pending'}">${esc(kind === 'transfer' && status === 'pending' ? 'Awaiting receipt' : STATUS[status] || status)}</span>`;
+    return `<span class="badge badge-${tones[status] || 'pending'}">${esc(statusLabel(status,kind))}</span>`;
   };
   const toolNames = record => ids(record).map(id => { const tool = toolById(id); return tool ? `${tool.name} (${id})` : id; }).join(', ');
 
@@ -270,7 +273,7 @@
     const statusSelect = current.root.querySelector('[data-status]');
     if (!statusSelect) return;
     const statuses = [...new Set(records.map(recordStatus))];
-    statusSelect.innerHTML = '<option value="">All statuses</option>' + statuses.map(status => `<option value="${esc(status)}">${esc(current.kind === 'transfer' && status === 'pending' ? 'Awaiting receipt' : STATUS[status] || status)}</option>`).join('');
+    statusSelect.innerHTML = '<option value="">All statuses</option>' + statuses.map(status => `<option value="${esc(status)}">${esc(statusLabel(status,current.kind))}</option>`).join('');
     statusSelect.value = statuses.includes(current.status) ? current.status : '';
     if (!statusSelect.value) current.status = '';
     const open = records.filter(record => !['received', 'rejected', 'completed', 'recovered', 'returned'].includes(recordStatus(record))).length;
@@ -612,7 +615,7 @@
       if (current !== active) return;
       const status = root.querySelector('[data-sync-warning]');
       if (status) status.textContent = message;
-    });
+    }, {tables: ['equipment','sites','mcpa_notifications']});
     try {
       if (!store()) throw new Error('The movement service has not loaded. Reload the page and try again.');
       await store().refresh();
@@ -686,6 +689,11 @@
           active.root.querySelector('[data-notice]')?.focus();
           return;
         }
+        if (kind === 'transfer') {
+          const record = visibleRecords().find(item=>item.id===id);
+          const receiver = mode()==='live' ? record.receiverId===context().id : record.receiver===context().name;
+          setTransferView(operational() && receiver && record.status==='pending' ? 'receive' : 'history');
+        }
         active.message = ''; active.error = false; renderNotice();
         active.detailId = id; active.search = ''; active.status = '';
         active.root.querySelector('[data-record-search]').value = '';
@@ -706,6 +714,12 @@
     dispose,
     cancelTarget,
     openRecord,
+    async showTransferView(view) {
+      const active=current;
+      if (active?.kind !== 'transfer') return;
+      await active.mounted;
+      if (current === active) setTransferView(view);
+    },
     render: () => { if (current) { renderLists(); if (!current.detailDirty) renderDetail(); } },
     openTransfer: async id => {
       if (current?.kind !== 'transfer') return;

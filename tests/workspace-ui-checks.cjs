@@ -235,7 +235,7 @@ exports.sync=async({fixture,evaluate,command,wait,fill,go,login,logout,calls})=>
  assert.equal(await evaluate("document.querySelector('[name=purpose]').value"),'Draft survives lost connectivity');
  for(const screen of ['transfer','activity','request']){await go(screen);await wait("document.querySelector('#screen-"+screen+".active')");}
  assert.equal(await evaluate('window.__channels.size'),2);assert.equal(await evaluate('window.__syncTimers.size'),2);
- assert.deepEqual(await evaluate('[...window.__channels].map(channel=>channel.tables).sort((a,b)=>a[0].localeCompare(b[0]))'),[['equipment','sites'],['mcpa_notifications']]);
+ assert.deepEqual(await evaluate('[...window.__channels].map(channel=>channel.tables).sort((a,b)=>a[0].localeCompare(b[0]))'),[['equipment','sites','mcpa_notifications'],['mcpa_notifications']]);
  await logout();assert.equal(await evaluate('window.__channels.size'),0);assert.equal(await evaluate('window.__syncTimers.size'),0);
  await login('admin');await wait("document.querySelector('.admin-review')");await go('users');await wait("document.querySelector('#accounts-list tbody tr')");
  await fixture.rpc(fixture.actors.admin,'mcpa_save_account',{p_id:fixture.actors.pau.id,p_name:'Engineer Pau updated in fixture',p_role:'engineer',p_status:'active',p_auth_user_id:fixture.actors.pau.authId});

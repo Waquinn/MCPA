@@ -2,6 +2,7 @@
   "name": "mcpa-movement-tests",
   "private": true,
   "scripts": {
+    "test:turnover": "node --test --test-concurrency=1 request-turnover.database.test.cjs dashboard-view.test.cjs movement-sync.test.cjs movement-navigation.test.cjs && node auth.browser.cjs --turnover-sync",
     "test:features": "node --test --test-concurrency=1 feature-frontend.test.cjs feature-storage.test.cjs purchase-ledger.test.cjs movement-cancellation.test.cjs monitoring-database.test.cjs && node auth.browser.cjs --feature-completion",
     "test:transfer-history": "node auth.browser.cjs --transfer-history",
     "test:projects": "node --test project-history-dependency.test.cjs project-history-repair.test.cjs && node auth.browser.cjs --projects-errors",
