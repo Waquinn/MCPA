@@ -17,6 +17,11 @@
 .mv-guide ol { padding-left: 18px; font-size: 13px; line-height: 1.8; margin: 16px 0; color: var(--gray); }
 .mv-guide li + li { margin-top: 10px; }
 .mv-help { font-size: 12px; line-height: 1.65; color: var(--gray); margin: 8px 0 14px; }
+.mv-field-label{display:block;font-size:12px;font-weight:600;margin-bottom:8px}
+.mv-fixed-destination{display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--white);color:var(--black)}
+.mv-fixed-destination svg{width:22px;height:22px;flex:0 0 22px;fill:none;stroke:var(--gold-dim);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.mv-fixed-destination strong{font-size:14px;font-weight:600}.mv-fixed-destination p,.mv-fixed-destination small{font-size:12px;line-height:1.6;color:var(--gray);overflow-wrap:anywhere}.mv-fixed-destination p{margin:4px 0 0}
+.mv-fixed-destination>div{min-width:0}
 .mv-identity { padding-bottom: 15px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
 .mv-input { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--white); color: var(--black); font-size: 13px; }
 .movement-ui textarea { resize: vertical; min-height: 64px; }

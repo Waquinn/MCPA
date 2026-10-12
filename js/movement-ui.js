@@ -86,6 +86,29 @@
     }).join('');
   }
 
+  function returnDestinationField() {
+    const office=current.returnOffice;
+    const problem=current.returnOfficeError;
+    return `<span class="mv-field-label">Return destination</span><div class="mv-fixed-destination" role="group" aria-label="Return destination"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5h12v16M16 11h4v10M2 21h20M8 9h4M8 13h4M8 17h4"/></svg><div><strong>Office</strong><p>Company equipment receiving location</p>${office&&office.name!=='Office'?`<small>${esc(office.name)}</small>`:''}</div></div>${problem?`<p class="mv-help" role="status">${esc(problem)}</p>${button('Retry Office connection','retry-office')}`:''}`;
+  }
+
+  async function loadReturnOffice(active) {
+    if (active.kind!=='return' || !operational()) return;
+    try {
+      const office=await store().returnDestination();
+      if (current!==active) return;
+      active.returnOffice=office;active.returnOfficeError='';
+    } catch(error) {
+      if (current!==active) return;
+      active.returnOffice=null;active.returnOfficeError=error.message||'The Office destination could not load. Retry or contact Admin.';
+    }
+    if (current!==active) return;
+    const host=active.root.querySelector('[data-return-destination]');
+    if(host)host.innerHTML=returnDestinationField();
+    const submit=active.root.querySelector('[data-return-submit]');
+    if(submit)submit.disabled=active.busy||!active.returnOffice||!eligibleTools('return').length;
+  }
+
   function createForm() {
     const kind = current.kind;
     if (!operational() && kind !== 'request' && !(handler() && kind === 'transfer')) return '<aside class="card card-pad mv-guide"><h2>Review saved '+TITLES[kind].toLowerCase()+'</h2><p class="mv-help">Open a record to inspect its history and available follow-up actions. The named receiving Engineer or Architect confirms physical custody.</p></aside>';
@@ -95,12 +118,12 @@
     let fields = '';
     if (kind === 'request') fields = `${siteField('destination', 'Destination project', true)}<div class="field"><label for="mv-needed-until">Needed until (optional)</label><input id="mv-needed-until" name="neededUntil" type="date"></div><div class="field"><label for="mv-purpose">Purpose</label><textarea id="mv-purpose" name="purpose" rows="3" required maxlength="2000" placeholder="What work are these tools needed for?"></textarea></div>`;
     if (kind === 'transfer') fields = `<div data-receiver-fields ${mode()==='live'?'hidden':''}>${siteField('destination', 'Destination project', true)}${receiverField()}</div><div class="field"><label for="mv-notes">Handover notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000" placeholder="Instructions for the receiver"></textarea></div>`;
-    if (kind === 'return') fields = `${siteField('destination', 'Return destination', true, 'Riverside Warehouse')}<div data-return-conditions></div><div class="field"><label for="mv-notes">Return notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000"></textarea></div><p class="mv-help">Good tools become available. Damaged and missing tools open a report for admin follow-up.</p>`;
+    if (kind === 'return') fields = `<div class="field" data-return-destination>${returnDestinationField()}</div><div data-return-conditions></div><div class="field"><label for="mv-notes">Return notes <span class="mv-optional">(optional)</span></label><textarea id="mv-notes" name="notes" rows="2" maxlength="2000"></textarea></div><p class="mv-help">Confirm after delivering the equipment to Office and inspecting it. Good tools become available; damaged tools go to repair. Missing items retain their last holder and location for follow-up.</p>`;
     if (kind === 'repair' || kind === 'missing') fields = `<div class="field"><label for="mv-notes">${kind === 'repair' ? 'Damage / issue details' : 'Last seen and circumstances'}</label><textarea id="mv-notes" name="notes" required rows="4" maxlength="2000" placeholder="${kind === 'repair' ? 'Describe the fault and when it occurred' : 'Describe the last known location and what happened'}"></textarea></div><p class="mv-help">Submitting updates the tool's status and adds it to the admin ${kind === 'repair' ? 'repair queue' : 'missing tools register'}.</p>`;
     // Hidden manual fields cannot receive native validation focus. Require them
     // when revealed, and explicitly require a receiver before submission below.
     if(kind==='transfer'&&mode()==='live')fields=fields.replaceAll(' required','');
-    return `<section class="card card-pad mv-create"><h2>${title}</h2><p class="mv-help mv-identity">${esc(context().name ? `Submitting as ${context().name}` : 'Sign in to submit movements.')}</p><form data-form="create">${kind==='transfer'?`${mode()==='live'?`<div class="mv-receiver-assist">${button('Scan Receiver QR','scan-receiver',null,'btn-accent')}<p class="mv-help">Scan the receiving person's QR to fill their name and assigned project. Scanning does not move equipment.</p><p data-receiver-context role="status"></p><button type="button" class="btn btn-secondary btn-sm" data-action="manual-receiver">Enter Details Manually</button></div>`:''}`:""}${toolPicker(kind)}${fields}<button class="btn btn-primary btn-block" type="submit"${!eligibleTools(kind).length ? ' disabled' : ''}>${submit}</button></form></section>`;
+    return `<section class="card card-pad mv-create"><h2>${title}</h2><p class="mv-help mv-identity">${esc(context().name ? `Submitting as ${context().name}` : 'Sign in to submit movements.')}</p><form data-form="create">${kind==='transfer'?`${mode()==='live'?`<div class="mv-receiver-assist">${button('Scan Receiver QR','scan-receiver',null,'btn-accent')}<p class="mv-help">Scan the receiving person's QR to fill their name and assigned project. Scanning does not move equipment.</p><p data-receiver-context role="status"></p><button type="button" class="btn btn-secondary btn-sm" data-action="manual-receiver">Enter Details Manually</button></div>`:''}`:""}${toolPicker(kind)}${fields}<button class="btn btn-primary btn-block" type="submit"${kind==='return'?' data-return-submit':''}${!eligibleTools(kind).length || (kind==='return'&&!current.returnOffice) ? ' disabled' : ''}>${submit}</button></form></section>`;
   }
 
   function transferLookup() {
@@ -417,7 +440,11 @@
         if (['request', 'transfer', 'return'].includes(kind) && !toolIds.length) throw new Error('Select at least one tool.');
         const payload = { toolIds, destination: value('destination'), receiver: value('receiver'), purpose: value('purpose'), notes: value('notes'), toolId: value('toolId'), neededUntil: value('neededUntil') };
         if (store().mode === 'live') { delete payload.receiver; if (kind === 'transfer') {payload.receiverId = value('receiverId');if(current.receivingToken)payload.receivingToken=current.receivingToken;} }
-        if (kind === 'return') payload.conditions = readConditions(form);
+        if (kind === 'return') {
+          if(!current.returnOffice)throw new Error('The company Office destination is unavailable. Retry the Office connection or contact Admin.');
+          payload.destination=current.returnOffice.name;payload.destinationId=current.returnOffice.id;
+          payload.conditions = readConditions(form);
+        }
         const methods = { request: 'createRequest', transfer: 'createTransfer', return: 'createReturn', repair: 'reportRepair', missing: 'reportMissing' };
         await perform(() => store()[methods[kind]](payload), result => kind === 'transfer' ? `Transfer ${result?.code || result?.id || ''} created. Share the code with the receiver.` : `${TITLES[kind] === 'Missing tools' ? 'Missing report' : { request: 'Request', return: 'Return', repair: 'Repair report' }[kind]} saved successfully.`, { resetCreate: true, showResult: true });
       } else if (action === 'reject') await perform(() => store().rejectRequest(form.dataset.id, value('reason')), 'Request rejected. The reason is visible to the requester.');
@@ -496,6 +523,7 @@
     const action = target.dataset.action;
     const id = target.dataset.id;
     if (action === 'dismiss') { current.message = ''; renderNotice(); }
+    else if(action==='retry-office')await loadReturnOffice(current);
     else if(action==='scan-receiver')await startCamera('receiver');
     else if(action==='close-scanner'){await stopCamera();current?.root.querySelector('[data-scanner-dialog]').close();syncModalLock();}
     else if(action==='manual-receiver'){
@@ -609,6 +637,8 @@
       if (current !== active || active.busy) return;
       await store().refresh();
       if (current !== active) return;
+      await loadReturnOffice(active);
+      if (current !== active) return;
       if (!root.querySelector('[data-list]')) renderShell();
       if (active.pendingTarget && !active.openingTarget) await openRecord(kind, active.pendingTarget);
     }, message => {
@@ -619,6 +649,8 @@
     try {
       if (!store()) throw new Error('The movement service has not loaded. Reload the page and try again.');
       await store().refresh();
+      if (current !== active) return;
+      await loadReturnOffice(active);
       if (current !== active) return;
       renderShell();
       if (window.movementDraft?.kind === kind) {

@@ -392,6 +392,8 @@
         return record;
       });
     },
+    // Explicit offline demo location only; live returns use the authenticated RPC.
+    returnDestination: function () { return {id:'demo-return-office',name:'Office',label:'Office'}; },
     createReturn: function (input) {
       input = input || {};
       return change(function (next) {
@@ -399,13 +401,15 @@
         assertUnlocked(next, tools);
         tools.forEach(function (tool) { if (tool.status !== 'inuse') fail('Only equipment currently in use can be returned.'); assertCustody(tool); });
         var results = inspections(tools, input.conditions);
-        var destination = site(next, input.destination, true);
+        var destination = 'Office';
+        if (text(input.destination, 'Return destination') && input.destination !== destination) fail('Equipment returns must go to the company Office. Use Transfers for project handovers.');
+        if (!next.sites.some(function (record) { return record.id === 'demo-return-office'; })) next.sites.push({id:'demo-return-office',name:destination});
         var record = { id: id(next, 'RET'), toolIds: tools.map(function (tool) { return tool.id; }), source: tools.map(snapshot), destination: destination || null, returnedBy: context().name, conditions: results, notes: text(input.notes, 'Notes'), createdAt: now() };
         tools.forEach(function (tool) {
           var result = results.find(function (item) { return item.toolId === tool.id; });
           if (result.condition === 'good') { tool.status = 'available'; tool.holder = '—'; if (destination) tool.site = destination; }
           else {
-            if (result.condition === 'damaged' && destination) tool.site = destination;
+            if (result.condition === 'damaged') { tool.site = destination; tool.holder = '—'; }
             report(next, tool, result.condition === 'lost' ? 'missing' : 'repair', result.notes, record.id);
           }
         });

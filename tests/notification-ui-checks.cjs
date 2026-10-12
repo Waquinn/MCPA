@@ -55,7 +55,7 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
     for(const [kind,selectors] of [
       ['request',['#mv-destination']],
       ['transfer',['#mv-destination','#mv-receiver']],
-      ['return',['#mv-destination','[data-condition]']],
+      ['return',['[data-condition]']],
       ['repair',['#mv-tool']],
       ['missing',['#mv-tool']]
     ]) {
@@ -71,7 +71,7 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
 
   const receiverSite=randomUUID();await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'Notification receiving project','Fixture',$2,$3)",[receiverSite,fixture.actors.pau.name,fixture.actors.pau.id]);
   const transfer = await action('sky','createTransfer',{toolIds:['TOOL-002'],destination:'Notification receiving project',receiverId:fixture.actors.pau.id,notes:'Isolated notification targeting transfer'});
-  const returned = await action('sky','createReturn',{toolIds:['TOOL-003'],destination:'Main Warehouse',conditions:[{toolId:'TOOL-003',condition:'good'}],notes:'Isolated notification targeting return'});
+  const returned = await action('sky','createReturn',{toolIds:['TOOL-003'],destination:'Main Office',conditions:[{toolId:'TOOL-003',condition:'good'}],notes:'Isolated notification targeting return'});
   const repair = await action('sky','reportRepair',{toolId:'TOOL-004',notes:'Isolated notification targeting repair'});
   await action('admin','startRepair',{id:repair.id});
   const missing = await action('sky','reportMissing',{toolId:'TOOL-005',notes:'Isolated notification targeting missing report'});

@@ -93,6 +93,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
    alter table equipment alter column id set default gen_random_uuid();`);
   for(const file of ['202610100003_feature_storage.sql','202610100004_movement_cancellation.sql','202610100005_purchase_ledger.sql','202610100006_monitoring.sql'])await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
  }
+ await require('./office-return-fixture.cjs').configure(fixture);
  await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
  server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new',...(process.env.MCPA_CHROME_NO_SANDBOX==='1'?['--no-sandbox','--disable-gpu','--disable-gpu-sandbox']:[]),'--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
@@ -142,6 +143,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(turnoverRun){
   await require('./request-turnover.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,port,base,errors});
   assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS Request turnover synchronization; isolated independent sessions, no live requests');return;
+ }
+ if(process.argv.includes('--office-returns')){
+  await require('./office-return.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
+  assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS Office returns; isolated local records, no live writes');return;
  }
  if(process.argv.includes('--feature-completion')){
   await require('./feature-frontend.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot});
@@ -344,7 +349,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  const transfer=await evaluate('MovementStore.getState().transfers.find(t=>t.requestId==='+JSON.stringify(request.id)+')');assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='TOOL-001').holder"),'');
  await logout();await login('sky');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await go('transfer');await wait("document.querySelector('[data-form=lookup]')");await click('[data-transfer-tab=receive]');await fill('[name=code]',transfer.code);await submit('[data-form=lookup]');await wait("document.querySelector('[data-form=receive]')");await fill('[data-condition]','good');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Test each')");await click('[data-tested]');await submit('[data-form=receive]');await wait("document.querySelector('[data-notice]').textContent.includes('Receipt confirmed')");
  assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='TOOL-001').holder"),'Engr Sky');
- await go('return');await wait("document.querySelector('[data-form=create]')");await click('[name="toolIds"][value="TOOL-001"]');await fill('[name=destination]','Main Warehouse');await fill('[data-condition]','damaged');await fill('[data-condition-notes]','Guard broken');await submit('[data-form=create]');await wait("MovementStore.getState().repairs.some(r=>r.toolId==='TOOL-001')");
+ await go('return');await wait("document.querySelector('[data-form=create]')");await click('[name="toolIds"][value="TOOL-001"]');await fill('[data-condition]','damaged');await fill('[data-condition-notes]','Guard broken');await submit('[data-form=create]');await wait("MovementStore.getState().repairs.some(r=>r.toolId==='TOOL-001')");
  await go('dashboard');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'));await shot('engineer-mobile-dark');
  await evaluate('__expire()');await wait("document.querySelector('#auth-email')");assert.equal(await evaluate('MovementStore.getState().tools.length'),0);
  await login('architect');await wait("document.querySelector('.dashboard-toolbar .overview-actions')");assert.equal(await evaluate('MCPAAuth.profile.role'),'architect');await logout();
