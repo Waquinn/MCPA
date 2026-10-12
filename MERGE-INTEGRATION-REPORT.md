@@ -1,5 +1,7 @@
 # Merge integration and deployment review — October 12, 2026
 
+**Later compatibility review:** [SUPABASE-RELEASE-READINESS.md](SUPABASE-RELEASE-READINESS.md) supersedes the deployment gate below. The user now confirms the reviewed Office wrapper exists live; do not rerun Office or optional-purpose SQL based on this historical report.
+
 This report covers the existing merge on `wip/engineer-improvements` from
 `origin/Updated-MCPARole` at `8e7ff9059c8d664b388eecd5a070a77fdecd4854`.
 It supersedes the deployment instructions in the incoming implementation reports.

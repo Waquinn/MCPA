@@ -1,5 +1,7 @@
 # Office-only Engineer/Architect returns
 
+**Latest status:** [SUPABASE-RELEASE-READINESS.md](SUPABASE-RELEASE-READINESS.md) supersedes all deployment instructions and live-status statements below. The user now reports the reviewed Office wrapper and optional-purpose lifecycle installed. Complete the read-only delegate/configuration checks; do not rerun either migration.
+
 **Merge integration update (October 12, 2026):** the report below records the incoming branch's earlier implementation and preflight. For current deployment instructions use [MERGE-INTEGRATION-REPORT.md](MERGE-INTEGRATION-REPORT.md). The user has since confirmed that optional purpose is installed live, while Office Returns deployment is unconfirmed. The Office migration's lifecycle guard now accepts the exact reviewed optional-purpose validation without changing the private function; it continues to reject unrelated drift. Do not reapply optional purpose or recreate Office. Run the updated read-only preflight before deciding whether Office SQL is needed.
 
 October 12, 2026. Implemented and tested locally. **Office backend deployment is pending.** The latest user-provided live preflight verifies an active Office location and confirms the Office return RPC is not installed. This agent created no live location, replaced no live RPC, changed no existing custody/transfer/request/history record, and performed no commit, push or publication. Frontend publication was not independently checked.
