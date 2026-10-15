@@ -23,28 +23,62 @@
     const value = Number(tool.quantity ?? tool.qty ?? 1);
     return Number.isFinite(value) ? Math.max(0, value) : 0;
   }
-  function availability(tool) {
-    const status = String(tool.status || '').replace(/[\s_-]/g, '').toUpperCase();
-    const project = Object.hasOwn(tool, 'site_id') ? tool.site_id : Object.hasOwn(tool, 'siteId') ? tool.siteId : tool.site;
-    if (project && status === 'INUSE') return 'Deployed';
-    if (!project || status === 'INOFFICE') return 'Available';
+  const normalized = value => String(value || '').replace(/[\s_-]/g, '').toLowerCase().replace(/^forrepair$/, 'repair');
+  function requestability(tool, data = window.MovementStore?.getState()) {
+    const status = normalized(tool.recordedStatus ?? tool.dbStatus ?? tool.status);
+    const id = tool.asset_id || tool.assetId || tool.id;
+    const includes = record => (record.toolIds || [record.toolId]).includes(id);
+    const result = (code, label, reason) => ({eligible: code === 'available', code, label, reason});
+    if (tool.archived_at || tool.is_active === false) return result('inactive', 'Unavailable', 'This equipment record is inactive or archived.');
+    if (quantity(tool) <= 0) return result('empty', 'No stock', 'The recorded quantity is zero.');
+    if (['missing','lost'].includes(status) || ['missing','lost'].includes(normalized(tool.condition))) return result('missing', 'Unavailable', 'Equipment is recorded as missing.');
+    if (['repair','underrepair','damaged'].includes(status) || ['damaged','repair','underrepair'].includes(normalized(tool.condition))) return result('damaged', 'Unavailable', 'Equipment needs repair before it can be requested.');
+    if (['disposed','retired'].includes(status)) return result('retired', 'Unavailable', 'Equipment has been retired from service.');
+    const lock = tool.movementLock;
+    if (lock === 'transfer' || (data?.transfers || []).some(record => ['pending','refused'].includes(record.status) && includes(record))) return result('transfer', 'Pending handover', 'A transfer is awaiting receipt or sender follow-up. Custody has not changed.');
+    if (lock === 'request' || lock === 'reserved' || (data?.requests || []).some(record => record.status === 'approved' && includes(record))) return result('reserved', 'Reserved', 'Allocated to an approved request; unavailable for another request.');
+    const holderId = tool.current_holder_id ?? tool.holderId;
+    const holder = String(tool.holder || '').trim();
+    const held = holderId || (!Object.hasOwn(tool,'current_holder_id') && !Object.hasOwn(tool,'holderId') && holder && !['—','–','-','?'].includes(holder));
+    if (status === 'inuse') return result('deployed', 'In use', 'Already in use. The current holder must transfer or return it.');
+    if (held) return result('assigned', 'In custody', 'Assigned to a holder; unavailable for a new stock request.');
+    // IN_OFFICE is normalized to available by old snapshots, but the action RPC
+    // accepts only recorded AVAILABLE stock. Do not promise an invalid request.
+    if (status !== 'available') return result('status', 'Unavailable', status === 'inoffice' ? 'Recorded as In Office. Admin must review its movement status before a request.' : 'The recorded status does not permit a new request.');
+    const verified = lock === null || typeof lock === 'string' || data?.inventoryAvailabilityVersion === 1
+      || !window.MCPAAuth || window.MCPAAuth.isDemo === true
+      || (data?.availabilityLoaded && ['admin','tool_handler'].includes(window.MCPAAuth.profile?.role));
+    if (!verified) return result('unknown', 'Availability unverified', 'Reservation information is unavailable. Refresh or ask Admin to verify before requesting.');
+    return result('available', 'Available to request', 'No holder or reservation. Admin approval is required.');
+  }
+  function availability(tool, data) {
+    const result = requestability(tool, data);
+    if (result.eligible) return 'Available';
+    if (normalized(tool.recordedStatus ?? tool.dbStatus ?? tool.status) === 'inuse') return 'Deployed';
     return 'Unavailable';
   }
-  function tally(tools) {
+  function statusMarkup(tool, data) {
+    const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const status = normalized(tool.recordedStatus ?? tool.dbStatus ?? tool.status), result = requestability(tool, data);
+    const labels = {available:'Available',inuse:'In use',inoffice:'In Office',repair:'For repair',underrepair:'Under repair',missing:'Missing',disposed:'Disposed',retired:'Retired'};
+    const tone = ['available','inuse','repair','underrepair','missing'].includes(status) ? status : 'pending';
+    return `<div class="equipment-status"><span class="equipment-status-caption">Recorded status</span><span class="badge badge-${tone}">${escape(labels[status] || tool.status || 'Unknown')}</span><span class="equipment-request-state" data-requestability="${result.code}"><span class="equipment-status-caption">New requests</span><strong>${escape(result.label)}</strong></span><span class="equipment-status-reason">${escape(result.reason)}</span></div>`;
+  }
+  function tally(tools, data) {
     return tools.reduce((totals, tool) => {
       const units = quantity(tool);
       totals.total += units;
-      if (availability(tool) === 'Available') totals.available += units;
-      if (availability(tool) === 'Deployed') totals.deployed += units;
+      if (availability(tool, data) === 'Available') totals.available += units;
+      if (availability(tool, data) === 'Deployed') totals.deployed += units;
       return totals;
     }, {total: 0, available: 0, deployed: 0});
   }
-  function matchesStatus(tool, value) {
+  function matchesStatus(tool, value, data) {
     if (!value) return true;
     const normalize = status => String(status || '').toLowerCase().replace(/[\s_-]/g, '').replace(/^forrepair$/, 'repair');
     const expected = normalize(value);
-    if (expected === 'available') return availability(tool) === 'Available';
-    if (['inuse', 'deployed'].includes(expected)) return availability(tool) === 'Deployed';
+    if (expected === 'available') return availability(tool, data) === 'Available';
+    if (['inuse', 'deployed'].includes(expected)) return availability(tool, data) === 'Deployed';
     return normalize(tool.status) === expected;
   }
   async function snapshot() {
@@ -116,5 +150,5 @@
     window.addEventListener('pagehide', dispose);
     return dispose;
   }
-  window.EquipmentTracking = {client, readAll, snapshot, quantity, availability, matchesStatus, tally, watch};
+  window.EquipmentTracking = {client, readAll, snapshot, quantity, requestability, statusMarkup, availability, matchesStatus, tally, watch};
 })();

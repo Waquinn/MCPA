@@ -11,7 +11,7 @@ function setup(){
   }
   const data={tools:[
     {id:'A',name:'Drill',qty:3,status:'inuse',site:'Site One',holder:'Engineer'},
-    {id:'B',name:'Grinder',qty:2,status:'inoffice',site:'Unassigned',holder:''},
+    {id:'B',name:'Grinder',qty:2,status:'available',site:'Unassigned',holder:''},
     {id:'C',name:'Saw',qty:1,status:'underrepair',site:'Site One',holder:'Engineer'},
     {id:'D',name:'Hidden zero',qty:0,status:'available'},
   ],sites:[{id:'s1',name:'Site One',is_active:true},{id:'s2',name:'Archived site',is_active:false}],activity:[],requests:[],transfers:[],repairs:[],missing:[]};

@@ -40,7 +40,7 @@
       if (!data || !Array.isArray(data.tools) || !Array.isArray(data.requests)) throw new Error('The movement database returned an invalid snapshot. Refresh after checking the setup.');
       // Ignore a live response after the user has switched to demo mode.
       if (mode !== 'live' || requestRevision !== revision) return clone(state);
-      const next = {...empty(), ...data};
+      const next = {...empty(), ...data, availabilityLoaded: true};
       const changed = JSON.stringify(next) !== JSON.stringify(state);
       state = next; ready = true; stale = false;
       TOOLS.splice(0, TOOLS.length, ...clone(state.tools));

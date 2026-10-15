@@ -12,7 +12,7 @@ const browser = process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Appli
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const db = {
   sites: [{id:'p1',name:'Casa Buena',location:'Manila',assigned_engineer:'Engr Pau',assigned_engineer_id:'u1',phase:'Structure',progress:40,status:'active',is_active:true,archived_at:null,updated_at:'1'}, {id:'p2',name:'Archived project',is_active:false,archived_at:'2026-01-01'}],
-  equipment: [{id:'e1',asset_id:'DRILL-001',name:'Drill',category:'Power Tool',brand:'Bosch',quantity:3,status:'IN_USE',site_id:'p1',current_holder_id:'u1',image_url:'/missing-photo.png'}, {id:'e2',asset_id:'GRIND-001',name:'Grinder',quantity:2,status:'IN_OFFICE',site_id:null}, {id:'e3',asset_id:'ZERO',name:'Zero quantity tool',quantity:0,status:'IN_USE',site_id:'p1'}],
+  equipment: [{id:'e1',asset_id:'DRILL-001',name:'Drill',category:'Power Tool',brand:'Bosch',quantity:3,status:'IN_USE',site_id:'p1',current_holder_id:'u1',image_url:'/missing-photo.png'}, {id:'e2',asset_id:'GRIND-001',name:'Grinder',quantity:2,status:'AVAILABLE',site_id:null}, {id:'e3',asset_id:'ZERO',name:'Zero quantity tool',quantity:0,status:'IN_USE',site_id:'p1'}],
   profiles: [{id:'u1',name:'Engr Pau',role:'engineer'}], project_history: []
 };
 const writes=[], errors=[];
@@ -40,7 +40,7 @@ const server=http.createServer(async(req,res)=>{
 });
 (async()=>{
   server.listen(0,'127.0.0.1');await once(server,'listening');
-  chrome=spawn(browser,['--headless=new','--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
+  chrome=spawn(browser,['--headless=new',...(process.env.MCPA_CHROME_NO_SANDBOX==='1'?['--no-sandbox']:[]),'--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
   let port;for(let i=0;i<100;i++){const file=path.join(profile,'DevToolsActivePort');if(fs.existsSync(file)){port=fs.readFileSync(file,'utf8').split('\n')[0];break;}await pause(100);}
   assert.ok(port,'Browser started');
   const targets=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();
@@ -56,7 +56,7 @@ const server=http.createServer(async(req,res)=>{
   await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1050,deviceScaleFactor:1,mobile:false});
   await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/index.html`});
   await wait("window.MCPAAuth?.profile?.role==='admin'");
-  await wait("document.querySelector('.dashboard-projects')");
+  await wait("document.querySelector('.dashboard-projects') && !MCPANavigation.restoring");
   assert.equal(await evaluate("document.querySelector('.overview-kpis .num').textContent"),'5');
   assert.ok(await evaluate("document.querySelector('.dashboard-projects').textContent.includes('Drill: 3') && !document.querySelector('.dashboard-projects').textContent.includes('Zero quantity tool') && !document.querySelector('.dashboard-projects').textContent.includes('Archived project')"));
   assert.ok(await evaluate("![...document.querySelectorAll('#content button')].some(b=>b.textContent.trim()==='Refresh')"));
@@ -65,11 +65,11 @@ const server=http.createServer(async(req,res)=>{
   await wait("document.querySelector('.overview-kpis .num').textContent==='9'");
   await shot('dashboard-desktop');
   await click('[data-status="available"]');
-  assert.ok(await evaluate("document.querySelector('#overview-results').textContent.includes('GRIND-001') && !document.querySelector('#overview-results').textContent.includes('DRILL-001')"),'Available filter follows existing location rule');
+  assert.ok(await evaluate("document.querySelector('#overview-results').textContent.includes('GRIND-001') && !document.querySelector('#overview-results').textContent.includes('DRILL-001')"),'Available filter follows request eligibility');
   await click('[data-status="inuse"]');
-  await click('[data-tool="DRILL-001"]');
-  assert.ok(await evaluate("document.querySelector('dialog[open]').textContent.includes('Engr Pau')"),'Dashboard Details opens current custody');
-  await click('[data-close]');
+  await click('[data-tool="DRILL-001"]');await wait("document.querySelector('#profileContent')?.textContent.includes('DRILL-001') && !MCPANavigation.restoring");
+  assert.ok(await evaluate("document.querySelector('#profileContent').textContent.includes('Engr Pau')"),'Dashboard Details opens current custody');
+  await evaluate('history.back()');await wait("document.querySelector('#screen-dashboard.active') && !MCPANavigation.restoring");
   await click('[data-status=""]');
   await evaluate("document.querySelector('#dashboard-search').value='Grinder';document.querySelector('#dashboard-search').dispatchEvent(new Event('input',{bubbles:true}))");
   assert.ok(await evaluate("!document.querySelector('#overview-results').textContent.includes('DRILL-001')"),'Inventory search filters rows');

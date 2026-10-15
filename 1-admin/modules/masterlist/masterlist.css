@@ -1,4 +1,9 @@
 /* Masterlist-specific timeline styling */
+#screen-masterlist .tool-id-chip{white-space:nowrap;}
+#screen-masterlist .table-wrap{max-width:100%;}
+#profileContent .equipment-status{min-width:0;max-width:100%;}
+#profileContent .display{overflow-wrap:anywhere;}
+@media(max-width:600px){#paginationContainer{flex-wrap:wrap;gap:12px;}#screen-masterlist .page-head{flex-wrap:wrap;gap:12px;}}
 .timeline{position:relative; padding-left:26px;}
 .timeline::before{content:""; position:absolute; left:6px; top:4px; bottom:4px; width:2px; background:linear-gradient(var(--gold), var(--line));}
 .tl-item{position:relative; padding-bottom:26px;}

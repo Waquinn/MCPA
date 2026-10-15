@@ -38,12 +38,13 @@
   }
 
   function eligibleTools(kind) {
-    const locked = new Set((state().transfers || []).filter(t => ['pending','refused'].includes(t.status)).flatMap(ids));
-    const reserved = new Set((state().requests || []).filter(r => r.status === 'approved').flatMap(ids));
-    return tools().filter(tool => {
+    const data = state();
+    const locked = new Set((data.transfers || []).filter(t => ['pending','refused'].includes(t.status)).flatMap(ids));
+    const reserved = new Set((data.requests || []).filter(r => r.status === 'approved').flatMap(ids));
+    return (data.tools || []).filter(tool => {
       if (locked.has(tool.id) || reserved.has(tool.id) || !(tool.qty > 0)) return false;
       const owns = mode() === 'live' ? tool.holderId === context().id : tool.holder === context().name;
-      if (kind === 'request') return tool.status === 'available';
+      if (kind === 'request') return window.EquipmentTracking.requestability(tool, data).eligible;
       if (kind === 'transfer') return (handler() && tool.status === 'available' && (!tool.holder || tool.holder === '?')) || (tool.status === 'inuse' && owns);
       if (kind === 'repair' || kind === 'missing') return (tool.status === 'inuse' && owns) || (admin() && tool.status === 'available');
       return tool.status === 'inuse' && owns;
@@ -119,7 +120,7 @@
     if (kind === 'repair' || kind === 'missing') {
       return `<div class="field"><label for="mv-tool">Tool</label><select id="mv-tool" name="toolId" required><option value="">Select a tool</option>${available.map(tool => `<option value="${esc(tool.id)}">${esc(tool.id)} · ${esc(tool.name)} · ${esc(tool.site)}</option>`).join('')}</select>${available.length ? '' : '<p class="mv-help">No eligible tools. Tools already reserved or in transit cannot be reported here.</p>'}</div>`;
     }
-    return `<fieldset class="mv-tools"><legend>Choose asset records <span data-selected-count>0 selected</span></legend><label class="mv-sr" for="mv-tool-search">Search available tools</label><input id="mv-tool-search" class="mv-input" type="search" data-tool-search placeholder="Search tool name, ID or project"><div class="mv-tool-options">${available.length ? available.map(tool => `<label class="mv-tool-option" data-tool-text="${esc(`${tool.id} ${tool.name} ${tool.site}`.toLowerCase())}"><input type="checkbox" name="toolIds" value="${esc(tool.id)}"><span><strong>${esc(tool.name)}</strong><small>${esc(tool.id)} · ${esc(tool.site)} · Qty ${esc(tool.qty)} (whole record)</small></span><span class="mv-tool-state">${esc(STATUS[tool.status] || tool.status)}</span></label>`).join('') : '<p class="mv-help mv-empty-tools">No eligible tools are available. Tools reserved for a request or transfer are excluded.</p>'}<p class="mv-help mv-empty-tools" data-tool-no-results hidden>No tools match this search.</p></div></fieldset>`;
+    return `${kind === 'request' && tools().some(tool => window.EquipmentTracking.requestability(tool,state()).code === 'unknown') ? '<p class="mv-help" role="status">Some stock availability could not be verified. Refresh or ask Admin to check reservations.</p>' : ''}<fieldset class="mv-tools"><legend>Choose asset records <span data-selected-count>0 selected</span></legend><label class="mv-sr" for="mv-tool-search">Search available tools</label><input id="mv-tool-search" class="mv-input" type="search" data-tool-search placeholder="Search tool name, ID or project"><div class="mv-tool-options">${available.length ? available.map(tool => `<label class="mv-tool-option" data-tool-text="${esc(`${tool.id} ${tool.name} ${tool.site}`.toLowerCase())}"><input type="checkbox" name="toolIds" value="${esc(tool.id)}"><span><strong>${esc(tool.name)}</strong><small>${esc(tool.id)} · ${esc(tool.site)} · Qty ${esc(tool.qty)} (whole record)</small></span><span class="mv-tool-state">${esc(kind === 'request' ? 'Available to request' : STATUS[tool.status] || tool.status)}</span></label>`).join('') : '<p class="mv-help mv-empty-tools">No eligible tools are available. Held, reserved, damaged, and pending-handover stock cannot be requested.</p>'}<p class="mv-help mv-empty-tools" data-tool-no-results hidden>No tools match this search.</p></div></fieldset>`;
   }
 
   function conditionFields(toolIds, prefix) {

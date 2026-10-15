@@ -46,7 +46,7 @@ function filteredEquipment() {
   const status = document.getElementById('statusFilter')?.value || '';
   const site = document.getElementById('siteFilter')?.value || '';
   return equipmentList.filter(item => equipmentMatchesSearch(item, search) && (!category || item.category === category)
-    && window.EquipmentTracking.matchesStatus({...item,status:item.dbStatus},status) && (!site || item.site === site));
+    && window.EquipmentTracking.matchesStatus(item,status,item.availabilityData) && (!site || item.site === site));
 }
 
 function filterAndResetPage() {
@@ -60,8 +60,8 @@ async function initMasterlist() {
   if (!tbody || owner?.disposed) return;
   const request = owner.request = (owner.request || 0) + 1;
   if (!tbody.children.length) tbody.innerHTML = '<tr><td colspan="10">Loading equipment…</td></tr>';
-  let data;
-  try { data = await window.EquipmentTracking.readAll('equipment'); }
+  let data, movement;
+  try { [data, movement] = await Promise.all([window.EquipmentTracking.readAll('equipment'), window.MovementStore.refresh().catch(() => null)]); }
   catch (error) {
     console.error("Error fetching equipment:", error.message);
     if (tbody.isConnected) document.getElementById('inventory-sync').textContent = 'Equipment could not load. Retrying automatically.';
@@ -75,10 +75,13 @@ async function initMasterlist() {
   if (!tbody?.isConnected || owner?.disposed || owner !== window.AdminEquipment || request !== owner.request) return;
   const siteNames = new Map((siteResult.data || []).map(site => [site.id, site.name]));
   const holderNames = new Map((holderResult.data || []).map(profile => [profile.id, profile.name]));
+  const movementTools = new Map((movement?.tools || []).map(tool => [tool.id, tool]));
   equipmentList = (data || []).map(item => ({
     site_id: item.site_id,
+    current_holder_id: item.current_holder_id,
+    movementLock: movementTools.get(item.asset_id)?.movementLock,
+    availabilityData: movement || {requests:[],transfers:[]},
     image_url: item.image_url,
-    availability: window.EquipmentTracking.availability(item),
     assetId: item.asset_id,
     equipmentType: item.name,
     category: item.category || 'Uncategorized',
@@ -125,14 +128,14 @@ function populateFilters() {
 }
 
 function formatDbStatus(status) {
-  if (!status) return 'available';
+  if (!status) return 'unknown';
   const s = status.toString().toUpperCase();
   if (s === 'IN_USE') return 'inuse';
   if (s === 'REPAIR' || s === 'FOR_REPAIR') return 'repair';
   if (s === 'UNDER_REPAIR') return 'underrepair';
   if (s === 'DISPOSED') return 'disposed';
   if (s === 'MISSING') return 'missing';
-  return 'available';
+  return s.toLowerCase().replace(/[\s_-]/g, '');
 }
 
 function getBadgeClass(status) {
@@ -271,7 +274,7 @@ function renderTable() {
       <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.category)}</td>
       <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.brand)}</td>
       <td style="padding:12px; border-bottom:1px solid var(--line);">${escapeHTML(item.site)}</td>
-      <td style="padding:12px; border-bottom:1px solid var(--line);"><span class="badge ${getBadgeClass(item.status)}">${escapeHTML(STATUS_LABEL[item.status] || item.status)}</span><div class="cell-sub">${escapeHTML(item.availability)}</div></td>
+      <td style="padding:12px; border-bottom:1px solid var(--line);">${window.EquipmentTracking.statusMarkup(item,item.availabilityData)}</td>
       
       <td style="padding:12px; border-bottom:1px solid var(--line);">
         <span style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; ${getConditionColor(item.condition)}">
@@ -367,7 +370,6 @@ function showToolProfile(assetId, restoring = false) {
             <h1 class="display" style="font-size:20px; font-weight:700; margin:0 0 4px 0;">${escapeHTML(item.equipmentType)} — ${escapeHTML(item.assetId)}</h1>
             <p class="sub" style="color:var(--gray); font-size:13px; margin:0;">${escapeHTML(item.brand)} · ${escapeHTML(item.model !== '—' ? item.model : 'Standard Model')}</p>
           </div>
-          <span class="badge ${getBadgeClass(item.status)}" style="padding:8px 14px; text-transform:uppercase;">${item.status}</span>
         </div>
 
         <figure class="equipment-profile-photo">${window.EquipmentVisual.thumbnail(item)}${item.image_url ? '' : '<figcaption>No item photo saved</figcaption>'}</figure>
@@ -399,7 +401,7 @@ function showToolProfile(assetId, restoring = false) {
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Identifying Details</span><span class="v" style="font-weight:600;">${escapeHTML(item.details)}</span></div>
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Current Location</span><span class="v" style="font-weight:600;">${escapeHTML(item.site)}</span></div>
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Current Holder</span><span class="v" style="font-weight:600;">${escapeHTML(item.holder)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0;"><span class="k" style="color:var(--gray); font-size:13px;">Status</span><span class="v" style="font-weight:600;"><span class="badge ${getBadgeClass(item.status)}">${item.status.toUpperCase()}</span></span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0;">${window.EquipmentTracking.statusMarkup(item,item.availabilityData)}</div>
         </div>
 
         <div class="section-title"><h2 style="font-size:15px; font-weight:600; margin-bottom:8px;">Actions & QR Tag</h2></div>
@@ -796,7 +798,7 @@ function formatDate(dateString) {
   stop = window.EquipmentTracking.watch(initMasterlist, message => {
     const target = document.getElementById('inventory-sync');
     if (target && !owner.disposed) target.textContent = message;
-  });
+  }, {tables:['equipment','sites','mcpa_notifications']});
   const ready = initMasterlist().catch(() => {
     const target = document.getElementById('inventory-sync');
     if (target && !owner.disposed) target.textContent = 'Projects could not load. Retrying automatically.';

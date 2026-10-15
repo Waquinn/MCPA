@@ -23,7 +23,7 @@
     <select id="typeFilter" class="chip-filter" onchange="filterAndResetPage()"><option value="">Category</option></select>
     <select id="statusFilter" class="chip-filter" onchange="filterAndResetPage()">
       <option value="">Status</option>
-      <option value="Available">Available</option>
+      <option value="Available">Available to request</option>
       <option value="In Use">In Use</option>
       <option value="For Repair">For Repair</option>
       <option value="Missing">Missing</option>
@@ -43,7 +43,7 @@
       </div>
     </div>
     
-    <div class="table-wrap" style="overflow-x:auto;">
+    <div class="table-wrap" role="region" aria-label="Equipment inventory; scroll horizontally for all columns" tabindex="0" style="overflow-x:auto;">
 
       <table style="width:100%; border-collapse:collapse; text-align:left; font-size:13px;">
         <thead>
@@ -54,7 +54,7 @@
             <th style="padding:12px;">Category</th>
             <th style="padding:12px;">Brand</th>
             <th style="padding:12px;">Location</th>
-            <th style="padding:12px;">Status</th>
+            <th style="padding:12px;">Status / new requests</th>
             <th style="padding:12px;">Condition</th>
             <th style="padding:12px;">Acquired</th>
             <th style="padding:12px; text-align:right;">Actions</th>

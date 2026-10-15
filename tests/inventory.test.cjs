@@ -13,23 +13,39 @@ function harness(db = {}) {
     setInterval(fn,ms) {intervals.set(++id,{fn,ms});return id;}, clearInterval(id) {intervals.delete(id);}});
   return {api:window.EquipmentTracking, window, document, timers, intervals, async flush() {const list=[...timers.values()];timers.clear();for(const fn of list)await fn();}};
 }
-test('availability follows project assignment and raw/normalized statuses', () => {
+test('request availability follows condition and custody, never location alone', () => {
   const {api} = harness();
   for (const status of ['IN_USE','inuse','In Use']) assert.equal(api.availability({site_id:'project',status}), 'Deployed');
-  assert.equal(api.availability({site_id:null,status:'IN_USE'}), 'Available');
-  assert.equal(api.availability({site_id:'project',status:'IN_OFFICE'}), 'Available');
-  assert.equal(api.availability({site_id:'project',status:'AVAILABLE'}), 'Unavailable');
+  assert.equal(api.availability({site_id:null,status:'IN_USE'}), 'Deployed');
+  assert.equal(api.availability({site_id:'project',status:'IN_OFFICE'}), 'Unavailable');
+  assert.equal(api.availability({site_id:'project',status:'AVAILABLE'}), 'Available');
   assert.equal(api.availability({site_id:'project',status:'REPAIR'}), 'Unavailable');
-  assert.equal(api.availability({site_id:null,site:'Unassigned',status:'MISSING'}), 'Available');
-  assert.equal(api.availability({siteId:null,site:'Unassigned',status:'IN_USE'}), 'Available');
-  assert.equal(api.matchesStatus({site_id:'p',status:'AVAILABLE'}, 'Available'), false);
-  assert.equal(api.matchesStatus({site_id:'p',status:'IN_OFFICE'}, 'Available'), true);
+  assert.equal(api.availability({site_id:null,site:'Unassigned',status:'MISSING'}), 'Unavailable');
+  assert.equal(api.availability({siteId:null,site:'Unassigned',status:'IN_USE'}), 'Deployed');
+  assert.equal(api.matchesStatus({site_id:'p',status:'AVAILABLE'}, 'Available'), true);
+  assert.equal(api.matchesStatus({site_id:'p',status:'IN_OFFICE'}, 'Available'), false);
   assert.equal(api.matchesStatus({site_id:'p',status:'REPAIR'}, 'For Repair'), true);
 });
-test('tallies sum quantities, count zero as zero, and do not trust manual AVAILABLE', () => {
+test('tallies sum eligible quantities and preserve deployed custody counts', () => {
   const {api} = harness();
-  const result = api.tally([{quantity:4,site_id:null,status:'IN_OFFICE'}, {qty:7,siteId:'p',status:'inuse'}, {quantity:0,site_id:null}, {quantity:2,site_id:'p',status:'AVAILABLE'}]);
+  const result = api.tally([{quantity:4,site_id:null,status:'AVAILABLE'}, {qty:7,siteId:'p',status:'inuse'}, {quantity:0,site_id:null}, {quantity:2,site_id:'p',status:'AVAILABLE',current_holder_id:'person'}]);
   assert.equal(result.total,13); assert.equal(result.available,4); assert.equal(result.deployed,7);
+});
+test('stock requests exclude hidden reservations, pending/refused transfers, damage and holders',()=>{
+  const {api,window}=harness();
+  const base={id:'T-8861',status:'AVAILABLE',qty:1,siteId:'project',holderId:null,condition:'Good',movementLock:null};
+  window.MCPAAuth={isDemo:false,profile:{role:'engineer',id:'other'}};
+  assert.equal(api.requestability(base).eligible,true);
+  for(const [change,code] of [[{movementLock:'request'},'reserved'],[{movementLock:'transfer'},'transfer'],[{holderId:'holder'},'assigned'],[{condition:'Damaged'},'damaged'],[{status:'MISSING'},'missing'],[{status:'REPAIR'},'damaged'],[{status:'DISPOSED'},'retired'],[{qty:0},'empty'],[{is_active:false},'inactive'],[{recordedStatus:'IN_OFFICE'},'status']]){
+    const tool={...base,...change};assert.equal(api.requestability(tool).code,code);assert.equal(api.availability(tool),'Unavailable');
+  }
+  for(const status of ['pending','refused'])assert.equal(api.requestability(base,{transfers:[{status,toolIds:[base.id]}]}).code,'transfer');
+  assert.equal(api.requestability(base,{requests:[{status:'approved',toolIds:[base.id]}]}).code,'reserved');
+  assert.equal(api.requestability(base,{requests:[{status:'pending',toolIds:[base.id]}],transfers:[{status:'received',toolIds:[base.id]}]}).eligible,true);
+  const old={...base};delete old.movementLock;
+  assert.equal(api.requestability(old,{requests:[],transfers:[]}).code,'unknown','Scoped movements cannot prove a stock item is unlocked');
+  window.MCPAAuth.profile.role='admin';assert.equal(api.requestability(old,{availabilityLoaded:true,requests:[],transfers:[]}).eligible,true);
+  assert.match(api.statusMarkup({...base,movementLock:'request'}),/Recorded status[\s\S]*Available[\s\S]*New requests[\s\S]*Reserved/);
 });
 test('paged reads respect the actual response cap and active-project query', async () => {
   const filters=[];

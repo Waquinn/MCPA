@@ -24,7 +24,7 @@
 
   const condition = t => ['repair','underrepair'].includes(t.status) ? 'repair' : t.status === 'inuse' ? 'deployed' : t.status === 'inoffice' ? 'available' : ['available','missing'].includes(t.status) ? t.status : 'other';
 
-  const match = (t,status) => status === 'repair' ? condition(t)==='repair' : EquipmentTracking.matchesStatus(t,status);
+  const match = (t,status,data) => status === 'repair' ? condition(t)==='repair' : EquipmentTracking.matchesStatus(t,status,data);
 
   const groups = [['available','Available'],['deployed','Deployed'],['repair','Repair / under repair'],['missing','Missing'],['other','Other / retired']];
 
@@ -79,11 +79,11 @@
   }
 
   function filters(data,tools,state) {
-    return `<div class="inventory-tabs" role="group" aria-label="Inventory status">${[['','All equipment'],['available','Available'],['inuse','Deployed'],['repair','Repair'],['missing','Missing']].map(([key,label]) => `<button data-status="${key}" aria-pressed="${state.status===key}" class="inventory-tab">${label} <span>${units(tools.filter(t=>match(t,key)))}</span></button>`).join('')}</div><div class="dashboard-filters"><input id="dashboard-search" data-search aria-label="Search inventory" placeholder="Search inventory…" value="${esc(state.query)}"><select id="overview-site" aria-label="Filter inventory by project"><option value="">All projects</option><option value="__unassigned" ${state.site==='__unassigned'?'selected':''}>Unassigned</option>${data.sites.map(p=>`<option value="${esc(p.name)}" ${state.site===p.name?'selected':''}>${esc(p.name)}</option>`).join('')}</select><select id="dashboard-condition" aria-label="Filter inventory by condition"><option value="">All conditions</option>${groups.map(([key,label])=>`<option value="${key}" ${state.condition===key?'selected':''}>${label}</option>`).join('')}</select></div>`;
+    return `<div class="inventory-tabs" role="group" aria-label="Inventory status">${[['','All equipment'],['available','Available'],['inuse','Deployed'],['repair','Repair'],['missing','Missing']].map(([key,label]) => `<button data-status="${key}" aria-pressed="${state.status===key}" class="inventory-tab">${label} <span>${units(tools.filter(t=>match(t,key,data)))}</span></button>`).join('')}</div><div class="dashboard-filters"><input id="dashboard-search" data-search aria-label="Search inventory" placeholder="Search inventory…" value="${esc(state.query)}"><select id="overview-site" aria-label="Filter inventory by project"><option value="">All projects</option><option value="__unassigned" ${state.site==='__unassigned'?'selected':''}>Unassigned</option>${data.sites.map(p=>`<option value="${esc(p.name)}" ${state.site===p.name?'selected':''}>${esc(p.name)}</option>`).join('')}</select><select id="dashboard-condition" aria-label="Filter inventory by condition"><option value="">All conditions</option>${groups.map(([key,label])=>`<option value="${key}" ${state.condition===key?'selected':''}>${label}</option>`).join('')}</select></div>`;
   }
 
   function inventory(data,user,state,table) {
-    const tools=scoped(data,user).filter(t=>match(t,state.status) && (!state.condition || condition(t)===state.condition) && (!state.site || (state.site==='__unassigned' ? !t.site || t.site==='Unassigned' : t.site===state.site)) && [t.id,t.name,t.brand,t.site,t.holder,t.serial].join(' ').toLowerCase().includes(state.query.toLowerCase()));
+    const tools=scoped(data,user).filter(t=>match(t,state.status,data) && (!state.condition || condition(t)===state.condition) && (!state.site || (state.site==='__unassigned' ? !t.site || t.site==='Unassigned' : t.site===state.site)) && [t.id,t.name,t.brand,t.site,t.holder,t.serial].join(' ').toLowerCase().includes(state.query.toLowerCase()));
 
     return `${table(tools.slice(0,6))}<div class="inventory-footer" role="status">${tools.length?`Showing ${Math.min(6,tools.length)} of ${tools.length} equipment records`:'No matching equipment'}${go('View full inventory','masterlist')}</div>`;
   }
@@ -131,7 +131,7 @@
   }
 
   function render(data,user,state,header,table,when) {
-    const admin=['admin','tool_handler'].includes(user.role), tools=scoped(data,user), totals=EquipmentTracking.tally(tools), projects=activeSites(data,user);
+    const admin=['admin','tool_handler'].includes(user.role), tools=scoped(data,user), totals=EquipmentTracking.tally(tools,data), projects=activeSites(data,user);
 
     const incoming=data.transfers.filter(t=>['pending','refused'].includes(t.status) && (admin || (window.MCPAAuth && !window.MCPAAuth.isDemo ? (t.receiverId===user.id || (t.status==='refused'&&t.senderId===user.id)) : (t.receiver===user.name || (t.status==='refused'&&t.sender===user.name)))));
 
@@ -139,7 +139,7 @@
 
     const repair=units(tools.filter(t=>condition(t)==='repair')), missing=units(tools.filter(t=>condition(t)==='missing'));
 
-    const cards=[[totals.total,'Total Equipment','Tracked equipment units','box','masterlist'],[totals.available,'Available',`${totals.total?Math.round(totals.available/totals.total*100):0}% by location availability`,'inbox','masterlist'],[totals.deployed,'Deployed',totals.deployed?'Equipment in use at project sites':'No assets currently deployed','swap','masterlist'],[projects.length,'Active Projects',`${projects.length} active project${projects.length === 1 ? '' : 's'} ${['engineer','architect'].includes(user.role) ? 'assigned to you' : 'tracked'}`,'map','sites']];
+    const cards=[[totals.total,'Total Equipment','Tracked equipment units','box','masterlist'],[totals.available,'Available',`${totals.total?Math.round(totals.available/totals.total*100):0}% eligible for new requests`,'inbox','masterlist'],[totals.deployed,'Deployed',totals.deployed?'Equipment in use at project sites':'No assets currently deployed','swap','masterlist'],[projects.length,'Active Projects',`${projects.length} active project${projects.length === 1 ? '' : 's'} ${['engineer','architect'].includes(user.role) ? 'assigned to you' : 'tracked'}`,'map','sites']];
 
     const tasks=[[incoming.length,'Transfers awaiting receipt',admin?'Monitor handovers; named receivers confirm custody.':'Inspect equipment before accepting custody.','swap','transfer'],[requests.length,'Open requests',admin?'Review requests and release approved tools.':'Track approval and release by the Admin.','inbox','request'],[repair,'Maintenance alerts',repair?'Equipment requires maintenance or repair.':'No equipment currently requires repair.','wrench','repair'],[missing,'Missing equipment',missing?'Review unresolved missing equipment.':'No equipment currently reported missing.','alert','missing']];
 
@@ -154,7 +154,7 @@
     }).join('')}</ol>`:empty('No recent equipment movements. Saved actions will appear here.');
 
     const projectCards=projects.length?`<div class="project-overview">${projects.slice(0,3).map(p=>{
-      const assets=data.tools.filter(t=>belongs(t,p)&&EquipmentTracking.quantity(t)>0), tally=EquipmentTracking.tally(assets), counts=new Map();
+      const assets=data.tools.filter(t=>belongs(t,p)&&EquipmentTracking.quantity(t)>0), tally=EquipmentTracking.tally(assets,data), counts=new Map();
 
       assets.forEach(t=>counts.set(t.name,(counts.get(t.name)||0)+EquipmentTracking.quantity(t)));
 

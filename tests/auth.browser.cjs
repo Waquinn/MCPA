@@ -91,8 +91,9 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(turnoverRun||process.argv.includes('--request-projects')){
   for(const file of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610120001_request_turnover_notifications.sql'])fixtureMigrations.add(file);
  }
- if(process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
+ if(process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
  fixtureMigrations.add('202610120003_optional_request_purpose.sql');
+ fixtureMigrations.add('202610150001_inventory_availability.sql');
  if(process.argv.includes('--feature-completion')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
@@ -148,6 +149,11 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--inventory-availability')){
+  await require('./inventory-availability.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,shot});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Inventory availability and mobile rendering; isolated fixture only');return;
+ }
  if(process.argv.includes('--navigation')){
   await require('./navigation-history.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,calls,shot,base});
   assert.deepEqual(errors,[],'No uncaught browser errors');
