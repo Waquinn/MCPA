@@ -46,7 +46,7 @@
     const data = viewData(), user = store().getContext();
     contextBar();
     if (screen === 'dashboard') root.innerHTML = dashboard(data,user);
-    else if (screen === 'activity') root.innerHTML = `${header('Activity logs', 'A history of saved movement actions and the people who recorded them.')}<div class="overview-filters"><div class="field"><label for="movement-activity-search">Search activity</label><input id="movement-activity-search" data-search value="${escape(query)}" placeholder="Reference, tool ID, person, action…"></div><button class="btn btn-secondary" data-export>Export CSV</button></div><div class="card" id="overview-results">${activityTable(visibleActivity(data))}</div>`;
+    else if (screen === 'activity') root.innerHTML = `${header('Activity logs', 'A history of saved movement actions and the people who recorded them.')}<div class="overview-filters"><div class="field"><label for="movement-activity-search">Search activity</label><input id="movement-activity-search" data-search value="${escape(query)}" placeholder="Reference, tool ID, person, action…"></div><button type="button" class="btn btn-secondary" data-export aria-label="Export activity logs as PDF">${SiteTracePDF.icon} Export PDF</button></div><div class="card" id="overview-results">${activityTable(visibleActivity(data))}</div>`;
     else root.innerHTML = `${header('Equipment Tracking', personal() ? 'Equipment in your confirmed custody. Open a tool to see its recorded history.' : 'Current location, condition, and custody. Open a tool to see its recorded history.')}<div class="overview-filters"><div class="field"><label for="movement-inventory-search">Search tools</label><input id="movement-inventory-search" data-search value="${escape(query)}" placeholder="Tool ID, name, brand, holder…"></div><div class="field"><label for="overview-status">Status</label><select id="overview-status"><option value="">All statuses</option>${Object.entries(STATUS_LABEL).map(([key,label]) => `<option value="${key}" ${status === key ? 'selected' : ''}>${label}</option>`).join('')}</select></div><div class="field"><label for="overview-site">Project</label><select id="overview-site"><option value="">All projects</option>${data.sites.map(s => `<option ${site === s.name ? 'selected' : ''}>${escape(s.name)}</option>`).join('')}</select></div>${personal() ? '' : `<label class="checkbox-row"><input type="checkbox" id="overview-mine" ${mine ? 'checked' : ''}>My custody only</label>`}</div><div class="card" id="overview-results"></div>`;
     if (screen === 'masterlist') filter();
     if (focusId) {
@@ -157,10 +157,14 @@
       if (el.dataset.go) {showScreen(el.dataset.go); return;}
       if (el.dataset.tool) {showScreen('masterlist?record=' + encodeURIComponent(el.dataset.tool)); return;}
       if (el.hasAttribute('data-export')) {
+        if (screen !== 'activity' || !window.MCPAAuth?.canRoute('activity')) return;
         const rows = visibleActivity(store().getState());
-        const cell = value => '"' + String(value ?? '').replace(/^[=+@\-\t\r]/, "'" + String(value ?? '')[0]).replace(/"/g, '""') + '"';
-        const csv = [['Date','Action','Reference','Actor','Tools','Summary'],...rows.map(r => [r.createdAt,r.action,r.entityId,r.actor,(r.toolIds || []).join(', '),r.summary])].map(r => r.map(cell).join(',')).join('\r\n');
-        const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8'})); const link = document.createElement('a'); link.href=url; link.download='mcpa-movement-activity.csv'; link.click(); setTimeout(() => URL.revokeObjectURL(url),1000); return;
+        await SiteTracePDF.download({button:el,feedback:root.querySelector('#overview-feedback'),route:'activity',report:{
+          title:'Activity Logs',filename:'Activity_Logs',columns:SiteTracePDF.activityColumns,
+          rows:SiteTracePDF.activityRows(rows),widths:[39,36,34,39,36,85],
+          filters:['Search: '+(query || 'All activity'),'Scope: All loaded activity authorized for '+store().getContext().name+(store().mode==='demo'?' · Offline demonstration records':'')]
+        }});
+        return;
       }
       if (el.hasAttribute('data-refresh')) await load();
     }, {signal});

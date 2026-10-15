@@ -91,7 +91,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(turnoverRun||process.argv.includes('--request-projects')){
   for(const file of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610120001_request_turnover_notifications.sql'])fixtureMigrations.add(file);
  }
- if(process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
+ if(process.argv.includes('--pdf-reports')||process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
  fixtureMigrations.add('202610120003_optional_request_purpose.sql');
  fixtureMigrations.add('202610150001_inventory_availability.sql');
  if(process.argv.includes('--feature-completion')){
@@ -149,6 +149,11 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--pdf-reports')){
+  await require('./pdf-reports.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,calls,shot,enter,artifactDirectory:profile,base});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS PDF exports: all authorized roles, account isolation, filters, downloads, desktop/mobile, errors, empty and multipage reports; isolated fixture only');return;
+ }
  if(process.argv.includes('--inventory-availability')){
   await require('./inventory-availability.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');

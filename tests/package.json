@@ -13,9 +13,12 @@
     "test:auth": "node --test auth-database.test.cjs accounts-database.test.cjs accounts-edge.test.mjs development-accounts.test.mjs legacy-handover-lockdown.test.cjs profile-identity.test.cjs && node auth.browser.cjs",
     "test:inventory": "node --test inventory.test.cjs archive-database.test.cjs && node inventory.browser.cjs",
     "test:inventory-availability": "node --test inventory.test.cjs inventory-availability.database.test.cjs dashboard-view.test.cjs && node auth.browser.cjs --inventory-availability",
-    "test:navigation": "node --test dashboard-view.test.cjs module-navigation.test.cjs movement-navigation.test.cjs && node auth.browser.cjs --navigation"
+    "test:navigation": "node --test dashboard-view.test.cjs module-navigation.test.cjs movement-navigation.test.cjs && node auth.browser.cjs --navigation",
+    "test:pdf": "node --test pdf-reports.test.cjs monitoring-database.test.cjs && node auth.browser.cjs --pdf-reports"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.8"
+    "@electric-sql/pglite": "0.5.8",
+    "@napi-rs/canvas": "0.1.80",
+    "pdfjs-dist": "5.4.624"
   }
 }

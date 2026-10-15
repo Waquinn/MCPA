@@ -6,9 +6,8 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  const receipt=async()=>evaluate(`(async()=>{const canvas=document.createElement('canvas');canvas.width=canvas.height=4;const context=canvas.getContext('2d');context.fillStyle='#947000';context.fillRect(0,0,4,4);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));const transfer=new DataTransfer();transfer.items.add(new File([blob],'receipt.png',{type:'image/png'}));const input=document.querySelector('#purchase-receipt');input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
  const records=async table=>(await f.db.query('select * from public.'+table+' order by 1')).rows;
  const exportReport=async()=>{
-  await evaluate(`(()=>{window.__reportCsvFixture={create:URL.createObjectURL,click:HTMLAnchorElement.prototype.click};URL.createObjectURL=blob=>{window.__reportCsvFixture.blob=blob;return window.__reportCsvFixture.create.call(URL,blob)};HTMLAnchorElement.prototype.click=function(){window.__reportCsvFixture.filename=this.download}})()`);
-  try{await click('#report-export');return await evaluate(`(async()=>({text:await window.__reportCsvFixture.blob.text(),filename:window.__reportCsvFixture.filename}))()`);}
-  finally{await evaluate(`(()=>{URL.createObjectURL=window.__reportCsvFixture.create;HTMLAnchorElement.prototype.click=window.__reportCsvFixture.click;delete window.__reportCsvFixture})()`);}
+  const report=await require('./pdf-test-utils.cjs').capture({evaluate,click,wait});
+  await report.pdf.destroy();return report;
  };
  const protectedTables=['equipment','consumables','consumable_requests','consumable_stock_movements','mcpa_movements','mcpa_movement_operations','mcpa_movement_reservations'];
  const itemId=randomUUID(),requestId=randomUUID();
@@ -63,7 +62,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  }
  await logout();await login('admin');await wait("MCPAAuth.profile?.role==='admin'");await go('reports');await wait("document.querySelector('#report-scope').textContent.includes('Current inventory as of')");
  assert.ok(await evaluate("document.querySelector('#report-results').textContent.includes('TOOL-001') && ![...document.querySelectorAll('#report-results td')].some(cell=>cell.textContent==='ZERO')"));
- await fill('#report-kind','history');assert.ok(await evaluate("document.querySelector('#report-scope').textContent.includes('past inventory is not reconstructed')"));assert.equal(await evaluate("document.querySelector('#report-export').disabled"),true);
+ await fill('#report-kind','history');assert.ok(await evaluate("document.querySelector('#report-scope').textContent.includes('past inventory is not reconstructed')"));assert.equal(await evaluate("document.querySelector('#report-export').disabled"),false);
  const captureId=await f.serviceRpc('mcpa_capture_inventory_snapshot');
  const captured=(await f.db.query("select to_char(local_date,'YYYY-MM-DD') as date_key,captured_at,tools from mcpa_inventory_snapshots where id=$1",[captureId])).rows[0];
  const actualDate=captured.date_key;await fill('#report-start',actualDate);await fill('#report-end',actualDate);await click('#report-refresh');
@@ -71,16 +70,17 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  assert.equal(await evaluate("document.querySelector('#report-snapshot').value"),captureId);assert.equal(await f.serviceRpc('mcpa_capture_inventory_snapshot'),captureId,'Scheduler captures once per actual Manila week');
  const currentTool=captured.tools.find(t=>t.id==='TOOL-001');await f.query(f.actors.admin,"update equipment set name='Changed after actual snapshot' where asset_id='TOOL-001'");
  await click('#report-refresh');await wait("document.querySelector('#report-refresh').disabled===false");assert.ok(await evaluate("document.querySelector('#report-results').textContent.includes("+JSON.stringify(currentTool.name)+") && !document.querySelector('#report-results').textContent.includes('Changed after actual snapshot')"));
- const historicalCsv=await exportReport();assert.ok(historicalCsv.text.includes(currentTool.name));assert.ok(!historicalCsv.text.includes('Changed after actual snapshot'));assert.equal(historicalCsv.filename,'mcpa-history-'+actualDate+'-'+actualDate+'.csv');
+ const generatedDate=await evaluate('SiteTracePDF.dateKey(new Date())');
+ const historicalPdf=await exportReport();assert.ok(historicalPdf.text.includes(currentTool.name));assert.ok(!historicalPdf.text.includes('Changed after actual snapshot'));assert.equal(historicalPdf.filename,'SiteTrace_Saved_Inventory_Snapshot_'+generatedDate+'.pdf');
  await fill('#report-kind','current');assert.ok(await evaluate("document.querySelector('#report-results').textContent.includes('Changed after actual snapshot')"));
- const currentCsv=await exportReport();assert.ok(currentCsv.text.includes('Changed after actual snapshot'));assert.equal(currentCsv.filename,'mcpa-current-'+actualDate+'-'+actualDate+'.csv');
+ const currentPdf=await exportReport();assert.ok(currentPdf.text.includes('Changed after actual snapshot'));assert.equal(currentPdf.filename,'SiteTrace_Current_Inventory_'+generatedDate+'.pdf');
  const newAsset=(await f.db.query("select asset_id from equipment where name='New photo fixture equipment'")).rows[0].asset_id;
  const movement=await f.rpc(f.actors.sky,'mcpa_movement_action',{p_action:'createRequest',p_payload:{toolIds:[newAsset],destination:'Casa Buena',purpose:'Isolated report date-range activity'},p_operation_id:randomUUID()});
  await click('#report-refresh');await wait("document.querySelector('#report-refresh').disabled===false");await fill('#report-kind','activity');assert.ok(await evaluate("document.querySelector('#report-results').textContent.includes("+JSON.stringify(movement.id)+")"));
- const activityCsv=await exportReport();assert.ok(activityCsv.text.includes(movement.id));assert.ok(activityCsv.text.includes('createRequest'));assert.equal(activityCsv.filename,'mcpa-activity-'+actualDate+'-'+actualDate+'.csv');
+ const activityPdf=await exportReport();assert.ok(activityPdf.text.includes(movement.id));assert.ok(activityPdf.text.includes('createRequest'));assert.equal(activityPdf.filename,'SiteTrace_Movement_History_'+generatedDate+'.pdf');
  await fill('#report-start','2000-01-01');await fill('#report-end','2000-01-02');await click('#report-refresh');await wait("document.querySelector('#report-results').textContent.includes('No records for this report')");
  assert.ok(await evaluate("document.querySelector('#report-scope').textContent.includes('2000-01-01 through 2000-01-02')"));await fill('#report-start',actualDate);await fill('#report-end',actualDate);await click('#report-refresh');await wait("document.querySelector('#report-results').textContent.includes("+JSON.stringify(movement.id)+")");
- await f.query(f.actors.admin,"update equipment set name='=1+1' where asset_id=$1",[newAsset]);await click('#report-refresh');await wait("document.querySelector('#report-refresh').disabled===false");await fill('#report-kind','current');const safeCsv=await exportReport();assert.ok(safeCsv.text.includes('"\'=1+1"'),'CSV protects formula-prefixed equipment names');await fill('#report-kind','activity');
+ await f.query(f.actors.admin,"update equipment set name='=1+1' where asset_id=$1",[newAsset]);await click('#report-refresh');await wait("document.querySelector('#report-refresh').disabled===false");await fill('#report-kind','current');const literalPdf=await exportReport();assert.ok(literalPdf.text.includes('=1+1'),'PDF preserves formula-like names literally');await fill('#report-kind','activity');
  await viewport(393);await shot('feature-report-mobile-light',true);assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'));await click('.theme-toggle');await wait('!themeTransitionRunning');await shot('feature-report-mobile-dark',true);await click('.theme-toggle');await wait('!themeTransitionRunning');await viewport(1440);await shot('feature-report-desktop-light',true);
  // Prospective notification is tied to the actual new operation, with own read state.
  await evaluate('MCPAMonitoring.refresh()');await wait("MCPAMonitoring.getState().notifications.some(n=>n.entityId==="+JSON.stringify(movement.id)+")");assert.equal(await evaluate("document.querySelector('.bell-dot').classList.contains('hidden')"),false);
