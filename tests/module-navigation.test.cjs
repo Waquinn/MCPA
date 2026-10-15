@@ -52,6 +52,11 @@ function harness() {
   const window = {
     MCPAAuth: {canRoute: () => true, profile: {role: 'admin'}, deny() {}},
     MovementUI: movementUI,
+    MCPANavigation: {
+      begin(route) { location.hash = '#' + route; return {}; },
+      isCurrent() { return true; },
+      activate(_ticket, _target, open) { return open(); }
+    },
     scrollTo() {}, closeMobileSearch() {}
   };
   const context = vm.createContext({

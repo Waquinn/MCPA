@@ -96,29 +96,58 @@ window.MCPAMovementLinks = {
   },
   parse(value) {
     const [screen, query = ''] = String(value).replace(/^#/, '').split('?');
-    const record = new URLSearchParams(query).get('record');
-    return {screen, record: Object.hasOwn(this.collections, screen) && record && record.length <= 120 ? record : ''};
+    const params = new URLSearchParams(query), record = params.get('record');
+    const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail'].includes(screen)) && record && record.length <= 120 ? record : ''};
+    if (screen === 'site-detail' && params.get('tool')?.length <= 120) result.tool = params.get('tool');
+    if (screen === 'transfer' && ['send','receive','history'].includes(params.get('view'))) result.view = params.get('view');
+    return result;
   }
 };
 
 function showScreen(route, afterActivate, options){
-  const {screen:id, record} = window.MCPAMovementLinks.parse(route);
-  if (!window.MCPAAuth?.canRoute(id)) { if (window.MCPAAuth?.profile) { resetApplication(); MCPAAuth.deny(); } return; }
+  const {screen:id, record, tool, view} = window.MCPAMovementLinks.parse(route);
+  if (!window.MCPAAuth?.profile) return;
+  const params = new URLSearchParams();
+  if (record) params.set('record', record);
+  if (tool) params.set('tool', tool);
+  if (view) params.set('view', view);
+  const normalized = id + (params.size ? '?' + params.toString().replaceAll('+', '%20') : '');
+  const navigation = window.MCPANavigation;
+  const ticket = navigation?.begin(normalized, options);
+  if (!window.MCPAAuth.canRoute(id)) {
+    resetApplication({keepMonitoring: true}); MCPAAuth.deny();
+    if (ticket) void navigation.activate(ticket, document.getElementById('content'), () => {});
+    return;
+  }
   window.MovementUI?.cancelTarget();
-  const hash = '#' + id + (record ? '?record=' + encodeURIComponent(record) : '');
-  if (location.hash !== hash) history.replaceState(null, '', hash);
+  window.MCPAProjects?.cancelTarget?.();
   if(!options?.keepSearch) window.closeMobileSearch?.(false);
   window.MCPADrawer?.close(false);
   loadModule(id, function(){
+    if (ticket && !navigation.isCurrent(ticket)) return;
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    const target = document.getElementById('screen-'+id);
+    const target = document.getElementById('screen-'+id) || (id === 'tool-profile' ? document.getElementById('screen-masterlist') : null);
     if(target) target.classList.add('active');
     document.getElementById('sidebar')?.classList.remove('open');
-    setActiveNav(id);
-    document.getElementById('content').scrollTop = 0;
-    window.scrollTo(0,0);
-    if(afterActivate) afterActivate();
-    if(record) void window.MovementUI?.openRecord(id, record);
+    setActiveNav(id === 'site-detail' ? 'sites' : id === 'tool-profile' ? 'masterlist' : id);
+    const open = async () => {
+      if(afterActivate) await afterActivate();
+      if (ticket && !navigation.isCurrent(ticket)) return;
+      if (view) await window.MovementUI?.showTransferView(view);
+      if (id === 'site-detail') await window.MCPAProjects?.openRecord(record, tool);
+      else if (record && ['masterlist','tool-profile'].includes(id)) {
+        if (window.AdminEquipment && !window.AdminEquipment.disposed) window.AdminEquipment.openRecord(record);
+        else window.MovementOverview?.openRecord(record);
+      } else if(record) await window.MovementUI?.openRecord(id, record);
+      else {
+        window.MovementUI?.clearRecord?.();
+        if (id === 'masterlist') window.MovementOverview?.clearRecord?.();
+        if (id === 'masterlist' && window.AdminEquipment && !window.AdminEquipment.disposed) showMasterlistView('masterlist');
+        if (id === 'sites') document.getElementById('sites-dialog')?.close();
+      }
+    };
+    if (ticket) void navigation.activate(ticket, target, open);
+    else void open();
   }, route);
 }
 

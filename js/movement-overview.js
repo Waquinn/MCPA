@@ -73,12 +73,17 @@
   const userRole = () => store().getContext().role;
   function detail(id) {
     const data = viewData(), item = data.tools.find(t => t.id === id);
-    if (!item) return;
     root.querySelector('dialog')?.remove();
-    const dialog = document.createElement('dialog'); dialog.className = 'overview-dialog';
+    if (!item) {
+      root.querySelector('#overview-feedback').textContent = 'This equipment is unavailable or your account no longer has access.';
+      return;
+    }
+    const dialog = document.createElement('dialog'); dialog.className = 'overview-dialog'; dialog.id = 'equipment-detail';
     dialog.innerHTML = `<div class="page-head"><div><h2>${escape(item.name)}</h2><span class="tool-id-chip">${escape(item.id)}</span></div><button class="btn btn-secondary" data-close>Close</button></div><div class="overview-detail-grid"><div><span>Current holder</span><strong>${escape(item.holder || '—')}</strong></div><div><span>Project</span><strong>${escape(item.site || 'Unassigned')}</strong></div><div><span>Status</span>${badge(item.status)}</div><div><span>Quantity</span><strong>${escape(item.qty)}</strong></div></div><h3>Movement history</h3>${activityTable(visibleActivity({...data,activity:data.activity.filter(r => r.toolIds?.includes(id))}))}<div class="overview-actions">${MCPAPermissions.operational(userRole()) ? button('Request tools','request')+button('Transfer','transfer')+button('Return','return')+button('Report issue','repair') : button('View activity','activity')}</div>`;
     root.appendChild(dialog); dialog.showModal();
-    dialog.querySelector('[data-close]').onclick = () => {dialog.close(); dialog.remove(); render();};
+    const close = () => { if (window.MCPANavigation?.canBack()) window.MCPANavigation.back(); else showScreen('masterlist', null, {history:'replace'}); };
+    dialog.querySelector('[data-close]').onclick = close;
+    dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
     dialog.addEventListener('close', () => { dialog.remove(); render(); }, {once: true});
   }
   async function load(automatic = false) {
@@ -104,7 +109,7 @@
       if (sourceMode === 'live' && screen === 'dashboard' && window.MCPAPermissions.operational(store().getContext().role)) {
         const data = await store().refresh();
         if (root !== owner || !owner.isConnected || store().mode !== sourceMode) return;
-        inventory = {tools:data.tools,sites:data.sites,activeProjects:data.sites.filter(site=>site.is_active!==false)};
+        inventory = {tools:data.tools,sites:data.sites,activeProjects:window.MCPAProjectScope.projects(data.sites, store().getContext(), false)};
         if (!owner.querySelector('dialog[open]')) render();
         return;
       }
@@ -147,10 +152,10 @@
     root.classList.add('movement-overview'); controller = new AbortController(); const signal = controller.signal;
     root.addEventListener('click', async event => {
       const el = event.target.closest('button'); if (!el) return;
-      if (el.hasAttribute('data-turnover-inbox')) {showScreen('transfer',()=>void window.MovementUI?.showTransferView('receive'));return;}
+      if (el.hasAttribute('data-turnover-inbox')) {showScreen('transfer?view=receive');return;}
       if (el.hasAttribute('data-status')) {status = el.dataset.status; render(); root.querySelector('[data-status="' + status + '"]')?.focus({preventScroll:true}); return;}
       if (el.dataset.go) {showScreen(el.dataset.go); return;}
-      if (el.dataset.tool) {detail(el.dataset.tool); return;}
+      if (el.dataset.tool) {showScreen('masterlist?record=' + encodeURIComponent(el.dataset.tool)); return;}
       if (el.hasAttribute('data-export')) {
         const rows = visibleActivity(store().getState());
         const cell = value => '"' + String(value ?? '').replace(/^[=+@\-\t\r]/, "'" + String(value ?? '')[0]).replace(/"/g, '""') + '"';
@@ -172,5 +177,14 @@
     await load();
   }
   window.addEventListener('mcpa:movement-change', contextBar);
-  window.MovementOverview = {mount, dispose, contextBar, escape, setSearch};
+  window.MovementOverview = {
+    mount(id) { const promise = mount(id); window.MCPANavigation?.track(root, promise); return promise; },
+    dispose, contextBar, escape, setSearch, openRecord: detail,
+    clearRecord() { root?.querySelectorAll('dialog').forEach(dialog => dialog.remove()); },
+    capture: () => root?.isConnected ? {screen, query, status, mine, site, dashboardCondition} : null,
+    restore(saved) {
+      if (!saved || saved.screen !== screen || !root?.isConnected) return;
+      ({query, status, mine, site, dashboardCondition} = saved); render();
+    }
+  };
 })();

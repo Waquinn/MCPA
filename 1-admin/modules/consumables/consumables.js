@@ -339,5 +339,6 @@
     if (!root.isConnected) { clearInterval(timer); observer.disconnect(); dialogRevision++; }
   });
   observer.observe(document.getElementById('content'), { childList: true });
-  refresh();
+  const ready = refresh();
+  window.MCPANavigation?.track(root, ready);
 })();

@@ -145,3 +145,15 @@
   .page-head-actions { width: 100%; }
   .page-head-actions .btn { flex: 1; }
 }
+
+/* A separate compact row keeps history clear of menu/search/account controls. */
+.mobile-history{display:none;}
+@media (max-width:900px){
+  .mobile-history:not(:has([hidden])){display:flex;position:sticky;top:64px;z-index:19;padding:4px 16px;background:var(--surface);border-bottom:1px solid var(--border);}
+  .mobile-back{display:inline-flex;align-items:center;gap:8px;min-width:80px;min-height:44px;padding:8px 12px;background:var(--surface);color:var(--text-primary);border:1px solid var(--border);border-radius:8px;font:inherit;font-weight:600;cursor:pointer;}
+  .mobile-back[hidden]{display:none;}
+  .mobile-back svg{width:20px;height:20px;}
+  .mobile-back:hover{background:var(--surface-muted,var(--off-white));}
+  .mobile-back:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  #topbar:has(.search-wrap.is-open) + .mobile-history{visibility:hidden;}
+}

@@ -38,3 +38,6 @@
  window.MCPADrawer={open,close};
 })();
 
+
+// The visible control uses the same traversal as the phone/browser Back action.
+document.getElementById('mobile-back')?.addEventListener('click', () => window.MCPANavigation.back());

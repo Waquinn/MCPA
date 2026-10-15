@@ -77,6 +77,7 @@ function loadModule(screenId, callback, route = screenId){
     content.removeAttribute('aria-busy');
     content.innerHTML = '<div class="card card-pad" role="alert"><h2>Unable to load this screen</h2><p>Please check your connection and try again.</p><button class="btn btn-secondary" id="retry-module">Retry</button></div>';
     document.getElementById('retry-module').onclick = () => showScreen(active.route);
+    window.MCPANavigation?.failed?.();
   }
   const relative = location.pathname.includes('/2-engr/') ? '../' : '';
   const user = window.MCPAAuth.profile;
@@ -113,6 +114,7 @@ function ensureModuleCSS(mod, href){
   link.rel = 'stylesheet';
   link.href = href + '?v=' + new Date().getTime();
   link.dataset.module = mod;
+  link.onload = link.onerror = () => { link.dataset.loaded = 'true'; };
   document.head.appendChild(link);
 }
 
@@ -134,8 +136,8 @@ function loadModuleScript(mod, src, callback, failed){
    APP INITIALIZATION
    ============================================================ */
 function enterApp(event){ return window.MCPAAuth?.signIn(event); }
-function resetApplication(){
-  window.MCPAMonitoring?.dispose();
+function resetApplication({keepMonitoring = false} = {}){
+  if (!keepMonitoring) window.MCPAMonitoring?.dispose();
   window.MCPADrawer?.close(false);
   moduleAbort?.abort(); pendingModule=null; currentModule=null; clearTimeout(searchTimer);
   disposeLoadedModule(); closeMobileSearch(false);
@@ -265,11 +267,6 @@ document.addEventListener('click', event => {
 
 function logout(){ return window.MCPAAuth?.logout(); }
 applyTheme(document.body.classList.contains('dark'), false);
-window.addEventListener('hashchange', () => {
-  const route = location.hash.slice(1);
-  const {screen} = window.MCPAMovementLinks.parse(route);
-  if (SCREEN_MODULE[screen] && !document.getElementById('app-shell').classList.contains('hidden')) showScreen(route);
-});
 
 document.addEventListener('click', event => {
   const link = event.target.closest('a[data-movement-link]');

@@ -14,7 +14,7 @@ exports.create=async({port,base,errors})=>{
  const wait=async(expression,timeout=8000)=>{const until=Date.now()+timeout;while(Date.now()<until){if(await evaluate(expression))return;await pause(60);}throw Error('Independent session wait: '+expression);};
  const click=selector=>evaluate('document.querySelector('+JSON.stringify(selector)+').click()');
  const fill=(selector,value)=>evaluate('(()=>{const control=document.querySelector('+JSON.stringify(selector)+');control.value='+JSON.stringify(value)+';control.dispatchEvent(new Event("input",{bubbles:true}));control.dispatchEvent(new Event("change",{bubbles:true}));})()');
- const go=async route=>{await evaluate('showScreen('+JSON.stringify(route)+')');await wait('document.querySelector("#screen-'+route.split('?')[0]+'.active")');};
+ const go=async route=>{await evaluate('showScreen('+JSON.stringify(route)+')');await wait('document.querySelector("#screen-'+route.split('?')[0]+'.active") && !window.MCPANavigation?.restoring');};
  const login=async key=>{await wait('document.querySelector("#auth-email")');await fill('#auth-email',key+'@example.test');await fill('#auth-password','test-password');await evaluate('document.querySelector("#auth-form").requestSubmit()');await wait('MCPAAuth.profile!==null');};
  const logout=async()=>{await evaluate('MCPAAuth.logout()');await wait('document.querySelector("#auth-email")');};
  await command('Runtime.enable');await command('Page.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});

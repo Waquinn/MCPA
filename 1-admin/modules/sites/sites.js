@@ -51,12 +51,10 @@
   }
   function currentSite() { return state.sites.find(site => site.id === state.selectedId); }
   function assignedToMe(site) {
-    const user = context();
-    if (site.assigned_engineer_id) return site.assigned_engineer_id === user.id;
-    return demo && Boolean(user.name) && site.assigned_engineer === user.name;
+    return window.MCPAProjectScope.assigned(site, context(), demo);
   }
   function filteredSites() {
-    return state.sites.filter(site => (state.includeArchived || (demo ? !site.archived_at : site.is_active === true))
+    return state.sites.filter(site => (state.includeArchived || window.MCPAProjectScope.active(site, demo))
       && (state.scope !== 'mine' || assignedToMe(site))
       && (!state.search || [site.name, site.location, site.assigned_engineer, site.phase].some(value => String(value || '').toLowerCase().includes(state.search))));
   }
@@ -324,10 +322,7 @@
 
   function openSite(id) {
     if (!state.sites.some(site => site.id === id)) return;
-    state.selectedId = id;
-    feedback('');
-    renderDetail();
-    showScreen('site-detail', () => setActiveNav('sites'));
+    showScreen('site-detail?record=' + encodeURIComponent(id));
   }
 
   function openDialog(title, content, wide = false, view = '') {
@@ -344,6 +339,12 @@
 
   function closeDialog() {
     if (state.saving) return;
+    const route = window.MCPAMovementLinks?.parse(location.hash);
+    if (route?.tool) {
+      if (window.MCPANavigation.canBack()) window.MCPANavigation.back();
+      else showScreen('site-detail?record=' + encodeURIComponent(route.record), null, {history:'replace'});
+      return;
+    }
     dialog.close();
     state.dirty = false;
     void refresh(true);
@@ -454,10 +455,10 @@
     finally { setSaving(false); }
   }
 
-  function reviewTools() {
+  function reviewTools(preserve = false) {
     const site = currentSite();
     if (!site) return;
-    if (!dialog.open) state.review = { search: '', status: '' };
+    if (!dialog.open && !preserve) state.review = { search: '', status: '' };
     openDialog(`Assigned Tools — ${site.name}`, `
       <p class="sites-dialog-description">Review the equipment assigned to this project, including zero-quantity records. Assignments and holders are read-only.</p>
       <div class="table-toolbar">
@@ -493,13 +494,13 @@
     openDialog(`Movement History — ${site.name}`, `<p class="sites-dialog-description">Equipment movement into and out of this project.</p><div class="card">${movementTable(records)}</div><div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true);
   }
 
-  async function viewTool(id) {
+  async function viewTool(id, fromReview = dialog.open && dialog.dataset.view === 'review') {
     const site = currentSite();
     const item = site && siteEquipment(site).find(record => record.id === id);
     if (!item) return;
-    const fromReview = dialog.open && dialog.dataset.view === 'review';
+    const navigation = state.navigation;
     const records = await repository.movements(site.id, item.id).catch(error => ({error: databaseError(error, 'tool-movements')}));
-    if (!root.isConnected) return;
+    if (!root.isConnected || state.disposed || state.navigation !== navigation || state.selectedId !== site.id) return;
     const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Project', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
     openDialog(item.name, `
       <p class="sites-dialog-description">Equipment details for ${escape(site.name)}.</p>
@@ -525,7 +526,8 @@
           openDialog('Project History', records.length ? records.map(record => `<p>${escape(formatTimestamp(record.changed_at))} · ${escape(record.change_types.join(', '))}</p>`).join('') : '<p>No project changes recorded.</p>');
         } catch (error) { feedback(databaseError(error, 'history'), true); }
       },
-      'review-tools': reviewTools, 'view-tool': () => viewTool(button.dataset.id),
+      'review-tools': () => window.MCPAMovementLinks.parse(location.hash).tool && window.MCPANavigation.canBack() ? window.MCPANavigation.back() : reviewTools(),
+      'view-tool': () => showScreen('site-detail?record=' + encodeURIComponent(state.selectedId) + '&tool=' + encodeURIComponent(button.dataset.id)),
       'view-movements': viewMovements, 'close-dialog': closeDialog
     };
     actions[button.dataset.action]?.();
@@ -548,6 +550,31 @@
   const stopWatching = demo ? () => {} : window.EquipmentTracking.watch(() => refresh(true), message => {
     const label = root.querySelector('.inventory-sync'); if (label && !state.disposed) label.textContent = message;
   });
-  window.MCPAProjects = {dispose() { state.disposed = true; stopWatching(); }};
-  refresh();
+  window.MCPAProjects = {
+    dispose() { state.disposed = true; stopWatching(); },
+    cancelTarget() { state.navigation = (state.navigation || 0) + 1; },
+    capture: () => state.disposed ? null : ({search: state.search, scope: state.scope, includeArchived: state.includeArchived, review: state.review, reviewOpen: dialog.open && dialog.dataset.view === 'review'}),
+    restore(saved) {
+      if (!saved || state.disposed) return;
+      state.search = saved.search; state.includeArchived = saved.includeArchived;
+      state.scope = isEngineer() ? 'mine' : saved.scope;
+      state.review = saved.review || {search:'',status:''}; state.restoreReview = saved.reviewOpen;
+      root.querySelector('#projects-search').value = state.search;
+      root.querySelector('#projects-archived').checked = state.includeArchived;
+      render();
+    },
+    async openRecord(id, tool) {
+      if (state.disposed) return;
+      const fromReview = dialog.open && dialog.dataset.view === 'review';
+      dialog.close();
+      // Never substitute the first project for a missing deep-linked record.
+      state.selectedId = state.sites.find(site => site.id === id && (!isEngineer() || assignedToMe(site)))?.id || null;
+      renderDetail();
+      if (state.selectedId && tool) await viewTool(tool, fromReview);
+      else if (state.selectedId && state.restoreReview) reviewTools(true);
+      state.restoreReview = false;
+    }
+  };
+  const ready = refresh();
+  window.MCPANavigation?.track(root, ready);
 })();

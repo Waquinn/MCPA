@@ -91,7 +91,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(turnoverRun||process.argv.includes('--request-projects')){
   for(const file of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610120001_request_turnover_notifications.sql'])fixtureMigrations.add(file);
  }
- if(process.argv.includes('--engineer-ux')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
+ if(process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
  fixtureMigrations.add('202610120003_optional_request_purpose.sql');
  if(process.argv.includes('--feature-completion')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
@@ -114,7 +114,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  const click=selector=>evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
  const fill=(selector,value)=>evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
  const submit=selector=>evaluate(`document.querySelector(${JSON.stringify(selector)}).requestSubmit()`);
- const go=async route=>{await evaluate(`showScreen(${JSON.stringify(route)})`);await wait(`document.querySelector('#screen-${route}.active')`);};
+ const go=async route=>{await evaluate(`showScreen(${JSON.stringify(route)})`);await wait(`document.querySelector('#screen-${route.split('?')[0]}.active') && !window.MCPANavigation?.restoring`);};
  const login=async(key,password='test-password')=>{await wait("document.querySelector('#auth-email')");await fill('#auth-email',key+'@example.test');await fill('#auth-password',password);await submit('#auth-form');};
  const logout=async()=>{await evaluate('MCPAAuth.logout()');await wait("document.querySelector('#auth-email')");};
  const shot=async (name,viewport=false)=>{if(process.env.MCPA_SKIP_SCREENSHOTS==='1')return;await pause(300);const {data}=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:!viewport});fs.writeFileSync(path.join(profile,name+'.png'),Buffer.from(data,'base64'));console.log('SCREENSHOT '+path.join(profile,name+'.png'));};
@@ -148,6 +148,11 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--navigation')){
+  await require('./navigation-history.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,calls,shot,base});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log('PASS Project scoping and browser history; local fixture only');return;
+ }
  if(process.argv.includes('--engineer-ux')){
   await require('./engineer-ux.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,enter});
   assert.deepEqual(errors,[],'No uncaught browser errors');

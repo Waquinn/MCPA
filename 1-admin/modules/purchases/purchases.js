@@ -101,5 +101,6 @@
  root.addEventListener('change', event => { if (event.target.closest('#purchase-form')) dirty = true; else render(); }, {signal: controller.signal});
  dialog.addEventListener('cancel', event => { event.preventDefault(); close(); }, {signal: controller.signal});
  window.MCPAPurchases = {dispose() { controller.abort(); dialog.close(); }};
- void load();
+ const mounted = load();
+ window.MCPANavigation?.track(root, mounted);
 })();

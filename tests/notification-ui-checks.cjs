@@ -161,7 +161,10 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
     await evaluate('window.__failReads=false;window.__holdTargetSnapshot=true');
     await click('.mv-setup [data-action=retry]');
     await wait("typeof window.__releaseTargetSnapshot==='function'");
-    await go('request');
+    // Deliberately navigate during the held mount. The normal go helper now
+    // waits for navigation-ready, which cannot occur until this test releases it.
+    await evaluate("showScreen('request')");
+    await wait("document.querySelector('#screen-request.active')");
     await evaluate('__releaseTargetSnapshot()');
     await wait("document.querySelector('#screen-request.active [data-list]')");
     await evaluate('MovementStore.refresh()'); await settle();

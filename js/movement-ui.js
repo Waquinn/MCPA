@@ -264,7 +264,7 @@
     const transfer=current.kind==='transfer';
     const list=`<section class="card mv-records${transfer || current.kind==='request'?' mv-transfer-history':''}"><div class="mv-record-header"><h2>${transfer?'Transfer history':(admin()?'All':'Your')+' '+TITLES[current.kind].toLowerCase()}</h2><div class="mv-list-filters"><label class="mv-sr" for="mv-search">Search movement records</label><input id="mv-search" class="mv-input" type="search" data-record-search placeholder="Search ID, tool, person or project" value="${esc(current.search)}"><label class="mv-sr" for="mv-status">Filter by status</label><select id="mv-status" class="mv-input" data-status><option value="">All statuses</option></select></div></div><div data-list></div></section>`;
     const workspace=transfer?`${transferTabs()}<section role="tabpanel" id="mv-panel-send" aria-labelledby="mv-tab-send" data-transfer-panel="send"><div data-create-panel>${createForm()}</div></section>${operational()?`<section role="tabpanel" id="mv-panel-receive" aria-labelledby="mv-tab-receive" data-transfer-panel="receive"><div class="mv-receive-grid">${receivingQrPanel()}${transferLookup()}</div><section class="card card-pad"><h2>Incoming transfers awaiting confirmation</h2><div data-incoming></div></section></section>`:''}<section role="tabpanel" id="mv-panel-history" aria-labelledby="mv-tab-history" data-transfer-panel="history">${list}</section>`:`<div class="mv-workspace"><div data-create-panel>${createForm()}</div><div class="mv-record-area">${list}</div></div>`;
-    current.root.innerHTML=`<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1><p class="sub">${descriptions()}</p></div></div><p class="sync-warning" data-sync-warning role="status"></p><div data-notice role="status" aria-live="polite"></div>${mode()==='demo'?'<div class="mv-demo-banner">Offline demo &middot; browser records</div>':''}<div data-summary class="mv-summary"></div>${workspace}<dialog class="mv-detail" data-detail aria-label="Movement details"><div data-detail-body></div></dialog><dialog class="mv-scanner" data-scanner-dialog aria-labelledby="mv-scanner-title"><div class="mv-section-heading"><h2 id="mv-scanner-title">Scan Receiver QR</h2>${button('Close','close-scanner')}</div><p class="mv-help">Ask the recipient to open Receive Transfer and generate their receiving QR.</p><div id="mv-receiver-camera"></div><p data-scanner-error role="alert"></p>${button('Try camera again','scan-receiver')}</dialog></div>`;
+    current.root.innerHTML=`<div class="movement-ui"><div class="page-head"><div><p class="eyebrow">Tool movement</p><h1 class="display">${TITLES[current.kind]}</h1><p class="sub">${descriptions()}</p></div></div><p class="sync-warning" data-sync-warning role="status"></p><div data-notice role="status" aria-live="polite"></div>${mode()==='demo'?'<div class="mv-demo-banner">Offline demo &middot; browser records</div>':''}<div data-summary class="mv-summary"></div>${workspace}<dialog id="movement-detail" class="mv-detail" data-detail aria-label="Movement details"><div data-detail-body></div></dialog><dialog class="mv-scanner" data-scanner-dialog aria-labelledby="mv-scanner-title"><div class="mv-section-heading"><h2 id="mv-scanner-title">Scan Receiver QR</h2>${button('Close','close-scanner')}</div><p class="mv-help">Ask the recipient to open Receive Transfer and generate their receiving QR.</p><div id="mv-receiver-camera"></div><p data-scanner-error role="alert"></p>${button('Try camera again','scan-receiver')}</dialog></div>`;
     const detail=current.root.querySelector('[data-detail]');
     detail.addEventListener('cancel',event=>{event.preventDefault();closeDetail();});
     detail.addEventListener('close',()=>{
@@ -286,6 +286,12 @@
   function closeDetail(){
     if(!current||current.busy)return;
     if(current.detailDirty&&!window.confirm('Discard your unsaved inspection or notes?'))return;
+    current.detailDirty = false;
+    if (window.MCPAMovementLinks?.parse(location.hash).record) {
+      if (window.MCPANavigation?.canBack()) window.MCPANavigation.back();
+      else showScreen(current.kind, null, {history:'replace'});
+      return;
+    }
     const detail=current.root.querySelector('[data-detail]');
     const id=current.detailId;
     cancelTarget();current.detailId='';current.detailDirty=false;detail.close();syncModalLock();renderLists();
@@ -590,13 +596,13 @@
       try{await qrRpc('mcpa_revoke_receiving_qr',{p_token:active.ownQr?.token});if(current===active){clearTimeout(active.qrExpiry);active.ownQr=null;active.root.querySelector('[data-own-qr]').textContent='Receiving QR revoked. Generate a new one when needed.';}}
       catch(error){if(current===active)notify(error.message,true);}
     }
-    else if (action === 'view') { cancelTarget(); current.detailId = id; renderLists(); renderDetail(); }
+    else if (action === 'view') { showScreen(current.kind + '?record=' + encodeURIComponent(id)); }
     else if (action === 'close-detail') closeDetail();
     else if (action === 'approve') await perform(() => store().approveRequest(id), 'Request approved. Its tools are reserved and ready for release.');
     else if (action === 'release') await perform(() => store().releaseRequest(id), 'Tools released. Share the handover code with the receiver.');
     else if (action === 'start-repair') await perform(() => store().startRepair(id), 'Repair started. The tool remains unavailable.');
     else if (action === 'open-transfer') {
-      if (typeof window.showScreen === 'function') window.showScreen('transfer', () => window.MovementUI.openTransfer(id));
+      if (typeof window.showScreen === 'function') window.showScreen('transfer?record=' + encodeURIComponent(id));
     } else if (action === 'copy') {
       try { await navigator.clipboard.writeText(id); notify('Transfer code copied.'); } catch (_) { notify(`Copy this transfer code: ${id}`); }
     } else if (action === 'camera') await startCamera();
@@ -678,6 +684,7 @@
     let finishMount;
     active.mounted = new Promise(resolve => { finishMount = resolve; });
     current = active;
+    window.MCPANavigation?.track(root, active.mounted);
     root.innerHTML = '<div class="movement-ui"><div class="card card-pad mv-loading" role="status">Loading movement records…</div></div>';
     root.addEventListener('click', click);
     root.addEventListener('submit', submit);
@@ -806,6 +813,51 @@
     dispose,
     cancelTarget,
     openRecord,
+    clearRecord() {
+      if (!current) return;
+      current.detailId = ''; current.detailDirty = false;
+      current.root.querySelector('[data-detail]')?.close(); syncModalLock();
+    },
+    capture() {
+      if (!current) return null;
+      const fields = [...current.root.querySelectorAll('[data-form="create"] input, [data-form="create"] select, [data-form="create"] textarea')]
+        .filter(el => el.name && !['file','password'].includes(el.type))
+        .map(el => ({name:el.name, type:el.type, value:el.value, checked:el.checked}));
+      const detailFields = [...current.root.querySelectorAll('[data-detail] input, [data-detail] select, [data-detail] textarea')]
+        .filter(el => !['file','password'].includes(el.type))
+        .map(el => ({id:el.id, name:el.name, inspection:el.closest('[data-inspection]')?.dataset.inspection, type:el.type, value:el.value, checked:el.checked}));
+      return {kind:current.kind, search:current.search, status:current.status, transferView:current.transferView, createDirty:current.createDirty, fields,
+        detailId:current.detailId, detailDirty:current.detailDirty, detailFields};
+    },
+    restore(saved) {
+      if (!current || saved?.kind !== current.kind) return;
+      current.search = saved.search; current.status = saved.status;
+      if (current.kind === 'transfer') setTransferView(saved.transferView);
+      renderLists();
+      const search = current.root.querySelector('[data-record-search]'); if (search) search.value = saved.search;
+      if (!saved.createDirty) return;
+      for (const el of current.root.querySelectorAll('[data-form="create"] input, [data-form="create"] select, [data-form="create"] textarea')) {
+        const field = saved.fields.find(f => f.name === el.name && (el.type !== 'checkbox' && el.type !== 'radio' || f.value === el.value));
+        if (!field || ['file','password'].includes(el.type)) continue;
+        if (el.type === 'checkbox' || el.type === 'radio') el.checked = field.checked;
+        else if (el.tagName !== 'SELECT' || [...el.options].some(option => option.value === field.value)) el.value = field.value;
+        el.dispatchEvent(new Event('change', {bubbles:true}));
+      }
+      current.createDirty = true;
+    },
+    restoreDetail(saved) {
+      if (!current || saved?.kind !== current.kind || !saved.detailDirty || saved.detailId !== current.detailId) return;
+      for (const el of current.root.querySelectorAll('[data-detail] input, [data-detail] select, [data-detail] textarea')) {
+        if (el.disabled || ['file','password'].includes(el.type)) continue;
+        const field = saved.detailFields?.find(f => f.id === el.id && f.name === el.name && f.type === el.type && f.inspection === el.closest('[data-inspection]')?.dataset.inspection);
+        if (!field) continue;
+        if (el.type === 'checkbox' || el.type === 'radio') el.checked = field.checked;
+        else if (el.tagName !== 'SELECT' || [...el.options].some(option => option.value === field.value)) el.value = field.value;
+        el.dispatchEvent(new Event('input', {bubbles:true}));
+        el.dispatchEvent(new Event('change', {bubbles:true}));
+      }
+      current.detailDirty = true;
+    },
     async showTransferView(view) {
       const active=current;
       if (active?.kind !== 'transfer') return;

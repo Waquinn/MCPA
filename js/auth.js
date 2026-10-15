@@ -21,6 +21,7 @@
   const client = () => window.EquipmentTracking.client();
   const rootUrl = () => new URL(location.pathname.includes('/2-engr/') ? '../index.html' : 'index.html',location.href).href.split('#')[0];
   function clearApplication() {
+    window.MCPANavigation?.suspend();
     window.resetApplication?.();
     window.MovementStore?.clear();
     if (typeof TOOLS !== 'undefined') TOOLS.splice(0,TOOLS.length);
@@ -72,13 +73,13 @@
     document.getElementById('app-shell').classList.remove('hidden');
     accountUI(); buildNav();
     window.MCPAMonitoring?.initialize();
-    const requested=location.hash.slice(1);
-    showScreen(window.MCPAMovementLinks.parse(requested).screen in SCREEN_MODULE ? requested : MCPAPermissions.home(profile.role));
+    const requested=window.MCPANavigation?.initialRoute(location.hash.slice(1)) ?? location.hash.slice(1);
+    showScreen(window.MCPAMovementLinks.parse(requested).screen in SCREEN_MODULE ? requested : MCPAPermissions.home(profile.role), null, {history:'initial'});
   }
   async function restore(session) {
     if(demo || recovering) return;
     const generation=++revision;
-    if(!session){profile=null;sessionUser=null;login('Sign in to access your company workspace.');return;}
+    if(!session){window.MCPANavigation?.endSession();profile=null;sessionUser=null;login('Sign in to access your company workspace.');return;}
     if(sessionUser!==session.user.id){profile=null;login('','loading');}
     try {
       const {data,error}=await client().rpc('mcpa_my_profile');
@@ -115,6 +116,7 @@
     clearApplication();await MovementStore.useDemo();if(!restoring)history.replaceState(null,'',location.pathname);enter();
   }
   async function logout() {
+    window.MCPANavigation?.endSession();
     const wasDemo=demo;++revision;profile=null;sessionUser=null;demo=false;recovering=false;invitationCallback=false;
     sessionStorage.removeItem('mcpa.password-setup');
     sessionStorage.removeItem('mcpa.demo.role');clearApplication();history.replaceState(null,'',location.pathname);login(wasDemo?'Demo closed. Your sample records remain in this browser.':'Signing out…');
@@ -136,7 +138,7 @@
       client().auth.onAuthStateChange((event,session)=>{
         if(demo || rejectCallback)return;
         if(event==='PASSWORD_RECOVERY'){setupPassword(session,'recovery');return;}
-        if(event==='SIGNED_OUT'){++revision;profile=null;sessionUser=null;recovering=false;sessionStorage.removeItem('mcpa.password-setup');login('Your session ended. Sign in again.');return;}
+        if(event==='SIGNED_OUT'){window.MCPANavigation?.endSession();++revision;profile=null;sessionUser=null;recovering=false;sessionStorage.removeItem('mcpa.password-setup');login('Your session ended. Sign in again.');return;}
         if(recovering)return;
         if(session && (invitationCallback || pendingSetup(session))){setupPassword(session,invitationCallback?'invite':pendingSetup(session));return;}
         if(event==='INITIAL_SESSION'||event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='USER_UPDATED')setTimeout(()=>restore(session),0);

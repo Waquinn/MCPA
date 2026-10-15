@@ -65,5 +65,6 @@
   link.href=url;link.download='mcpa-'+$('#report-kind').value+'-'+data.start+'-'+data.end+'.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  },{signal:controller.signal});
  window.MCPAReports={dispose(){controller.abort();}};
- void load();
+ const mounted = load();
+ window.MCPANavigation?.track(root, mounted);
 })();

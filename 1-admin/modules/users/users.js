@@ -116,6 +116,7 @@
     await load(); await loadCapabilities();
   }, value => { if(root.isConnected) $('[data-sync-warning]').textContent=value; }, {tables:['mcpa_account_audit']});
   window.MCPAAccounts = {dispose:stop};
-  load().catch(()=>{$('#accounts-list').textContent='People are unavailable. Retrying automatically.';});
+  const ready = load().catch(()=>{$('#accounts-list').textContent='People are unavailable. Retrying automatically.';});
+  window.MCPANavigation?.track(root, ready);
   updateControls();loadCapabilities();
 })();

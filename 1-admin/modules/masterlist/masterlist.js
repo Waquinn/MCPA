@@ -99,8 +99,8 @@ async function initMasterlist() {
 
   populateFilters();
   renderTable();
-  if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId);
-  if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId);
+  if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId, true);
+  if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId, true);
   if (!tbody.dataset.listeners) { setupMasterlistListeners(); tbody.dataset.listeners = 'true'; }
   document.getElementById('inventory-sync').textContent = '';
 }
@@ -343,9 +343,15 @@ function showMasterlistView(viewName) {
   }
 }
 
-function showToolProfile(assetId) {
+function showToolProfile(assetId, restoring = false) {
+  if (!restoring) { showScreen('tool-profile?record=' + encodeURIComponent(assetId)); return; }
   const item = equipmentList.find(eq => eq.assetId === assetId);
-  if (!item) return;
+  if (!item) {
+    currentProfileId = null;
+    document.getElementById('profileContent').textContent = 'This equipment is unavailable or your account no longer has access.';
+    showMasterlistView('tool-profile');
+    return;
+  }
   currentProfileId = assetId;
   currentProfileId = assetId;
 
@@ -791,8 +797,11 @@ function formatDate(dateString) {
     const target = document.getElementById('inventory-sync');
     if (target && !owner.disposed) target.textContent = message;
   });
-  initMasterlist().catch(() => {
+  const ready = initMasterlist().catch(() => {
     const target = document.getElementById('inventory-sync');
     if (target && !owner.disposed) target.textContent = 'Projects could not load. Retrying automatically.';
   });
+  owner.openRecord = assetId => showToolProfile(assetId, true);
+  window.MCPANavigation?.track(document.getElementById('content').firstElementChild, ready);
+  window.MCPANavigation?.track(document.getElementById('screen-tool-profile'), ready);
 })();

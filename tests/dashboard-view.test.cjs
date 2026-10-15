@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const path=require('node:path');
 function setup(){
   const context=vm.createContext({window:{},icon:()=>'<svg></svg>'});
-  for(const file of ['equipment-tracking.js','dashboard-view.js']){
+  for(const file of ['equipment-tracking.js','project-scope.js','dashboard-view.js']){
     vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',file),'utf8'),context);
     context.EquipmentTracking=context.window.EquipmentTracking;
   }
@@ -97,4 +97,32 @@ test('turnover panel excludes another receiver and received/canceled handovers; 
   assert.match(html,/No equipment is currently awaiting your confirmation/);
   assert.doesNotMatch(html,/data-go="transfer\?record=TRF-(OTHER|DONE|CANCELED)"/);
   assert.doesNotMatch(render({id:'admin-id',role:'admin'}),/Pending Equipment Turnover/);
+});
+
+test('project KPI, cards and chart share stable assignment rules for seven company projects',()=>{
+  const {data,render,context}=setup(); context.window.MCPAAuth={isDemo:false};
+  data.sites=Array.from({length:7},(_,i)=>({id:'p'+i,name:'Project '+i,is_active:true,assigned_engineer_id:i===0?'mike':'other',assigned_engineer:'Mike'}));
+  const count=html=>Number(html.match(/<span class="lbl">Active Projects<\/span><span class="num">(\d+)/)[1]);
+  for (const role of ['engineer','architect']) {
+    const html=render({id:'mike',name:'Mike',role});
+    assert.equal(count(html),1);
+    assert.match(html,/1 active project assigned to you/);
+    assert.doesNotMatch(html,/Project [1-6]/,'Unassigned projects cannot appear in cards, charts or filters');
+    assert.equal(count(render({id:'nobody',name:'Mike',role})),0,'Duplicate names never imply assignments');
+    assert.equal(count(render({name:'Mike',role})),0,'Missing profile IDs never imply assignments');
+  }
+  for(const role of ['admin','tool_handler'])assert.equal(count(render({id:'admin',role})),7);
+  data.activeProjects=[...data.sites,{id:'archived',is_active:true,archived_at:'2026-10-14',assigned_engineer_id:'mike'},{id:'inactive',is_active:false,assigned_engineer_id:'mike'}];
+  assert.equal(count(render({id:'mike',role:'engineer'})),1,'Even precomputed activeProjects must exclude archived/inactive entries');
+});
+
+test('name-only project assignments require explicit demo mode and never override an assigned ID',()=>{
+  const {data,render,context}=setup();
+  data.sites=[{id:'demo',name:'Demo site',assigned_engineer:'Mike'},{id:'wrong',name:'Other site',is_active:true,assigned_engineer:'Mike',assigned_engineer_id:'someone-else'}];
+  const person={id:'demo-mike',name:'Mike',role:'engineer'};
+  assert.doesNotMatch(render(person),/Demo site/);
+  context.window.MCPAAuth={isDemo:true};
+  const html=render(person);
+  assert.match(html,/1 active project assigned to you/); assert.match(html,/Demo site/); assert.doesNotMatch(html,/Other site/);
+  data.sites[0].is_active=false;assert.match(render(person),/0 active projects assigned to you/);
 });
