@@ -81,7 +81,7 @@
    widths:kind==='activity'?[39,36,34,39,36,85]:[34,54,43,42,22,33,41]
   }});}finally{exporting=false;if(root.isConnected)exportState();}
  },{signal:controller.signal});
- window.MCPAReports={dispose(){controller.abort();}};
+ window.MCPAReports={openRecord(id){if(['current','history','activity'].includes(id)){$('#report-kind').value=id;render();}},dispose(){controller.abort();}};
  const mounted = load();
  window.MCPANavigation?.track(root, mounted);
 })();

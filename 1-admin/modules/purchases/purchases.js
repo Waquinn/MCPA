@@ -100,7 +100,7 @@
  root.addEventListener('input', event => { if (event.target.closest('#purchase-form')) { dirty = true; total(); } else if (event.target.id === 'purchase-search') render(); }, {signal: controller.signal});
  root.addEventListener('change', event => { if (event.target.closest('#purchase-form')) dirty = true; else render(); }, {signal: controller.signal});
  dialog.addEventListener('cancel', event => { event.preventDefault(); close(); }, {signal: controller.signal});
- window.MCPAPurchases = {dispose() { controller.abort(); dialog.close(); }};
+ window.MCPAPurchases = {clearRecord() { if (!dirty) close(true); }, async openRecord(id) { await mounted; if (!root.isConnected) return; const record=state.purchases.find(p=>p.id===id); if(record) detail(record); else feedback('This purchase is no longer available or access was denied.',true); }, dispose() { controller.abort(); dialog.close(); }};
  const mounted = load();
  window.MCPANavigation?.track(root, mounted);
 })();

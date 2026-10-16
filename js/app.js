@@ -142,6 +142,7 @@ function resetApplication({keepMonitoring = false} = {}){
   moduleAbort?.abort(); pendingModule=null; currentModule=null; clearTimeout(searchTimer);
   disposeLoadedModule(); closeMobileSearch(false);
   window.mcpaSearch='';
+  window.MCPAGlobalSearch?.reset();
   window.movementDraft=null;
   if (typeof equipmentList !== 'undefined') equipmentList=[];
   if (typeof selectedAssets !== 'undefined') selectedAssets=[];
@@ -209,18 +210,7 @@ async function toggleTheme(button = document.querySelector('.theme-toggle')){
 }
 
 let searchTimer;
-function globalSearch(q){
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    window.mcpaSearch = q;
-    showScreen('masterlist', function(){
-      const input = document.getElementById('movement-inventory-search') || document.getElementById('searchEquipment');
-      if(input){ input.value = q; input.dispatchEvent(new Event('input', {bubbles: true})); }
-      else window.MovementOverview?.setSearch(q);
-      if (typeof filterAndResetPage === 'function' && document.getElementById('equipmentTableBody')) filterAndResetPage();
-    }, {keepSearch:true});
-  }, 180);
-}
+function globalSearch(q){ window.MCPAGlobalSearch?.search(q); }
 
 const compactSearch = matchMedia('(max-width: 900px)');
 // A breakpoint can hide the focused close button before the media-change
@@ -231,6 +221,7 @@ document.addEventListener('pointerdown',event=>{if(!event.target.closest('#globa
 function closeMobileSearch(restoreFocus = true, cancelPending = true){
   const panel = document.getElementById('global-search-panel'), button = document.getElementById('mobile-search-toggle');
   const wasOpen = panel?.classList.contains('is-open');
+  window.MCPAGlobalSearch?.close();
   panel?.classList.remove('is-open'); button?.setAttribute('aria-expanded','false');
   if(cancelPending) clearTimeout(searchTimer);
   if(!restoreFocus)searchHadFocus=false;
@@ -238,7 +229,7 @@ function closeMobileSearch(restoreFocus = true, cancelPending = true){
 }
 function openMobileSearch(){
   window.MCPADrawer?.close(false);
-  if(!window.MCPAAuth?.canRoute('masterlist')) return;
+  if(!window.MCPAAuth?.profile) return;
   const panel = document.getElementById('global-search-panel');
   if(panel.classList.contains('is-open')) { closeMobileSearch(); return; }
   document.getElementById('account-menu')?.removeAttribute('open');
@@ -251,15 +242,13 @@ function updateSearchLayout(){
   const focused = document.activeElement;
   const restore = searchHadFocus || focused === input || focused === button || Boolean(focused?.closest('.mobile-search-close'));
   closeMobileSearch(false);
-  input.placeholder = compactSearch.matches ? 'Search equipment or ID…' : 'Search tool ID, equipment, serial, project, or holder…';
+  input.placeholder = compactSearch.matches ? 'Search SiteTrace\u2026' : 'Search equipment, projects, or reference IDs\u2026';
   if(restore) (compactSearch.matches ? button : input).focus();
 }
 compactSearch.addEventListener('change', updateSearchLayout); updateSearchLayout();
 document.getElementById('global-search-panel').addEventListener('keydown', event => {
   if(event.key === 'Escape'){ event.preventDefault(); closeMobileSearch(); }
-  if(event.key === 'Enter' && event.target.id === 'global-search-input' && compactSearch.matches){
-    event.preventDefault(); globalSearch(event.target.value); closeMobileSearch(true, false);
-  }
+
 });
 document.addEventListener('click', event => {
   if(event.target.closest('.mobile-menu-btn,.bell-wrap,#account-menu summary,[data-tool]')) closeMobileSearch(false);

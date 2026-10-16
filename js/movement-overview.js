@@ -184,6 +184,14 @@
   window.MovementOverview = {
     mount(id) { const promise = mount(id); window.MCPANavigation?.track(root, promise); return promise; },
     dispose, contextBar, escape, setSearch, openRecord: detail,
+    openActivity(id) {
+      const record=store().getState().activity.find(r=>r.id===id);
+      const feedback=root?.querySelector('#overview-feedback');
+      if(!record){if(feedback)feedback.textContent='This activity is no longer available or access was denied.';return;}
+      const dialog=document.createElement('dialog');dialog.className='overview-dialog';
+      dialog.innerHTML='<h2>Activity record</h2>'+activityTable([record])+'<button class="btn btn-secondary">Close</button>';
+      dialog.querySelector('button').onclick=()=>dialog.close();dialog.addEventListener('close',()=>dialog.remove());root.append(dialog);dialog.showModal();
+    },
     clearRecord() { root?.querySelectorAll('dialog').forEach(dialog => dialog.remove()); },
     capture: () => root?.isConnected ? {screen, query, status, mine, site, dashboardCondition} : null,
     restore(saved) {

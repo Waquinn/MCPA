@@ -82,7 +82,7 @@ exports.header=async({evaluate,command,wait,click,fill,go,shot})=>{
     assert.ok(await evaluate("(()=>{const r=document.querySelector('#global-search-panel').getBoundingClientRect(),i=document.querySelector('#global-search-input').getBoundingClientRect();return r.left>=0 && r.right<=innerWidth && i.width>innerWidth*.65 && document.documentElement.scrollWidth<=innerWidth})()"));
     if([393,430].includes(width))await shot('mobile-search-'+width+'-'+(dark?'dark':'light'));
     await fill('#global-search-input','TOOL-001');
-    await wait("document.querySelector('#equipmentTableBody')?.textContent.includes('TOOL-001') && document.querySelector('#searchEquipment')?.value==='TOOL-001'");
+    await wait("document.querySelector('#global-search-list')?.textContent.includes('TOOL-001')");
     assert.ok(await evaluate("document.querySelector('#global-search-panel').classList.contains('is-open')"));
     await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
     await command('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});

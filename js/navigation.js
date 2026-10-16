@@ -97,7 +97,7 @@ window.MCPAMovementLinks = {
   parse(value) {
     const [screen, query = ''] = String(value).replace(/^#/, '').split('?');
     const params = new URLSearchParams(query), record = params.get('record');
-    const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail'].includes(screen)) && record && record.length <= 120 ? record : ''};
+    const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail','activity','purchase','consumables','reports'].includes(screen)) && record && record.length <= 120 ? record : ''};
     if (screen === 'site-detail' && params.get('tool')?.length <= 120) result.tool = params.get('tool');
     if (screen === 'transfer' && ['send','receive','history'].includes(params.get('view'))) result.view = params.get('view');
     return result;
@@ -138,9 +138,16 @@ function showScreen(route, afterActivate, options){
       else if (record && ['masterlist','tool-profile'].includes(id)) {
         if (window.AdminEquipment && !window.AdminEquipment.disposed) window.AdminEquipment.openRecord(record);
         else window.MovementOverview?.openRecord(record);
-      } else if(record) await window.MovementUI?.openRecord(id, record);
+      } else if (record && id === 'purchase') await window.MCPAPurchases?.openRecord(record);
+      else if (record && id === 'consumables') await window.MCPAConsumables?.openRecord(record);
+      else if (record && id === 'reports') window.MCPAReports?.openRecord(record);
+      else if (record && id === 'activity') window.MovementOverview?.openActivity(record);
+      else if(record) await window.MovementUI?.openRecord(id, record);
       else {
         window.MovementUI?.clearRecord?.();
+        if (id === 'activity') window.MovementOverview?.clearRecord?.();
+        if (id === 'purchase') window.MCPAPurchases?.clearRecord?.();
+        if (id === 'consumables') window.MCPAConsumables?.clearRecord?.();
         if (id === 'masterlist') window.MovementOverview?.clearRecord?.();
         if (id === 'masterlist' && window.AdminEquipment && !window.AdminEquipment.disposed) showMasterlistView('masterlist');
         if (id === 'sites') document.getElementById('sites-dialog')?.close();

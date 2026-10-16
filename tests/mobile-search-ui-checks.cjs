@@ -73,7 +73,7 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
     assert.ok(size.left>=0 && size.right<=size.viewport+.5, 'Expanded search stays inside viewport');
     assert.ok(size.scroll<=size.viewport+1, 'Expanded search creates no page overflow');
     assert.ok(size.width>size.viewport*.65 && size.height>=44, 'Search input has useful width and touch height');
-    assert.match(size.placeholder, /Search.*(?:equipment|tool|ID)/i);
+    assert.match(size.placeholder, /Search.*SiteTrace/i);
     assert.ok(size.placeholderWidth<=size.textSpace+1, 'The compact placeholder is fully readable');
   };
   const originalIdentity = await evaluate("document.querySelector('#account-menu .account-name').textContent");
@@ -106,10 +106,11 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
 
         await touch('#mobile-search-toggle'); await assertOpen();
         await fill('#global-search-input', 'TOOL-001');
-        await key('Enter',13);
-        await wait("document.querySelector('#equipmentTableBody')?.textContent.includes('TOOL-001') && document.querySelector('#searchEquipment')?.value==='TOOL-001'");
-        assert.equal(await panelOpen(), false, 'Enter navigates using existing search and closes panel');
-        assert.equal(await evaluate('document.activeElement.id'), 'mobile-search-toggle');
+        await wait("document.querySelector('[data-key=\"masterlist:TOOL-001\"]')");
+        await key('ArrowDown',40); await key('Enter',13);
+        await wait("location.hash==='#masterlist?record=TOOL-001' && document.querySelector('#profileContent')?.textContent.includes('TOOL-001')");
+        assert.equal(await panelOpen(), false, 'Enter opens the exact selected record and closes panel');
+
         assert.equal(await evaluate("document.querySelector('#global-search-input').value"), 'TOOL-001');
 
         await touch('#mobile-search-toggle'); await assertOpen();
@@ -153,9 +154,8 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
   await viewport(393);
   await touch('#mobile-search-toggle'); await assertOpen();
   await fill('#global-search-input', 'TOOL-001');
-  await wait("document.querySelector('#equipmentTableBody')?.textContent.includes('TOOL-001') && document.querySelector('#searchEquipment')?.value==='TOOL-001'");
-  await evaluate("document.querySelector('#equipmentTableBody button[onclick^=\"showToolProfile\"]').scrollIntoView({block:'center',inline:'center'})");
-  await touch('#equipmentTableBody button[onclick^="showToolProfile"]');
+  await wait("document.querySelector('[data-key=\"masterlist:TOOL-001\"]')");
+  await touch('[data-key="masterlist:TOOL-001"]');
   await wait("getComputedStyle(document.querySelector('#screen-tool-profile')).display!=='none' && document.querySelector('#profileContent').textContent.includes('TOOL-001')");
   assert.equal(await panelOpen(), false, 'Admin View opens the existing equipment profile and dismisses search');
 
@@ -178,20 +178,20 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
     })()`);
     try {
       await fill('#global-search-input', 'TOOL-002');
-      await wait("window.__searchTestSnapshotStarted && document.querySelector('#screen-masterlist.active') && !document.querySelector('#movement-inventory-search')");
+      await wait("window.__searchTestSnapshotStarted && document.querySelector('#screen-dashboard.active')");
       await fill('#global-search-input', 'TOOL-002');
-      await wait("window.mcpaSearch==='TOOL-002'");
+      assert.equal(await evaluate('window.mcpaSearch'), '', 'Global query never writes the local equipment filter');
       await evaluate('window.__restoreSearchTestSnapshot()');
-      await wait("document.querySelector('#movement-inventory-search')?.value==='TOOL-002' && document.querySelector('#overview-results [data-tool=\"TOOL-002\"]')");
-      assert.deepEqual(await evaluate("[...document.querySelectorAll('#overview-results [data-tool]')].map(button=>button.dataset.tool)"), ['TOOL-002'], 'The latest query filters results after a pending initial inventory load');
+      await wait("document.querySelector('#global-search-list [data-key=\"masterlist:TOOL-002\"]')");
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('#global-search-list [data-key^=\"masterlist:\"]')].map(button=>button.dataset.key.slice(11))"), ['TOOL-002'], 'The latest query filters results after a pending initial inventory load');
     } finally {
       await evaluate('window.__restoreSearchTestSnapshot?.();delete window.__restoreSearchTestSnapshot;delete window.__searchTestSnapshotStarted');
     }
     // The second input deliberately arrives during the held read. Its pending
     // search debounce can rebuild the table; finish it before measuring a row.
     await evaluate('new Promise(resolve=>setTimeout(resolve,250))');
-    await evaluate("document.querySelector('#overview-results [data-tool=\"TOOL-002\"]').scrollIntoView({block:'center',inline:'center'})");
-    await touch('#overview-results [data-tool="TOOL-002"]');
+    await evaluate("document.querySelector('#global-search-list [data-key=\"masterlist:TOOL-002\"]').scrollIntoView({block:'center',inline:'center'})");
+    await touch('#global-search-list [data-key="masterlist:TOOL-002"]');
     await wait("document.querySelector('dialog[open]')?.textContent.includes('TOOL-002')");
     assert.equal(await panelOpen(), false, 'Engineer Details opens the existing read-only dialog and dismisses search');
     assert.ok(await evaluate("(()=>{const d=document.querySelector('dialog[open]'),r=d.getBoundingClientRect();return d.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2))})()"), 'Native detail dialog remains above the header');
@@ -204,7 +204,7 @@ exports.verify = async ({evaluate, command, wait, click, fill, go, login, logout
   for (const width of [1024,1440]) {
     await viewport(width);
     assert.ok(await evaluate("getComputedStyle(document.querySelector('#mobile-search-toggle')).display==='none' && document.querySelector('#global-search-input').getBoundingClientRect().width>250"), 'Desktop keeps the full search field');
-    assert.equal(await evaluate("document.querySelector('#global-search-input').placeholder"), 'Search tool ID, equipment, serial, project, or holder\u2026');
+    assert.equal(await evaluate("document.querySelector('#global-search-input').placeholder"), 'Search equipment, projects, or reference IDs\u2026');
   }
   await evaluate("document.querySelector('#global-search-input').focus()");
   await viewport(393);

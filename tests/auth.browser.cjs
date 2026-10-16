@@ -94,7 +94,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(process.argv.includes('--pdf-reports')||process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
  fixtureMigrations.add('202610120003_optional_request_purpose.sql');
  fixtureMigrations.add('202610150001_inventory_availability.sql');
- if(process.argv.includes('--feature-completion')){
+ if(process.argv.includes('--feature-completion')||process.argv.includes('--global-search')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
    alter table storage.objects enable row level security;grant usage on schema storage to authenticated,anon;grant select,insert,update,delete on storage.objects to authenticated,anon;
@@ -149,6 +149,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--global-search')){
+  await require('./global-search.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,calls,shot,base});
+  assert.deepEqual(errors,[],'No uncaught browser errors');console.log('PASS global search');return;
+ }
  if(process.argv.includes('--pdf-reports')){
   await require('./pdf-reports.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,calls,shot,enter,artifactDirectory:profile,base});
   assert.deepEqual(errors,[],'No uncaught browser errors');

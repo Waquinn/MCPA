@@ -339,6 +339,12 @@
     if (!root.isConnected) { clearInterval(timer); observer.disconnect(); dialogRevision++; }
   });
   observer.observe(document.getElementById('content'), { childList: true });
+  window.MCPAConsumables = {clearRecord() { dialog.close(); }, async openRecord(id) {
+    await ready; if (!root.isConnected) return;
+    const request=state.requests.find(r=>r.id===id), item=state.items.find(r=>r.id===id);
+    if(request) viewRequest(request); else if(item) await history(item);
+    else feedback('This material record is no longer available or access was denied.',true);
+  }};
   const ready = refresh();
   window.MCPANavigation?.track(root, ready);
 })();
