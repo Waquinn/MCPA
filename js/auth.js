@@ -21,6 +21,7 @@
   const client = () => window.EquipmentTracking.client();
   const rootUrl = () => new URL(location.pathname.includes('/2-engr/') ? '../index.html' : 'index.html',location.href).href.split('#')[0];
   function clearApplication() {
+    window.MCPAAccountMenu?.close(false);
     window.MCPANavigation?.suspend();
     window.resetApplication?.();
     window.MovementStore?.clear();
@@ -52,6 +53,24 @@
     host.querySelectorAll('[data-demo-role]').forEach(b=>b.addEventListener('click',()=>startDemo(b.dataset.demoRole)));
   }
   function feedback(message) { const el=document.getElementById('auth-feedback');if(el) {el.textContent=message;el.setAttribute('role','alert');} }
+  // One delegated dismissal pair for every account/header rerender.
+  window.MCPAAccountMenu?.dispose();
+  const accountEvents = new AbortController();
+  function closeAccount(restore = false) {
+    const menu=document.getElementById('account-menu');
+    if(!menu)return;
+    const wasOpen=menu.open;menu.open=false;
+    menu.querySelector('summary')?.setAttribute('aria-expanded','false');
+    if(wasOpen&&restore)menu.querySelector('summary')?.focus();
+  }
+  document.addEventListener('click',event=>{
+    const menu=document.getElementById('account-menu');
+    if(menu?.open&&!menu.contains(event.target))closeAccount();
+  },{signal:accountEvents.signal});
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&document.getElementById('account-menu')?.open){event.preventDefault();closeAccount(true);}
+  },{signal:accountEvents.signal});
+  window.MCPAAccountMenu={close:closeAccount,dispose:()=>accountEvents.abort()};
   function accountUI() {
     const label=MCPAPermissions.labels[profile.role], name=profile.name;
     document.querySelector('.sidebar-foot .name').textContent=name;
@@ -61,8 +80,10 @@
     let menu=document.getElementById('account-menu');
     if(!menu){menu=document.createElement('details');menu.id='account-menu';document.querySelector('.topbar-actions').append(menu);}
     document.querySelector('.topbar-actions > .avatar')?.classList.add('hidden');
-    menu.innerHTML=`<summary aria-label="Account menu"><span class="account-name">${esc(name)}</span><span>${esc(label)}${demo?' · Demo':''}</span></summary><div class="account-dropdown"><button data-account-profile>My Account</button><button data-account-theme>Change theme</button><button data-account-logout>${demo?'Exit demo':'Log Out'}</button></div>`;
-    menu.querySelector('[data-account-profile]').onclick=()=>{menu.open=false;showScreen('settings');};
+    menu.innerHTML=`<summary aria-label="Account menu" aria-expanded="${menu.open}" aria-controls="account-dropdown"><span class="account-name">${esc(name)}</span><span>${esc(label)}${demo?' · Demo':''}</span></summary><div class="account-dropdown" id="account-dropdown"><button data-account-profile>My Account</button><button data-account-theme>Change theme</button><button data-account-logout>${demo?'Exit demo':'Log Out'}</button></div>`;
+    menu.querySelector('summary').onclick=()=>{if(!menu.open)window.MCPAMonitoring?.close(false);};
+    menu.ontoggle=()=>{menu.querySelector('summary')?.setAttribute('aria-expanded',String(menu.open));if(menu.open)window.MCPAMonitoring?.close(false);};
+    menu.querySelector('[data-account-profile]').onclick=()=>{closeAccount();showScreen('settings');};
     menu.querySelector('[data-account-theme]').onclick=event=>toggleTheme(event.currentTarget);
     menu.querySelector('[data-account-logout]').onclick=logout;
     document.querySelector('.bell-wrap')?.classList.toggle('hidden',!canRoute('activity'));

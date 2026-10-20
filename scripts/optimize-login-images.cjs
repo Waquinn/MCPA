@@ -7,6 +7,13 @@ const directory = path.resolve(__dirname, '../images/login-slideshow');
 (async () => {
   let originals = 0, optimized = 0;
   const assets = [];
+  // Project 10 is an existing JPEG: register it without rewriting the source
+  // or manufacturing another photograph/variant.
+  const featured = path.join(directory, 'project-10.jpg');
+  const image = await loadImage(featured), size = fs.statSync(featured).size;
+  assets.push({source:'project-10.jpg',output:'project-10.jpg',width:image.width,height:image.height,
+    sourceBytes:size,outputBytes:size,sourceSha256:createHash('sha256').update(fs.readFileSync(featured)).digest('hex')});
+  originals += size; optimized += size;
   for (let index = 1; index <= 9; index++) {
     const source = path.join(directory, `project-${index}.png`);
     const photo = await loadImage(source);

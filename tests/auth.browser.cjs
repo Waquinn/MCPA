@@ -93,7 +93,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(turnoverRun||process.argv.includes('--request-projects')){
   for(const file of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610120001_request_turnover_notifications.sql'])fixtureMigrations.add(file);
  }
- if(process.argv.includes('--pdf-reports')||process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
+ if(process.argv.includes('--header-notifications')||process.argv.includes('--pdf-reports')||process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
  fixtureMigrations.add('202610120003_optional_request_purpose.sql');
  fixtureMigrations.add('202610150001_inventory_availability.sql');
  if(process.argv.includes('--feature-completion')||process.argv.includes('--global-search')){
@@ -126,10 +126,14 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  console.log('Local Chrome ready; external HTTPS blocked');
  const base=`http://127.0.0.1:${server.address().port}`;
+ if(process.argv.includes('--header-notifications')){
+  await require('./header-notifications.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,login,logout,base,calls});
+  assert.deepEqual(errors,[],'No uncaught browser errors');return;
+ }
  if(process.argv.includes('--login-slideshow') || process.argv.includes('--login-slideshow-fallback') || process.argv.includes('--login-slideshow-controls')){
   await require('./login-slideshow.browser-checks.cjs').verify({evaluate,command,wait,click,fill,login,logout,base});
   assert.deepEqual(errors,[],'No uncaught browser errors');
-  console.log(process.argv.includes('--login-slideshow-fallback') ? 'PASS Login slideshow image-failure checks' : process.argv.includes('--login-slideshow-controls') ? 'PASS Focused slideshow controls, auth lifecycle, reduced motion and image failures' : 'PASS Login portfolio: responsive and short screens, static mobile, all nine slides, arrows, auth lifecycle, subpaths, reduced motion, focus pause/resume and image failures');return;
+  console.log('PASS Manual gallery: ten photos, Project 10 default, no autoplay, responsive layout, arrows, auth lifecycle and image failures');return;
  }
  await command('Page.navigate',{url:base+'/2-engr/index.html#users'});await wait("document.querySelector('#auth-email')");
  assert.equal(calls.length,0,'Protected pages do not fetch business records while signed out');

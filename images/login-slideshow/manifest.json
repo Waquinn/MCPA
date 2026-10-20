@@ -4,6 +4,15 @@
   "quality": 82,
   "assets": [
     {
+      "source": "project-10.jpg",
+      "output": "project-10.jpg",
+      "width": 3200,
+      "height": 2132,
+      "sourceBytes": 2201112,
+      "outputBytes": 2201112,
+      "sourceSha256": "93ead3eff98e0d7c5f0336a4f0dd708ee9a67fdf3cd7df8a19cb33700ca10819"
+    },
+    {
       "source": "project-1.png",
       "output": "project-1.webp",
       "width": 430,

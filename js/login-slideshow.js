@@ -3,14 +3,15 @@
   'use strict';
   const host = document.getElementById('login-screen');
   const stage = document.getElementById('login-slideshow');
-  const controls = host?.querySelector('.login-gallery-controls');
   const buttons = [...(host?.querySelectorAll('[data-login-step]') || [])];
   if (!stage || buttons.length !== 2) return;
   // Resolve from this script, including /MCPA/ and /MCPA/2-engr/ entry points.
   const directory = new URL('../images/login-slideshow/', document.currentScript.src);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const compact = matchMedia('(max-width: 900px), (max-width: 1200px) and (max-aspect-ratio: 3/2)');
-  const HOLD = 5500, FADE = 1350;
+  const FADE = 650;
+  // Project identity stays independent of its position in the manual gallery.
+  const projects = [10, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   const firstLayer = stage.querySelector('.login-slide');
   const layers = [firstLayer, firstLayer.cloneNode(true)];
   layers[1].style.opacity = '0';
@@ -25,17 +26,14 @@
   }
   const cache = new Map();
   let visible = true, ready = false, slot = 0, index = 0;
-  let timer = null, due = 0, remaining = HOLD, generation = 0, advancing = false;
-  let progress = null;
+  let generation = 0, advancing = false;
   let fade = null;
   const navigable = () => visible && ready && !host.hidden && !host.classList.contains('hidden') && !document.hidden && !compact.matches;
-  // Keyboard users can inspect the photographs without an automatic change.
-  const running = () => navigable() && !buttons.some(button => button.matches(':focus-visible')) && !reducedMotion.matches;
-  const url = (number, extension) => new URL(`project-${number + 1}.${extension}`, directory).href;
+  const url = (number, extension) => new URL(`project-${projects[number]}.${extension}`, directory).href;
   function load(number) {
     if (cache.has(number)) return cache.get(number);
     const pending = (async () => {
-      for (const extension of ['webp', 'png']) {
+      for (const extension of projects[number] === 10 ? ['jpg'] : ['webp', 'png']) {
         const image = new Image();
         image.decoding = 'async';
         try {
@@ -61,41 +59,23 @@
     image.className = 'login-photo';
     image.alt = '';
     layer.querySelector('.login-scene').replaceChildren(image);
-    layer.dataset.project = String(number + 1);
+    layer.dataset.project = String(projects[number]);
   }
   function updateCounter() {
     host.querySelector('[data-login-number]').textContent = String(index + 1).padStart(2, '0');
-    host.querySelector('[data-login-counter]').setAttribute('aria-label', `Photograph ${index + 1} of 9`);
+    host.querySelector('[data-login-counter]').setAttribute('aria-label', `Photograph ${index + 1} of ${projects.length}`);
+    host.querySelector('[data-login-progress]').style.transform = `scaleX(${(index + 1) / projects.length})`;
   }
-  function startProgress() {
-    progress?.cancel();
-    progress = null;
-    if (reducedMotion.matches) return;
-    progress = host.querySelector('[data-login-progress]').animate(
-      [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
-      { duration: HOLD, easing: 'linear', fill: 'forwards' }
-    );
-  }
-  function schedule() {
-    if (!running() || timer !== null || advancing) return;
-    due = performance.now() + remaining;
-    timer = setTimeout(() => { timer = null; remaining = 0; advance(); }, remaining);
-  }
-  async function advance(direction = 1, manual = false) {
+  async function advance(direction) {
     // Ignore overlapping loads/fades rather than reusing a layer mid-transition.
-    if (advancing || (manual && fade && fade.playState !== 'finished')) return;
-    if (manual) {
-      if (!navigable()) return;
-      if (timer !== null) { clearTimeout(timer); timer = null; }
-      remaining = HOLD;
-    }
+    if (!navigable() || advancing || (fade && fade.playState !== 'finished')) return;
     const revision = generation;
     advancing = true;
     try {
-      for (let step = 1; step <= 9; step++) {
-        const next = (index + direction * step + 9) % 9;
+      for (let step = 1; step < projects.length; step++) {
+        const next = (index + direction * step + projects.length) % projects.length;
         const image = await load(next);
-        if (revision !== generation || !(manual ? navigable() : running())) return;
+        if (revision !== generation || !navigable()) return;
         if (!image) continue;
         const previous = layers[slot];
         slot = 1 - slot;
@@ -122,16 +102,13 @@
           }
         };
         index = next;
-        stage.dataset.project = String(index + 1);
+        stage.dataset.project = String(projects[index]);
         updateCounter();
-        startProgress();
-        remaining = HOLD;
         // Keep only the displayed and upcoming decoded images in our cache.
         for (const key of cache.keys()) if (key !== index) cache.delete(key);
-        load((index + 1) % 9);
+        load((index + 1) % projects.length);
         return;
       }
-      remaining = HOLD; // Solid charcoal remains usable even if every photo fails.
     } finally {
       advancing = false;
       sync();
@@ -139,62 +116,56 @@
   }
   function sync() {
     buttons.forEach(button => { button.hidden = compact.matches || !ready; });
-    stage.dataset.paused = String(!running());
-    if (running()) {
-      if (!progress) startProgress();
-      else if (progress.playState === 'paused') progress.play();
-      if (fade?.playState === 'paused') fade.play();
-      load((index + 1) % 9);
-      schedule();
-    } else {
-      if (timer !== null) { clearTimeout(timer); timer = null; remaining = Math.max(0, due - performance.now()); }
-      if (reducedMotion.matches) {
-        progress?.cancel(); progress = null;
-        if (fade) { fade.onfinish = null; fade.cancel(); fade = null; }
-        layers[slot].style.opacity = '1';
-        layers[1 - slot].style.opacity = '0';
-      } else {
-        progress?.pause();
-        // Finish manual crossfades while a navigation button holds focus.
-        if (!navigable()) fade?.pause();
-      }
+    stage.dataset.paused = 'true'; // Compatibility: this gallery is always manual.
+    if (reducedMotion.matches && fade) {
+      fade.onfinish = null; fade.cancel(); fade = null;
+      layers[slot].style.opacity = '1'; layers[1 - slot].style.opacity = '0';
     }
+    if (navigable()) {
+      if (fade?.playState === 'paused') fade.play();
+      load((index + 1) % projects.length);
+    } else fade?.pause();
   }
-  buttons.forEach(button => button.addEventListener('click', () => advance(Number(button.dataset.loginStep), true)));
-  controls.addEventListener('focusin', () => requestAnimationFrame(sync));
-  // Chromium can run a focusout microtask before updating :focus-visible.
-  // Reconcile on the next frame, after the native focus change has completed.
-  controls.addEventListener('focusout', () => requestAnimationFrame(sync));
+  buttons.forEach(button => button.addEventListener('click', () => advance(Number(button.dataset.loginStep))));
   document.addEventListener('visibilitychange', sync);
   reducedMotion.addEventListener('change', sync);
   compact.addEventListener('change', sync);
   // Also cover direct host hiding and back/forward-cache restoration.
   new MutationObserver(sync).observe(host, { attributes: true, attributeFilter: ['class', 'hidden'] });
   window.addEventListener('pagehide', () => { visible = false; ++generation; sync(); });
-  window.addEventListener('pageshow', () => { visible = !host.classList.contains('hidden'); sync(); });
+  window.addEventListener('pageshow', event => { visible = !host.classList.contains('hidden'); if(event.persisted) void reset(); sync(); });
   window.MCPALoginSlideshow = {
-    show() { visible = true; sync(); },
+    show() { const returning = !visible; visible = true; if(returning) void reset(); sync(); },
     hide() { visible = false; ++generation; sync(); }
   };
   // The HTML already displays the high-priority first photo while JS initializes.
-  (async () => {
-    for (let first = 0; first < 9; first++) {
+  async function reset() {
+    const revision = ++generation;
+    ready = false;
+    delete stage.dataset.project;
+    if(fade){fade.onfinish=null;fade.cancel();fade=null;}
+    for (let first = 0; first < projects.length; first++) {
       const image = await load(first);
+      if(revision !== generation) return;
       if (!image) continue;
+      slot = 0;
       prepare(layers[0], image, first);
+      layers[0].style.opacity = '1'; layers[0].style.zIndex = '1';
+      layers[1].style.opacity = '0'; layers[1].style.zIndex = '0';
       // One deterministic image for this visit, independent of desktop slides and
       // authentication rerenders. Use the first successful source after failures.
       mobilePhoto.closest('picture').querySelector('source')?.remove();
       mobilePhoto.src = image.src;
       mobilePhoto.style.visibility = 'visible';
-      mobilePhoto.dataset.project = String(first + 1);
+      mobilePhoto.dataset.project = String(projects[first]);
       index = first;
-      stage.dataset.project = String(first + 1);
+      stage.dataset.project = String(projects[first]);
       updateCounter();
       break;
     }
     ready = Boolean(stage.dataset.project);
     stage.dataset.unavailable = String(!ready);
     sync();
-  })();
+  }
+  void reset();
 })();

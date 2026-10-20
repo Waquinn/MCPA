@@ -2,6 +2,8 @@
 
 Implemented October 18, 2026; desktop layout corrected October 20, 2026, for both `index.html` and `2-engr/index.html`.
 
+**Current behavior (October 21, 2026):** Project 10 now opens a ten-photo manual gallery on both portals, with no autoplay and a static position indicator. Mobile keeps the approved static photograph and glass design. See [implementation, verification and screenshot report](MANUAL-GALLERY-HEADER-NOTIFICATIONS.md). The autoplay and nine-photo descriptions below are historical.
+
 ## Current desktop proportions
 
 See [Desktop proportion refinement and fresh screenshots](login-layout/README.md). That review supersedes the historical 75%-of-height/contain geometry below. The current layout targets 44/56 with bounded portrait framing, photo-specific roof protection and an extended compact tablet breakpoint; authentication and all photo assets are unchanged.

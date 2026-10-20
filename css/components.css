@@ -198,7 +198,10 @@ tbody tr.clickable{cursor:pointer;}
 /* Bell panel: viewport-contained in both portals and both themes. */
 .monitoring-dialog{position:fixed;inset:auto;margin:0;padding:0;max-width:calc(100vw - 24px);border:1px solid var(--border-strong);border-radius:12px;background:var(--surface);color:var(--text-primary);z-index:1200;overflow:hidden}
 .monitoring-dialog[open]{display:flex;flex-direction:column}
-.monitoring-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid var(--border)}
+.monitoring-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid var(--border)}
+.monitoring-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.monitoring-actions .btn{font-size:12px;padding:8px 10px}
+.monitoring-actions .btn:disabled{opacity:.55;cursor:default}
 .monitoring-head h2{font-size:20px;line-height:1.3}
 .monitoring-head p{font-size:12px;line-height:1.5;margin-top:4px;color:var(--text-secondary)}
 .monitoring-dialog .btn{min-height:44px;white-space:normal}
