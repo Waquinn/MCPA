@@ -76,10 +76,12 @@ const server=http.createServer(async(req,res)=>{
   }catch(e){error={code:e.code||'TEST',message:e.message};}
   res.setHeader('Content-Type','application/json');res.end(JSON.stringify({data,error,count}));return;
  }
- const file=path.resolve(root,'.'+new URL(req.url,'http://localhost').pathname);
+ // Also exercise GitHub Pages' project subpath using the same local fixture.
+ const pathname=new URL(req.url,'http://localhost').pathname.replace(/^\/MCPA\//,'/');
+ const file=path.resolve(root,'.'+pathname);
  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.writeHead(404);res.end();return;}
  let content=fs.readFileSync(file);if(file.endsWith('index.html'))content=content.toString().replace(/<script src="https:[^"]+"[^>]*><\/script>/g,'').replace('</head>','<script src="/__sdk.js"></script></head>');
- res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css'})[path.extname(file)]||'text/plain');res.end(content);
+ res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.png':'image/png','.webp':'image/webp'})[path.extname(file)]||'text/plain');res.end(content);
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
@@ -122,6 +124,11 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  console.log('Local Chrome ready; external HTTPS blocked');
  const base=`http://127.0.0.1:${server.address().port}`;
+ if(process.argv.includes('--login-slideshow') || process.argv.includes('--login-slideshow-fallback')){
+  await require('./login-slideshow.browser-checks.cjs').verify({evaluate,command,wait,click,fill,login,logout,base});
+  assert.deepEqual(errors,[],'No uncaught browser errors');
+  console.log(process.argv.includes('--login-slideshow-fallback') ? 'PASS Login slideshow image-failure checks' : 'PASS Login portfolio: seven viewports plus short screens, static mobile, all nine slides, auth lifecycle, subpaths, reduced motion, pause/resume and image failures');return;
+ }
  await command('Page.navigate',{url:base+'/2-engr/index.html#users'});await wait("document.querySelector('#auth-email')");
  assert.equal(calls.length,0,'Protected pages do not fetch business records while signed out');
  assert.ok(await evaluate("document.getElementById('app-shell').classList.contains('hidden') && !document.body.classList.contains('dark')"));

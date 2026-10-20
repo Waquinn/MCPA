@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MCPA — Construction Asset &amp; Accountability System</title>
+<link rel="preload" as="image" type="image/webp" href="images/login-slideshow/project-1.webp" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,480;9..144,560&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -14,6 +15,7 @@
 <link rel="stylesheet" href="css/global-search.css">
 <link rel="stylesheet" href="css/movement.css">
 <link rel="stylesheet" href="css/movement-overview.css">
+<link rel="stylesheet" href="css/login-slideshow.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
 </head>
@@ -23,7 +25,33 @@
 <!-- ============================================================
      LOGIN SCREEN
      ============================================================ -->
-<div id="login-screen"><p role="status">Checking your session?</p></div>
+<div id="login-screen">
+  <section class="login-gallery" aria-label="MCPA completed projects">
+    <div id="login-slideshow" class="login-slideshow" aria-hidden="true">
+      <div class="login-slide"><div class="login-scene">
+        <picture>
+          <source srcset="images/login-slideshow/project-1.webp" type="image/webp">
+          <img class="login-photo" src="images/login-slideshow/project-1.png" alt="" width="430" height="574" fetchpriority="high" decoding="async">
+        </picture>
+      </div></div>
+      <picture class="login-mobile-backdrop">
+        <source srcset="images/login-slideshow/project-1.webp" type="image/webp">
+        <img class="login-mobile-photo" src="images/login-slideshow/project-1.png" alt="" width="430" height="574" decoding="async">
+      </picture>
+    </div>
+  </section>
+  <div id="login-content"><p role="status">Checking your session...</p></div>
+  <div class="login-gallery-footer" role="group" aria-label="Project slideshow controls">
+    <span class="login-photo-counter" data-login-counter aria-label="Photograph 1 of 9"><span data-login-number>01</span> / 09</span>
+    <div class="login-gallery-controls">
+      <div class="login-gallery-progress" aria-hidden="true"><span data-login-progress></span></div>
+      <button class="login-motion-toggle" type="button" data-login-motion aria-label="Pause slideshow" aria-controls="login-slideshow" hidden>
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path data-login-motion-icon d="M2 1h3v10H2zm5 0h3v10H7z"/></svg><span data-login-motion-label>Pause</span>
+      </button>
+    </div>
+    </div>
+</div>
+<script src="js/login-slideshow.js"></script>
 
 <!-- ============================================================
      APP SHELL
