@@ -25,6 +25,13 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
     await command('Page.navigate', { url: base + route });
     await wait(ready);
   };
+  const focusArrow = async (direction = '-1') => {
+    // Establish real keyboard modality before testing :focus-visible behavior.
+    await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+    await command('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9});
+    await evaluate(`document.querySelector('[data-login-step="${direction}"]').focus()`);
+    await wait(paused);
+  };
   const capture = async (name, viewport = false, verifyPhoto = false) => {
     const { data } = await command('Page.captureScreenshot', { format: 'png', captureBeyondViewport: !viewport });
     const bytes = Buffer.from(data, 'base64');
@@ -62,6 +69,7 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
     }
   };
   if (!process.argv.includes('--login-slideshow-fallback')) {
+  if (!process.argv.includes('--login-slideshow-controls')) {
   for (const [width, height] of [[375,812],[393,852],[430,932],[768,1024],[900,900],[901,900],[1024,1366],[1024,768],[1200,800],[1201,800],[1366,768],[1440,900],[1920,1080],[2560,1440],[2560,1080]]) {
     await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 768 });
     await navigate();
@@ -124,7 +132,7 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
       assert.equal(await evaluate(current), '1', 'Mobile never advances while typing or recovering');
       assert.equal(await evaluate("document.querySelector('.login-mobile-photo').src"), source);
       assert.equal(await evaluate('window.__loginTimers.size'), 0, 'Mobile has no slideshow timer');
-      assert.ok(await evaluate("document.querySelector('[data-login-motion]').hidden && document.getAnimations().length===0"));
+      assert.ok(await evaluate("[...document.querySelectorAll('[data-login-step]')].every(button=>button.hidden) && document.getAnimations().length===0"));
       const requests = await evaluate("performance.getEntriesByType('resource').filter(r=>r.name.includes('/images/login-slideshow/')).map(r=>r.name)");
       assert.ok(requests.every(url=>url.endsWith('project-1.webp')), 'Mobile only loads the first optimized photo');
     } else {
@@ -161,19 +169,47 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
     const interval = report.cycle[i].time - report.cycle[i - 1].time;
     assert.ok(interval > 5000 && interval < 6200, `5.5-second cadence: ${interval}ms`);
   }
+  } else { await navigate(); }
   const settled = "(() => { const slide=document.querySelector('.login-slide[data-project=\"'+document.querySelector('#login-slideshow').dataset.project+'\"]'); return slide.getAnimations().length===0 && getComputedStyle(slide).opacity==='1'; })()";
   await wait(settled);
-  await click('[data-login-motion]');
+  await focusArrow();
   await wait(paused);
   const beforePause = await evaluate(current);
   await pause(5700);
   assert.equal(await evaluate(current), beforePause);
   assert.ok(await evaluate("document.getAnimations().every(a=>a.playState==='paused' || a.playState==='finished')"));
-  await click('[data-login-motion]');
+  await wait(settled);
+  // Full-page capture can temporarily change Chrome's viewport/focus. Keep the
+  // focused-control assertion in the actual viewport, as with photo framing.
+  await capture('login-focus-paused-settled-slide', true, true);
+  await evaluate('document.activeElement.blur()');
   assert.ok(await evaluate(settled), 'Resuming a completed fade must not restart it from transparent');
-  await capture('login-resumed-settled-slide', false, true);
   await wait(`${current}!==${JSON.stringify(beforePause)}`);
-  report.checks.push('Manual pause freezes both timing and animations; resume advances');
+  report.checks.push('Keyboard focus pauses automatic progression; leaving controls resumes');
+
+  await navigate();
+  assert.equal(await evaluate("document.querySelector('[data-login-motion]')"),null);
+  const previousPoint=await evaluate("(()=>{const r=document.querySelector('[data-login-step=\"-1\"]').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
+  await command('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...previousPoint});
+  await command('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...previousPoint});
+  await wait(`${current}==='9'`);
+  assert.equal(await evaluate(paused),false,'Mouse navigation preserves autoplay');
+  await evaluate("for(let i=0;i<20;i++)document.querySelector('[data-login-step=\"1\"]').click()");
+  assert.equal(await evaluate(current),'9','Rapid clicks during a crossfade are ignored');
+  await pause(1500); await wait(settled);
+  await click('[data-login-step="1"]'); await wait(`${current}==='1'`);
+  await pause(1500); await wait(settled);
+  assert.equal(await evaluate("document.querySelector('[data-login-number]').textContent"),'01');
+  assert.ok(await evaluate('__loginTimers.size<=1'),'Manual navigation keeps one automatic timer');
+  await focusArrow('1');
+  assert.equal(await evaluate("getComputedStyle(document.activeElement).outlineStyle"),'solid');
+  await command('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'});
+  await command('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+  await wait(`${current}==='2'`); await pause(1500); await wait(settled);
+  await capture('login-desktop-arrows',true,true);
+  await evaluate('document.activeElement.blur()');
+  const afterManual=await evaluate(current);await wait(`${current}!==`+JSON.stringify(afterManual));
+  report.checks.push('Previous/Next wrap, rapid clicks, counter, keyboard activation/focus, and automatic restart');
 
   // Switch real browser tabs, without mocking document.hidden or its events.
   await wait(settled);
@@ -196,7 +232,9 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
   await wait(paused);
   await pause(5700);
   assert.equal(await evaluate(current), '1');
-  assert.ok(await evaluate("document.getAnimations().length===0 && document.querySelector('[data-login-motion]').hidden"));
+  assert.ok(await evaluate("document.getAnimations().length===0 && [...document.querySelectorAll('[data-login-step]')].every(button=>!button.hidden)"));
+  await click('[data-login-step="-1"]'); await wait(`${current}==='9'`);
+  assert.equal(await evaluate('document.getAnimations().length'),0,'Reduced-motion manual navigation has no animation');
   report.checks.push('Reduced motion uses a still photo with no animation or automatic slide changes');
   await command('Emulation.setEmulatedMedia', { features: [] });
 
@@ -233,9 +271,9 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
   }
   assert.equal(await evaluate('__loginTimers.size'), 1, 'Repeated auth rendering retains a single slide timer');
   assert.equal(await evaluate("document.querySelectorAll('.login-slide').length"), 2);
-  await click('[data-login-motion]');
-  assert.equal(await evaluate('__loginTimers.size'), 0, 'One click still pauses after repeated renders');
-  await click('[data-login-motion]');
+  await focusArrow();
+  assert.equal(await evaluate('__loginTimers.size'), 0, 'Focus still pauses after repeated renders');
+  await evaluate('document.activeElement.blur()');
   await click('[data-auth-demo]');
   await click('[data-demo-role=engineer]');
   await wait("window.MCPAAuth?.isDemo && document.querySelector('#login-screen').classList.contains('hidden')");
@@ -280,7 +318,7 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
   await login('admin');
   await wait("window.MCPAAuth?.profile?.role==='admin'");
   await logout();
-  assert.ok(await evaluate("document.querySelector('.login-mobile-photo').dataset.project==='1' && document.querySelector('[data-login-motion]').hidden"));
+  assert.ok(await evaluate("document.querySelector('.login-mobile-photo').dataset.project==='1' && [...document.querySelectorAll('[data-login-step]')].every(button=>button.hidden)"));
   assert.equal(await evaluate('__loginTimers.size'), 0);
   report.checks.push('Mobile background remains static across typing, recovery, login and logout; all form controls remain reachable at 393x420');
   await command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 600, deviceScaleFactor: 1, mobile: false });
@@ -302,7 +340,7 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
   await command('Network.setBlockedURLs', { urls: ['https://*', '*images/login-slideshow/*'] });
   await command('Page.navigate', { url: base + '/MCPA/index.html' });
   await wait("document.querySelector('#auth-email') && document.querySelector('#login-slideshow')?.dataset.unavailable==='true'");
-  assert.ok(await evaluate("document.querySelector('[data-login-motion]').hidden && Array.from(document.querySelectorAll('.login-photo')).every(img=>getComputedStyle(img).visibility==='hidden')"), 'No broken-image icon or irrelevant motion control');
+  assert.ok(await evaluate("[...document.querySelectorAll('[data-login-step]')].every(button=>button.hidden) && Array.from(document.querySelectorAll('.login-photo')).every(img=>getComputedStyle(img).visibility==='hidden')"), 'No broken-image icon or irrelevant motion control');
   await fill('#auth-email', 'admin@example.test');
   await fill('#auth-password', 'test-password');
   assert.equal(await evaluate("getComputedStyle(document.querySelector('#login-screen')).backgroundColor"), 'rgb(17, 19, 18)');

@@ -64,10 +64,13 @@ test('stock requests exclude hidden reservations, pending/refused transfers, dam
   }
   for(const status of ['pending','refused'])assert.equal(api.requestability(base,{transfers:[{status,toolIds:[base.id]}]}).code,'transfer');
   assert.equal(api.requestability(base,{requests:[{status:'approved',toolIds:[base.id]}]}).code,'reserved');
+  assert.equal(api.requestability(base,{requests:[{status:'released',toolIds:[base.id]}]}).code,'transfer','A released request protects stock even when its transfer is missing from the scoped list');
+  assert.match(api.requestability({...base,movementLock:'transfer'}).label,/Pending receipt/);
+  assert.equal(api.requestability(base,{availabilityError:true}).code,'unknown','Previously verified stock fails closed after a refresh error');
   assert.equal(api.requestability(base,{requests:[{status:'pending',toolIds:[base.id]}],transfers:[{status:'received',toolIds:[base.id]}]}).eligible,true);
   const old={...base};delete old.movementLock;
   assert.equal(api.requestability(old,{requests:[],transfers:[]}).code,'unknown','Scoped movements cannot prove a stock item is unlocked');
-  window.MCPAAuth.profile.role='admin';assert.equal(api.requestability(old,{availabilityLoaded:true,requests:[],transfers:[]}).eligible,true);
+  window.MCPAAuth.profile.role='admin';assert.equal(api.requestability(old,{availabilityLoaded:true,requests:[],transfers:[]}).code,'unknown','A full movement list still cannot rule out a stale reservation row');
   assert.match(api.statusMarkup({...base,movementLock:'request'}),/Recorded status[\s\S]*Available[\s\S]*New requests[\s\S]*Reserved/);
 });
 test('paged reads respect the actual response cap and active-project query', async () => {

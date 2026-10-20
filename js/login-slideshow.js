@@ -3,8 +3,9 @@
   'use strict';
   const host = document.getElementById('login-screen');
   const stage = document.getElementById('login-slideshow');
-  const button = host?.querySelector('[data-login-motion]');
-  if (!stage || !button) return;
+  const controls = host?.querySelector('.login-gallery-controls');
+  const buttons = [...(host?.querySelectorAll('[data-login-step]') || [])];
+  if (!stage || buttons.length !== 2) return;
   // Resolve from this script, including /MCPA/ and /MCPA/2-engr/ entry points.
   const directory = new URL('../images/login-slideshow/', document.currentScript.src);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -23,11 +24,13 @@
     if (image.complete && !image.naturalWidth) image.style.visibility = 'hidden';
   }
   const cache = new Map();
-  let visible = true, manuallyPaused = false, ready = false, slot = 0, index = 0;
+  let visible = true, ready = false, slot = 0, index = 0;
   let timer = null, due = 0, remaining = HOLD, generation = 0, advancing = false;
   let progress = null;
   let fade = null;
-  const running = () => visible && ready && !host.hidden && !host.classList.contains('hidden') && !document.hidden && !compact.matches && !manuallyPaused && !reducedMotion.matches;
+  const navigable = () => visible && ready && !host.hidden && !host.classList.contains('hidden') && !document.hidden && !compact.matches;
+  // Keyboard users can inspect the photographs without an automatic change.
+  const running = () => navigable() && !buttons.some(button => button.matches(':focus-visible')) && !reducedMotion.matches;
   const url = (number, extension) => new URL(`project-${number + 1}.${extension}`, directory).href;
   function load(number) {
     if (cache.has(number)) return cache.get(number);
@@ -66,6 +69,8 @@
   }
   function startProgress() {
     progress?.cancel();
+    progress = null;
+    if (reducedMotion.matches) return;
     progress = host.querySelector('[data-login-progress]').animate(
       [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }],
       { duration: HOLD, easing: 'linear', fill: 'forwards' }
@@ -76,14 +81,21 @@
     due = performance.now() + remaining;
     timer = setTimeout(() => { timer = null; remaining = 0; advance(); }, remaining);
   }
-  async function advance() {
+  async function advance(direction = 1, manual = false) {
+    // Ignore overlapping loads/fades rather than reusing a layer mid-transition.
+    if (advancing || (manual && fade && fade.playState !== 'finished')) return;
+    if (manual) {
+      if (!navigable()) return;
+      if (timer !== null) { clearTimeout(timer); timer = null; }
+      remaining = HOLD;
+    }
     const revision = generation;
     advancing = true;
     try {
       for (let step = 1; step <= 9; step++) {
-        const next = (index + step) % 9;
+        const next = (index + direction * step + 9) % 9;
         const image = await load(next);
-        if (revision !== generation || !running()) return;
+        if (revision !== generation || !(manual ? navigable() : running())) return;
         if (!image) continue;
         const previous = layers[slot];
         slot = 1 - slot;
@@ -97,7 +109,7 @@
         incoming.style.zIndex = '1';
         incoming.style.opacity = '1';
         // Fade over an opaque outgoing image, avoiding a dark dip midway.
-        const transition = incoming.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE, easing: 'ease-in-out' });
+        const transition = incoming.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reducedMotion.matches ? 0 : FADE, easing: 'ease-in-out' });
         fade = transition;
         transition.onfinish = () => {
           if (fade === transition) {
@@ -105,6 +117,7 @@
             // A completed Animation can restart from zero when paused then played.
             // Retire it so visibility changes only resume an unfinished crossfade.
             transition.onfinish = null;
+            transition.cancel();
             fade = null;
           }
         };
@@ -121,14 +134,11 @@
       remaining = HOLD; // Solid charcoal remains usable even if every photo fails.
     } finally {
       advancing = false;
-      schedule();
+      sync();
     }
   }
   function sync() {
-    button.hidden = compact.matches || reducedMotion.matches || !ready;
-    button.querySelector('[data-login-motion-label]').textContent = manuallyPaused ? 'Play' : 'Pause';
-    button.setAttribute('aria-label', manuallyPaused ? 'Play slideshow' : 'Pause slideshow');
-    button.querySelector('[data-login-motion-icon]').setAttribute('d', manuallyPaused ? 'M3 1l8 5-8 5z' : 'M2 1h3v10H2zm5 0h3v10H7z');
+    buttons.forEach(button => { button.hidden = compact.matches || !ready; });
     stage.dataset.paused = String(!running());
     if (running()) {
       if (!progress) startProgress();
@@ -145,11 +155,16 @@
         layers[1 - slot].style.opacity = '0';
       } else {
         progress?.pause();
-        fade?.pause();
+        // Finish manual crossfades while a navigation button holds focus.
+        if (!navigable()) fade?.pause();
       }
     }
   }
-  button.addEventListener('click', () => { manuallyPaused = !manuallyPaused; sync(); });
+  buttons.forEach(button => button.addEventListener('click', () => advance(Number(button.dataset.loginStep), true)));
+  controls.addEventListener('focusin', () => requestAnimationFrame(sync));
+  // Chromium can run a focusout microtask before updating :focus-visible.
+  // Reconcile on the next frame, after the native focus change has completed.
+  controls.addEventListener('focusout', () => requestAnimationFrame(sync));
   document.addEventListener('visibilitychange', sync);
   reducedMotion.addEventListener('change', sync);
   compact.addEventListener('change', sync);

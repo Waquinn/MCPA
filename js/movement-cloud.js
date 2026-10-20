@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const empty = () => ({version: 1, revision: 0, tools: [], sites: [], users: [], requests: [], transfers: [], returns: [], repairs: [], missing: [], activity: []});
-  let state = empty(), ready = false, loading = null, saving = false, stale = false;
+  let state = empty(), ready = false, loading = null, saving = false, stale = false, availabilityError = false;
   let mode = 'live';
   const pending = new Map();
   const clone = value => JSON.parse(JSON.stringify(value));
@@ -43,11 +43,17 @@
       const next = {...empty(), ...data, availabilityLoaded: true};
       const changed = JSON.stringify(next) !== JSON.stringify(state);
       state = next; ready = true; stale = false;
+      const recovered = availabilityError;
+      availabilityError = false;
       TOOLS.splice(0, TOOLS.length, ...clone(state.tools));
-      if (changed) notify();
+      if (changed || recovered) notify();
       return clone(state);
     })();
-    try { return await loading; } finally { if (requestRevision === revision) loading = null; }
+    try { return await loading; }
+    catch (error) {
+      if (mode === 'live' && requestRevision === revision) { availabilityError = true; notify(); }
+      throw error;
+    } finally { if (requestRevision === revision) loading = null; }
   }
   async function mutate(action, payload) {
     if (!window.MCPAAuth?.canAction(action)) throw new Error('This action is not permitted for your account.');
@@ -56,6 +62,7 @@
     const requestRevision = revision;
     if (saving) throw new Error('A movement is already saving. Please wait.');
     if (stale) throw new Error('A movement was saved, but the latest records could not load. Refresh before making another change.');
+    if (action === 'createRequest' && availabilityError) throw new Error('The latest inventory verification failed. Refresh before requesting equipment.');
     if (!ready) await refresh();
     if (requestRevision !== revision) throw new Error('Your session changed. Sign in again before continuing.');
     const actor = context();
@@ -79,7 +86,7 @@
   }
   const api = {
     get mode() { return mode; },
-    getState() { return mode === 'demo' ? window.MovementDemoStore.getState() : clone(state); },
+    getState() { return mode === 'demo' ? window.MovementDemoStore.getState() : {...clone(state), ...(availabilityError ? {availabilityError:true} : {})}; },
     getContext: context,
     async returnDestination() {
       if (mode === 'demo') return window.MovementDemoStore.returnDestination();
@@ -95,7 +102,7 @@
     async initialize() { if (mode === 'demo') return window.MovementDemoStore.activate(); return ready ? clone(state) : refresh(); },
     refresh,
     clear() {
-      ++revision; loading = null; ready = false; saving = false; stale = false; state = empty(); pending.clear();
+      ++revision; loading = null; ready = false; saving = false; stale = false; availabilityError = false; state = empty(); pending.clear();
       window.MovementDemoStore.deactivate(); mode='live';
       TOOLS.splice(0,TOOLS.length);
     },

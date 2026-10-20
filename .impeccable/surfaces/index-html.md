@@ -17,7 +17,7 @@ OWN-WORLD: Near-black authentication panel, charcoal gallery, gold primary actio
 
 STORY: Recognize MCPA's work, enter a company account, recover access, or open the existing offline demonstration. No invented project claims.
 
-FIRST VIEWPORT: Desktop aims for 44/56, with gallery width clamped to 75–80% of viewport height and at least 440px left for authentication. Cover sizing preserves proportions and fills every edge; the bound limits height cropping to about 6.4%. Photos 4/5/6 use top alignment for roofs, 3/7/9 bottom alignment for watermarks, and 1/2/8 center. A 360px form is centered in the remaining charcoal panel; photo count and progress/Pause remain below it, clear of the photograph. At 900px and below, and on tablets up to 1200px wide at 3:2 or taller, the unchanged fixed photograph/glass card presentation is used with no slideshow timer.
+FIRST VIEWPORT: Desktop aims for 44/56, with gallery width clamped to 75–80% of viewport height and at least 440px left for authentication. Cover sizing preserves proportions and fills every edge; the bound limits height cropping to about 6.4%. Photos 4/5/6 use top alignment for roofs, 3/7/9 bottom alignment for watermarks, and 1/2/8 center. A 360px form is centered in the remaining charcoal panel; photo count, progress and Previous/Next arrows remain below it, clear of the photograph. At 900px and below, and on tablets up to 1200px wide at 3:2 or taller, the unchanged fixed photograph/glass card presentation is used with no slideshow timer.
 
 FORM: User-pinned split gallery / mobile glass composition. Code-led build. Seed 4faed49b returned index 3 with no remote challengers; the user's explicit composition overrides exploration. No generated imagery or alternate concepts were needed.
 

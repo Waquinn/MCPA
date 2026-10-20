@@ -1,5 +1,4 @@
 const assert=require('node:assert/strict'),{randomUUID}=require('node:crypto');
-const {withOfficeId}=require('./office-return-fixture.cjs');
 exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot})=>{
  const a=f.actors,office=f.sites.office;
  const writes=()=>calls.filter(c=>c.rpc==='mcpa_movement_action').length;
@@ -7,6 +6,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  await f.db.query("insert into equipment(id,asset_id,name,quantity,status,current_holder_id,site_id) values($1,'OTHER-OFFICE','Other Engineer equipment',1,'IN_USE',$2,$3),($4,'ARCH-OFFICE','Architect return equipment',2,'IN_USE',$5,$3)",[randomUUID(),a.pau.id,f.sites.casa,randomUUID(),a.architect.id]);
  await f.db.query("update equipment set name=$1 where asset_id='TOOL-003'",['Construction equipment with a long descriptive name for Office return inspection and repair accountability']);
  const baseline=await equipment(),baselineSites=(await f.db.query('select * from sites order by id')).rows;
+ const resolverDefinition=(await f.db.query("select pg_get_functiondef('public.mcpa_return_destination()'::regprocedure) as definition")).rows[0].definition;
  await f.db.exec('drop function public.mcpa_return_destination()');
  await logout();await login('sky');await wait('document.querySelector(".dashboard-turnovers")');await go('return');await wait('document.querySelector("[data-return-submit]")');
  assert.ok(await evaluate('document.querySelector("[data-return-submit]").disabled'));
@@ -14,7 +14,9 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  assert.ok(await evaluate('!document.querySelector("[data-form=create] [name=destination]")'));
  await click('[name=toolIds][value="TOOL-002"]');await fill('[data-condition]','good');await fill('#mv-notes','Preserve this draft during Office connection retry');
  const writesBeforeMissing=writes();await submit('[data-form=create]');assert.equal(writes(),writesBeforeMissing);
- await f.db.exec(withOfficeId(office));
+ // Restore only the dropped test resolver. Reapplying an older migration after
+ // the newer verified-inventory patch correctly fails its source-drift guard.
+ await f.db.exec(resolverDefinition);
  await click('[data-action=retry-office]');await wait('!document.querySelector("[data-return-submit]").disabled');
  assert.equal(await evaluate('document.querySelector("#mv-notes").value'),'Preserve this draft during Office connection retry');
  assert.equal(await evaluate('document.querySelector("[data-condition]").value'),'good');

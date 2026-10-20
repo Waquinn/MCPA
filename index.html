@@ -45,8 +45,11 @@
     <span class="login-photo-counter" data-login-counter aria-label="Photograph 1 of 9"><span data-login-number>01</span> / 09</span>
     <div class="login-gallery-controls">
       <div class="login-gallery-progress" aria-hidden="true"><span data-login-progress></span></div>
-      <button class="login-motion-toggle" type="button" data-login-motion aria-label="Pause slideshow" aria-controls="login-slideshow" hidden>
-        <svg viewBox="0 0 12 12" aria-hidden="true"><path data-login-motion-icon d="M2 1h3v10H2zm5 0h3v10H7z"/></svg><span data-login-motion-label>Pause</span>
+      <button class="login-photo-step" type="button" data-login-step="-1" aria-label="Previous photograph" aria-controls="login-slideshow" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+      </button>
+      <button class="login-photo-step" type="button" data-login-step="1" aria-label="Next photograph" aria-controls="login-slideshow" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg>
       </button>
     </div>
     </div>

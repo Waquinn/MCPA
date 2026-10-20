@@ -45,7 +45,8 @@
     if (['repair','underrepair','damaged'].includes(status) || ['damaged','repair','underrepair'].includes(normalized(tool.condition))) return result('damaged', 'Unavailable', 'Equipment needs repair before it can be requested.');
     if (['disposed','retired'].includes(status)) return result('retired', 'Unavailable', 'Equipment has been retired from service.');
     const lock = tool.movementLock;
-    if (lock === 'transfer' || (data?.transfers || []).some(record => ['pending','refused'].includes(record.status) && includes(record))) return result('transfer', 'Pending handover', 'A transfer is awaiting receipt or sender follow-up. Custody has not changed.');
+    if (lock === 'transfer' || (data?.transfers || []).some(record => ['pending','refused'].includes(record.status) && includes(record))
+      || (data?.requests || []).some(record => record.status === 'released' && includes(record))) return result('transfer', 'Pending receipt — unavailable for new requests', 'A handover is awaiting receipt or sender follow-up. Recorded status and custody remain unchanged until an authorized workflow resolves it.');
     if (lock === 'request' || lock === 'reserved' || (data?.requests || []).some(record => record.status === 'approved' && includes(record))) return result('reserved', 'Reserved', 'Allocated to an approved request; unavailable for another request.');
     const holderId = tool.current_holder_id ?? tool.holderId;
     const holder = String(tool.holder || '').trim();
@@ -56,9 +57,9 @@
     // accepts only recorded AVAILABLE stock. Do not promise an invalid request.
     if (status !== 'available') return result('status', 'Unavailable', status === 'inoffice' ? 'Recorded as In Office. Admin must review its movement status before a request.' : 'The recorded status does not permit a new request.');
     const verified = lock === null || typeof lock === 'string' || data?.inventoryAvailabilityVersion === 1
-      || !window.MCPAAuth || window.MCPAAuth.isDemo === true
-      || (data?.availabilityLoaded && ['admin','tool_handler'].includes(window.MCPAAuth.profile?.role));
-    if (!verified) return result('unknown', 'Availability unverified', 'Reservation information is unavailable. Refresh or ask Admin to verify before requesting.');
+      || !window.MCPAAuth || window.MCPAAuth.isDemo === true;
+    if (data?.availabilityError) return result('unknown', 'Availability unverified', 'The latest inventory verification failed. Refresh to verify reservations before requesting.');
+    if (!verified) return result('unknown', 'Availability unverified', 'The server did not provide reservation verification. Ask Admin to review the availability preflight and migration, then refresh.');
     return result('available', 'Available to request', 'No holder or reservation. Admin approval is required.');
   }
   function availability(tool, data) {

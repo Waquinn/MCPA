@@ -1,4 +1,8 @@
 -- SEPARATE MANUAL STEP after 202610120004_equipment_office_default.sql.
+-- BLOCKED by the latest reported active reservation/handover. Do not execute.
+-- The historical confirmation below is not authorization for the current state.
+-- Obtain fresh physical verification and an authorized decision after resolving
+-- the legitimate movement. Never weaken the active-workflow guards below.
 -- User physically confirmed Welding Machine T-8862 at Office on October 12, 2026.
 -- Only its current physical site is corrected. No historical record is rewritten.
 begin;

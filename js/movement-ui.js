@@ -117,10 +117,17 @@
 
   function toolPicker(kind) {
     const available = eligibleTools(kind);
+    const checks = kind === 'request' ? tools().map(tool => window.EquipmentTracking.requestability(tool,state())) : [];
+    const unverified = checks.some(check => check.code === 'unknown');
+    const verificationMessage = state().availabilityError
+      ? 'The latest availability verification failed. Refresh to retry; previously loaded stock cannot be requested until verification succeeds.'
+      : 'The server did not provide reservation verification for some stock. Ask Admin to update inventory availability verification, then refresh.';
+    const blocked = checks.filter(check => ['reserved','transfer'].includes(check.code)).length;
     if (kind === 'repair' || kind === 'missing') {
       return `<div class="field"><label for="mv-tool">Tool</label><select id="mv-tool" name="toolId" required><option value="">Select a tool</option>${available.map(tool => `<option value="${esc(tool.id)}">${esc(tool.id)} · ${esc(tool.name)} · ${esc(tool.site)}</option>`).join('')}</select>${available.length ? '' : '<p class="mv-help">No eligible tools. Tools already reserved or in transit cannot be reported here.</p>'}</div>`;
     }
-    return `${kind === 'request' && tools().some(tool => window.EquipmentTracking.requestability(tool,state()).code === 'unknown') ? '<p class="mv-help" role="status">Some stock availability could not be verified. Refresh or ask Admin to check reservations.</p>' : ''}<fieldset class="mv-tools"><legend>Choose asset records <span data-selected-count>0 selected</span></legend><label class="mv-sr" for="mv-tool-search">Search available tools</label><input id="mv-tool-search" class="mv-input" type="search" data-tool-search placeholder="Search tool name, ID or project"><div class="mv-tool-options">${available.length ? available.map(tool => `<label class="mv-tool-option" data-tool-text="${esc(`${tool.id} ${tool.name} ${tool.site}`.toLowerCase())}"><input type="checkbox" name="toolIds" value="${esc(tool.id)}"><span><strong>${esc(tool.name)}</strong><small>${esc(tool.id)} · ${esc(tool.site)}${operational() ? '' : ` · Qty ${esc(tool.qty)} (whole record)`}</small></span><span class="mv-tool-state">${esc(kind === 'request' ? 'Available to request' : STATUS[tool.status] || tool.status)}</span></label>`).join('') : '<p class="mv-help mv-empty-tools">No eligible tools are available. Held, reserved, damaged, and pending-handover stock cannot be requested.</p>'}<p class="mv-help mv-empty-tools" data-tool-no-results hidden>No tools match this search.</p></div></fieldset>`;
+    const markup = `${unverified ? `<p class="mv-help" role="status" data-availability-warning>${esc(verificationMessage)}</p>` : ''}${blocked ? `<p class="mv-help" data-stock-blocked>${blocked} asset record(s) reserved or pending receipt; unavailable for new requests.</p>` : ''}<fieldset class="mv-tools"><legend>Choose asset records <span data-selected-count>0 selected</span></legend><label class="mv-sr" for="mv-tool-search">Search available tools</label><input id="mv-tool-search" class="mv-input" type="search" data-tool-search placeholder="Search tool name, ID or project"><div class="mv-tool-options">${available.length ? available.map(tool => `<label class="mv-tool-option" data-tool-text="${esc(`${tool.id} ${tool.name} ${tool.site}`.toLowerCase())}"><input type="checkbox" name="toolIds" value="${esc(tool.id)}"><span><strong>${esc(tool.name)}</strong><small>${esc(tool.id)} · ${esc(tool.site)}${operational() ? '' : ` · Qty ${esc(tool.qty)} (whole record)`}</small></span><span class="mv-tool-state">${esc(kind === 'request' ? 'Available to request' : STATUS[tool.status] || tool.status)}</span></label>`).join('') : `<p class="mv-help mv-empty-tools">${unverified ? 'Availability is unverified. Stock has not been confirmed unavailable.' : 'No eligible tools are available. Held, reserved, damaged, and pending-handover stock cannot be requested.'}</p>`}<p class="mv-help mv-empty-tools" data-tool-no-results hidden>No tools match this search.</p></div></fieldset>`;
+    return kind === 'request' ? `<div data-request-stock>${markup}</div>` : markup;
   }
 
   function conditionFields(toolIds, prefix) {
@@ -131,6 +138,26 @@
       const decision = prefix === 'receive' ? `<div class="field mv-custody-decision" data-decision-field hidden><label for="${esc(key)}-disposition">Custody decision for damaged equipment</label><select id="${esc(key)}-disposition" data-disposition disabled><option value="">Choose after reviewing the damage</option>${canRefuse?'<option value="declined">Refuse damaged handover</option>':''}<option value="accepted">Accept custody with recorded damage</option></select><p class="mv-help">Acceptance changes custody and records the damage. ${canRefuse?'Refusal holds all tools with the current holder and keeps the handover reserved for sender follow-up.':'If you cannot accept custody, contact the original sender before confirming.'} This record does not determine who caused the damage.</p></div>` : '';
       return `<div class="mv-inspection" data-inspection="${esc(id)}"><div class="mv-inspection-title"><strong>${esc(tool?.name || id)}</strong><span class="tool-id-chip">${esc(id)}</span></div>${prefix === 'receive' ? `<p class="mv-help">Current holder: <strong>${esc(tool?.holder || 'Unassigned')}</strong> · ${esc(tool?.site || 'Unassigned project')}</p>` : ''}<div class="field"><label for="${esc(key)}-condition">Inspected condition</label><select id="${esc(key)}-condition" data-condition required><option value="">Select after inspection</option><option value="good">Good — ready for use</option><option value="damaged">Damaged — needs repair</option><option value="lost">Missing — not received</option></select></div><div class="field"><label for="${esc(key)}-notes">Inspection notes <span class="mv-optional">(required for damaged or missing)</span></label><textarea id="${esc(key)}-notes" data-condition-notes rows="2" maxlength="2000" placeholder="Describe the condition and any pre-existing issue"></textarea></div>${decision}${prefix === 'receive' ? `<label class="checkbox-row"><input type="checkbox" data-tested> I tested this tool (not required for missing items).</label>` : ''}</div>`;
     }).join('');
+  }
+
+  function syncRequestStock() {
+    if (current.kind !== 'request') return;
+    const picker = current.root.querySelector('[data-request-stock]');
+    if (!picker) return;
+    const selected = new Set([...picker.querySelectorAll('[name="toolIds"]:checked')].map(input => input.value));
+    const search = picker.querySelector('[data-tool-search]');
+    const query = search?.value || '';
+    const focused = document.activeElement === search;
+    const replacement = document.createElement('div');
+    replacement.innerHTML = toolPicker('request');
+    const next = replacement.firstElementChild;
+    picker.replaceWith(next);
+    next.querySelectorAll('[name="toolIds"]').forEach(input => { input.checked = selected.has(input.value); });
+    next.querySelector('[data-selected-count]').textContent = `${next.querySelectorAll('[name="toolIds"]:checked').length} selected`;
+    const nextSearch = next.querySelector('[data-tool-search]');
+    nextSearch.value = query;
+    nextSearch.dispatchEvent(new Event('input', {bubbles:true}));
+    if (focused) nextSearch.focus({preventScroll:true});
   }
 
   function returnDestinationField() {
@@ -356,7 +383,7 @@
     if (!statusSelect.value) current.status = '';
     const open = records.filter(record => !['received', 'rejected', 'completed', 'recovered', 'returned'].includes(recordStatus(record))).length;
     const summary = current.root.querySelector('[data-summary]');
-    if (summary) summary.innerHTML = `<div><span class="mv-summary-number">${records.length}</span><span>total ${TITLES[current.kind].toLowerCase()}</span></div><div><span class="mv-summary-number">${open}</span><span>${current.kind === 'transfer' ? 'awaiting receipt' : 'open records'}</span></div><div><span class="mv-summary-number">${eligibleTools(current.kind).length}</span><span>eligible tools</span></div>`;
+    if (summary) summary.innerHTML = `<div><span class="mv-summary-number">${records.length}</span><span>total ${TITLES[current.kind].toLowerCase()}</span></div><div><span class="mv-summary-number">${open}</span><span>${current.kind === 'transfer' ? 'awaiting receipt' : 'open records'}</span></div><div><span class="mv-summary-number">${current.kind === 'request' && tools().some(tool => window.EquipmentTracking.requestability(tool,state()).code === 'unknown') ? 'Unverified' : eligibleTools(current.kind).length}</span><span>eligible tools</span></div>`;
     const query = current.search.toLowerCase();
     const filtered = records.filter(record => (!current.status || recordStatus(record) === current.status) && `${record.id} ${toolNames(record)} ${record.destination || ''} ${record.requester || record.sender || record.returnedBy || record.reportedBy || ''} ${record.receiver || ''} ${record.notes || ''}`.toLowerCase().includes(query)).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     const list = current.root.querySelector('[data-list]');
@@ -494,6 +521,7 @@
         const kind = current.kind;
         const toolIds = data.getAll('toolIds');
         if (['request', 'transfer', 'return'].includes(kind) && !toolIds.length) throw new Error('Select at least one tool.');
+        if (kind === 'request' && toolIds.some(id => !eligibleTools('request').some(tool => tool.id === id))) throw new Error('Selected stock is no longer verified as available. Refresh and select eligible equipment again.');
         const payload = { toolIds, destination: value('destination'), receiver: value('receiver'), purpose: value('purpose'), notes: value('notes'), toolId: value('toolId'), neededUntil: value('neededUntil') };
         if(kind==='request'&&mode()==='live'&&!requestSites().some(site=>site.name===payload.destination))throw new Error(requestSites().length?'Choose a project assigned to your account.':noRequestProject);
         if (store().mode === 'live') { delete payload.receiver; if (kind === 'transfer') {payload.receiverId = value('receiverId');if(current.receivingToken)payload.receivingToken=current.receivingToken;} }
@@ -754,7 +782,7 @@
     if (!current.createDirty && !document.activeElement?.closest('[data-form="create"]')) {
       const host = current.root.querySelector('[data-create-panel]');
       if (host) host.innerHTML = createForm();
-    }
+    } else syncRequestStock();
     syncRequestDestination();
     if (!current.detailDirty && !document.activeElement?.closest('[data-detail] form')) renderDetail();
   });
