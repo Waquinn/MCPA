@@ -91,6 +91,11 @@
     </div>
 
     <form id="equipmentForm" class="form-grid" style="display:flex; flex-direction:column; gap:14px;">
+      <div class="field" id="equipmentInitialLocation">
+        <label for="equipmentInitialLocationValue">Initial location</label>
+        <input id="equipmentInitialLocationValue" value="Office" readonly aria-describedby="equipmentInitialLocationHelp">
+        <p id="equipmentInitialLocationHelp" class="equipment-photo-help">New equipment starts at Office. Use a transfer to move it to a project.</p>
+      </div>
       <div class="field full">
         <label for="equipmentType" style="display:block; font-size:12px; font-weight:600; margin-bottom:4px;">Item Name / Classification <span style="color:#c58b00;">*</span></label>
         <input type="text" id="equipmentType" placeholder="e.g. Shovel (Pala, Lapad)" style="width:100%; padding:9px; border:1px solid var(--line); border-radius:6px;" required />

@@ -81,7 +81,7 @@ function masterlistHarness() {
   nodes.equipmentModal={style:{display:'flex'}};nodes.equipmentFormFeedback={isConnected:true,textContent:''};nodes['inventory-sync']={isConnected:true,textContent:''};
   const document={getElementById:id=>nodes[id]||null},db={from(table){assert.equal(table,'equipment');const q={};return {update(payload){q.payload=payload;return this;},insert(payload){q.payload=payload[0];return this;},eq(key,value){q[key]=value;return this;},select(){return this;},async single(){writes.push(q);if(db.error)return {error:db.error};Object.assign(saved,q.payload);return {data:saved};}};}};
   let prepareCount=0;
-  const window={MCPAAuth:{requireLive:()=>user},EquipmentTracking:{client:()=>db,matchesStatus:(item,status)=>!status||item.dbStatus===status},EquipmentPhotos:{async prepare(file,assetId,previous){if(window.uploadError)throw new Error('Photo upload failed');prepareCount++;return previous||{reference:'storage://equipment-photos/'+assetId+'/11111111-1111-4111-8111-111111111111.png',file,assetId};}}};
+  const window={MCPAAuth:{requireLive:()=>user},EquipmentTracking:{async inventoryOffice(){if(window.officeError)throw new Error(window.officeError);return {id:"office-fixture",label:"Office"};},client:()=>db,matchesStatus:(item,status)=>!status||item.dbStatus===status},EquipmentPhotos:{async prepare(file,assetId,previous){if(window.uploadError)throw new Error('Photo upload failed');prepareCount++;return previous||{reference:'storage://equipment-photos/'+assetId+'/11111111-1111-4111-8111-111111111111.png',file,assetId};}}};
   const context={window,document,supabaseClient:db,URL:{revokeObjectURL(){}},crypto:{randomUUID:()=> '11111111-1111-4111-8111-111111111111'},console};
   const text=source('1-admin/modules/masterlist/masterlist.js');vm.runInNewContext(text.slice(0,text.lastIndexOf('(function () {')),context);
   context.initMasterlist=async()=>{};context.currentEditId='TOOL-001';context.setupMasterlistListeners();
@@ -98,7 +98,8 @@ test('expanded inventory search continues to intersect category, status and proj
   assert.equal(h.context.filteredEquipment().length,1);h.nodes.siteFilter.value='South';assert.equal(h.context.filteredEquipment().length,0);
 });
 test('editing equipment without selecting a photo preserves its existing association',async()=>{
-  const h=masterlistHarness();await h.save();assert.equal(h.writes.length,1);assert.equal(Object.hasOwn(h.writes[0].payload,'image_url'),false);assert.equal(h.saved.image_url,'https://fixture.example/old.png');
+  const h=masterlistHarness();h.window.officeError='Office unavailable';await h.save();assert.equal(h.writes.length,1);assert.equal(Object.hasOwn(h.writes[0].payload,'image_url'),false);assert.equal(h.saved.image_url,'https://fixture.example/old.png');
+  for(const key of ['site_id','current_holder_id','status'])assert.equal(Object.hasOwn(h.writes[0].payload,key),false);
 });
 test('upload failure prevents metadata writes and keeps the form and old photo',async()=>{
   const h=masterlistHarness();h.context.equipmentPhotoState.file=image();h.window.uploadError=true;await h.save();
@@ -116,4 +117,16 @@ test('new item photo uses stable unique record and asset IDs across a failed-sav
   const h=masterlistHarness();h.context.currentEditId=null;h.context.equipmentPhotoState.file=image();h.db.error={message:'Fixture temporary failure'};
   await h.save();const first=h.writes[0].payload;assert.equal(first.id,'11111111-1111-4111-8111-111111111111');assert.match(first.asset_id,/^T-[0-9A-F]{16}$/);assert.equal(first.status,'AVAILABLE');
   h.db.error=null;await h.save();assert.equal(h.writes[1].payload.id,first.id);assert.equal(h.writes[1].payload.asset_id,first.asset_id);assert.equal(h.writes[1].payload.image_url,first.image_url);
+  assert.equal(first.site_id,'office-fixture');
+});
+test('unavailable Office prevents creation and upload while preserving form and selected photo',async()=>{
+  const h=masterlistHarness();h.context.currentEditId=null;const file=image();h.context.equipmentPhotoState.file=file;
+  h.window.officeError='Office inventory configuration is unavailable';await h.save();
+  assert.equal(h.writes.length,0);assert.equal(h.prepareCount,0);
+  assert.equal(h.context.equipmentPhotoState.file,file);
+  assert.equal(h.nodes.equipmentModal.style.display,'flex');
+  assert.match(h.nodes.equipmentFormFeedback.textContent,/Office inventory configuration/);
+  h.window.officeError=null;await h.save();assert.equal(h.writes.length,1);
+  assert.equal(h.writes[0].payload.site_id,'office-fixture');
+  assert.equal(h.nodes.equipmentModal.style.display,'none');
 });

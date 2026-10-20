@@ -60,7 +60,7 @@
   }
   function siteEquipment(site) { return state.equipment.filter(item => item.site_id === site.id); }
   function visibleEquipment(site) { return siteEquipment(site).filter(item => item.quantity > 0); }
-  function totalQuantity(items) { return items.reduce((sum, item) => sum + item.quantity, 0); }
+  function totalQuantity(items) { return isEngineer() ? items.filter(item => item.quantity > 0).length : items.reduce((sum, item) => sum + item.quantity, 0); }
 
   function client() {
     if (!window.supabaseClient) {
@@ -261,7 +261,7 @@
     root.querySelector('#sites-list').innerHTML = projects.length ? projects.map(site => {
       const items = visibleEquipment(site);
       const count = (...statuses) => totalQuantity(items.filter(item => statuses.includes(item.status)));
-      const totals = window.EquipmentTracking.tally(items);
+      const totals = window.EquipmentTracking.tally(items, undefined, {assetsOnly:isEngineer()});
       const stats = [['Total', totals.total], ['Available', totals.available], ['Deployed', totals.deployed], ['Repair', count('repair', 'underrepair')]];
       if (count('missing')) stats.push(['Missing', count('missing')]);
       if (count('disposed')) stats.push(['Disposed', count('disposed')]);
@@ -275,12 +275,12 @@
   }
 
   function inventoryTable(items, emptyText = 'No equipment is currently assigned to this project.') {
-    return `<div class="table-wrap"><table><thead><tr><th>Tool</th><th>Quantity</th><th>Status</th><th>Current Holder</th><th><span class="sites-muted">Details</span></th></tr></thead><tbody>${items.length ? items.map(item => `<tr>
+    return `<div class="table-wrap"><table><thead><tr><th>Tool</th>${isEngineer() ? '' : '<th>Quantity</th>'}<th>Status</th><th>Current Holder</th><th><span class="sites-muted">Details</span></th></tr></thead><tbody>${items.length ? items.map(item => `<tr>
       <td class="cell-name"><div class="equipment-identity">${window.EquipmentVisual.thumbnail(item)}<div>${escape(item.name)}<div class="cell-sub mono">${escape(item.asset_id)}</div></div></div></td>
-      <td class="mono">${item.quantity}${item.unit ? ` <span class="sites-muted">${escape(item.unit)}</span>` : ''}</td>
+      ${isEngineer() ? '' : `<td class="mono">${item.quantity}${item.unit ? ` <span class="sites-muted">${escape(item.unit)}</span>` : ''}</td>`}
       <td>${badge(item.status, toolStatuses)}<div class="cell-sub">${escape(window.EquipmentTracking.availability(item))}</div></td><td>${escape(item.holder)}</td>
       <td class="sites-row-action"><button type="button" class="sites-text-button" data-action="view-tool" data-id="${escape(item.id)}" aria-label="View ${escape(item.name)} ${escape(item.asset_id)}">View →</button></td>
-    </tr>`).join('') : `<tr><td colspan="5" class="empty-state">${escape(emptyText)}</td></tr>`}</tbody></table></div>`;
+    </tr>`).join('') : `<tr><td colspan="${isEngineer()?4:5}" class="empty-state">${escape(emptyText)}</td></tr>`}</tbody></table></div>`;
   }
 
   function renderDetail() {
@@ -306,13 +306,13 @@
       </div></div>
       <div class="grid grid-4 sites-summary">
         <div class="card card-pad"><span class="k">Accountable Engineer / Architect</span><div class="v">${escape(site.assigned_engineer)}</div>${site.assigned_engineer_id ? '' : '<span class="sites-muted">Profile link not recorded</span>'}</div>
-        <div class="card card-pad"><span class="k">Equipment at Project</span><div class="v">${totalQuantity(items)} units</div></div>
+        <div class="card card-pad"><span class="k">Equipment at Project</span><div class="v">${totalQuantity(items)} ${isEngineer()?'assets':'units'}</div></div>
         <div class="card card-pad"><span class="k">Last Inventory Check</span><div class="v">${formatDate(site.last_inventory_check)}</div></div>
         <div class="card card-pad"><span class="k">Last Movement</span><div class="v" data-last-movement>Loading…</div><button type="button" class="sites-text-button" data-action="view-movements">View movement history →</button></div>
       </div>
-      <div class="section-title sites-section-title"><h2>Project Inventory</h2><span class="eyebrow">Zero-quantity items are hidden</span></div>
+      <div class="section-title sites-section-title"><h2>Project Inventory</h2>${isEngineer() ? '' : '<span class="eyebrow">Zero-quantity items are hidden</span>'}</div>
       <div class="card">${inventoryTable(items)}</div>
-      <p class="sites-muted sites-inventory-note">${hiddenCount ? `${hiddenCount} zero-quantity record${hiddenCount === 1 ? ' is' : 's are'} hidden. ` : ''}Equipment assignments and movement are shown for reference only.</p>`;
+      <p class="sites-muted sites-inventory-note">${!isEngineer() && hiddenCount ? `${hiddenCount} zero-quantity record${hiddenCount === 1 ? ' is' : 's are'} hidden. ` : ''}Equipment assignments and movement are shown for reference only.</p>`;
     syncControls();
     const lastMovement = container.querySelector('[data-last-movement]');
     repository.movements(site.id).then(records => {
@@ -460,7 +460,7 @@
     if (!site) return;
     if (!dialog.open && !preserve) state.review = { search: '', status: '' };
     openDialog(`Assigned Tools — ${site.name}`, `
-      <p class="sites-dialog-description">Review the equipment assigned to this project, including zero-quantity records. Assignments and holders are read-only.</p>
+      <p class="sites-dialog-description">Review the equipment assigned to this project, ${isEngineer()?'by Asset ID.':'including zero-quantity records.'} Assignments and holders are read-only.</p>
       <div class="table-toolbar">
         <div class="field sites-review-search"><label for="sites-tool-search">Search equipment</label><input type="search" id="sites-tool-search" value="${escape(state.review.search)}" placeholder="Tool name, asset ID, brand or holder" autofocus></div>
         <div class="field"><label for="sites-tool-status">Status</label><select id="sites-tool-status" class="chip-filter"><option value="">All statuses</option>${Object.entries(toolStatuses).map(([key, [label]]) => `<option value="${key}"${state.review.status === key ? ' selected' : ''}>${label}</option>`).join('')}</select></div>
@@ -483,7 +483,7 @@
   function movementTable(records) {
     if (records.error) return `<div class="empty-state"><p class="t">Movement history unavailable</p><p class="d">${escape(records.error)}</p></div>`;
     if (!records.length) return '<div class="empty-state sites-movement-empty"><p class="t">No movement records available</p><p class="d">Movement history will appear here when records are available. This view is read-only.</p></div>';
-    return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Tool</th><th>From</th><th>To</th><th>Quantity</th></tr></thead><tbody>${records.map(record => `<tr><td>${escape(formatDate(record.date))}</td><td>${escape(record.asset_id)}</td><td>${escape(record.from)}</td><td>${escape(record.to)}</td><td>${escape(record.quantity)}</td></tr>`).join('')}</tbody></table></div>`;
+    return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Tool</th><th>From</th><th>To</th>${isEngineer() ? '' : '<th>Quantity</th>'}</tr></thead><tbody>${records.map(record => `<tr><td>${escape(formatDate(record.date))}</td><td>${escape(record.asset_id)}</td><td>${escape(record.from)}</td><td>${escape(record.to)}</td>${isEngineer() ? '' : `<td>${escape(record.quantity)}</td>`}</tr>`).join('')}</tbody></table></div>`;
   }
 
   async function viewMovements() {
@@ -504,7 +504,7 @@
     const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Project', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
     openDialog(item.name, `
       <p class="sites-dialog-description">Equipment details for ${escape(site.name)}.</p>
-      <div class="sites-tool-details">${fields.map(([label, value]) => `<div class="kv"><span class="k">${label}</span><span class="v">${escape(value ?? '—') || '—'}</span></div>`).join('')}<div class="kv"><span class="k">Status</span><span class="v">${badge(item.status, toolStatuses)}</span></div></div>
+      <div class="sites-tool-details">${fields.filter(([label]) => !isEngineer() || !['Quantity','Tracking Type'].includes(label)).map(([label, value]) => `<div class="kv"><span class="k">${label}</span><span class="v">${escape(value ?? '—') || '—'}</span></div>`).join('')}<div class="kv"><span class="k">Status</span><span class="v">${badge(item.status, toolStatuses)}</span></div></div>
       <div class="section-title"><h2>Movement History</h2><span class="eyebrow">Read only</span></div>
       <div class="card">${movementTable(records)}</div>
       <div class="sites-dialog-actions">${fromReview ? '<button type="button" class="btn btn-secondary" data-action="review-tools">← Assigned Tools</button>' : ''}<button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`);

@@ -19,6 +19,16 @@
       offset += data.length;
     }
   }
+  // Resolve afresh before each creation; never infer Office from a display name.
+  async function inventoryOffice() {
+    const person = window.MCPAAuth.requireLive();
+    if (!['admin','tool_handler','engineer','architect'].includes(person.role)) throw new Error('Equipment access required.');
+    const {data, error} = await client().rpc('mcpa_inventory_office');
+    if (error || !data || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.id) || data.label !== 'Office') {
+      throw new Error('Office inventory configuration is unavailable. Ask your administrator to review the Office setup, then retry.');
+    }
+    return data;
+  }
   function quantity(tool) {
     const value = Number(tool.quantity ?? tool.qty ?? 1);
     return Number.isFinite(value) ? Math.max(0, value) : 0;
@@ -64,9 +74,9 @@
     const tone = ['available','inuse','repair','underrepair','missing'].includes(status) ? status : 'pending';
     return `<div class="equipment-status"><span class="equipment-status-caption">Recorded status</span><span class="badge badge-${tone}">${escape(labels[status] || tool.status || 'Unknown')}</span><span class="equipment-request-state" data-requestability="${result.code}"><span class="equipment-status-caption">New requests</span><strong>${escape(result.label)}</strong></span><span class="equipment-status-reason">${escape(result.reason)}</span></div>`;
   }
-  function tally(tools, data) {
+  function tally(tools, data, {assetsOnly = false} = {}) {
     return tools.reduce((totals, tool) => {
-      const units = quantity(tool);
+      const units = assetsOnly ? Number(quantity(tool) > 0) : quantity(tool);
       totals.total += units;
       if (availability(tool, data) === 'Available') totals.available += units;
       if (availability(tool, data) === 'Deployed') totals.deployed += units;
@@ -150,5 +160,5 @@
     window.addEventListener('pagehide', dispose);
     return dispose;
   }
-  window.EquipmentTracking = {client, readAll, snapshot, quantity, requestability, statusMarkup, availability, matchesStatus, tally, watch};
+  window.EquipmentTracking = {client, readAll, snapshot, inventoryOffice, quantity, requestability, statusMarkup, availability, matchesStatus, tally, watch};
 })();

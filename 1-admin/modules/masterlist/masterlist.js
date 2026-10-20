@@ -100,6 +100,7 @@ async function initMasterlist() {
     createdAt: item.created_at
   }));
 
+  equipmentList.forEach(item => { item.availability = window.EquipmentTracking.availability(item, item.availabilityData); });
   populateFilters();
   renderTable();
   if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId, true);
@@ -442,6 +443,7 @@ function editTool(assetId) {
   if (!item) return;
   
   currentEditId = assetId;
+  document.getElementById('equipmentInitialLocation').hidden = true;
   resetEquipmentPhoto(item);
 
   document.getElementById('equipmentType').value = item.equipmentType || '';
@@ -540,7 +542,8 @@ function setupMasterlistListeners() {
 
   if (openBtn && modal) {
     openBtn.onclick = () => {
-      currentEditId = null; 
+      currentEditId = null;
+      document.getElementById('equipmentInitialLocation').hidden = false;
       
       const modalTitle = modal.querySelector('h2');
       const modalSubmitBtn = modal.querySelector('button[type="submit"]');
@@ -639,6 +642,7 @@ function setupMasterlistListeners() {
       submit.textContent = state.file ? 'Uploading photo…' : 'Saving item…'; feedback.textContent = '';
       let saved = false;
       try {
+        const office = editId ? null : await window.EquipmentTracking.inventoryOffice();
         if (state.file) {
           state.staged = await window.EquipmentPhotos.prepare(state.file,assetId,state.staged);
           payload.image_url = state.staged.reference;
@@ -646,10 +650,11 @@ function setupMasterlistListeners() {
         if (!form.isConnected || window.MCPAAuth.requireLive().id !== user.id || equipmentPhotoState !== state) throw new Error('Your screen or account changed. Reopen the item before saving.');
         submit.textContent = 'Saving item…';
         const db = window.EquipmentTracking.client();
-        const query = editId ? db.from('equipment').update(payload).eq('asset_id',editId) : db.from('equipment').insert([{...payload,id:state.newRecordId ||= crypto.randomUUID(),asset_id:assetId,status:'AVAILABLE'}]);
-        const {data,error} = await query.select('asset_id,image_url').single();
+        const query = editId ? db.from('equipment').update(payload).eq('asset_id',editId) : db.from('equipment').insert([{...payload,id:state.newRecordId ||= crypto.randomUUID(),asset_id:assetId,status:'AVAILABLE',site_id:office.id}]);
+        const {data,error} = await query.select('asset_id,image_url,site_id').single();
         if (error) throw new Error('The item could not be saved. Your form and photo selection have been kept. Check your connection and retry. ' + error.message);
         if (!data || data.asset_id !== assetId) throw new Error('The saved item could not be verified. Refresh the inventory before retrying.');
+        if (!editId && data.site_id !== office.id) throw new Error('The saved Office location could not be verified. Refresh inventory before retrying.');
         saved = true;
       } catch (error) { if (feedback.isConnected) feedback.textContent = error.message; }
       finally {

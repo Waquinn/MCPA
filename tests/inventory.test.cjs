@@ -31,6 +31,29 @@ test('tallies sum eligible quantities and preserve deployed custody counts', () 
   const result = api.tally([{quantity:4,site_id:null,status:'AVAILABLE'}, {qty:7,siteId:'p',status:'inuse'}, {quantity:0,site_id:null}, {quantity:2,site_id:'p',status:'AVAILABLE',current_holder_id:'person'}]);
   assert.equal(result.total,13); assert.equal(result.available,4); assert.equal(result.deployed,7);
 });
+test('asset presentation counts positive records without changing quantities or availability', () => {
+  const {api} = harness();
+  const tools = [{qty:7,status:'AVAILABLE'}, {qty:3,status:'IN_USE'}, {qty:0,status:'AVAILABLE'}];
+  const before = JSON.stringify(tools), assets = api.tally(tools, undefined, {assetsOnly:true});
+  assert.equal(assets.total,2); assert.equal(assets.available,1); assert.equal(assets.deployed,1);
+  assert.equal(api.tally(tools).total,10);
+  assert.equal(JSON.stringify(tools),before);
+});
+test('Office metadata uses the authenticated RPC on every call and fails closed', async () => {
+  let calls=0, response={data:{id:'11111111-1111-4111-8111-111111111111',name:'Configured warehouse',label:'Office'}};
+  const {api,window}=harness({async rpc(name){assert.equal(name,'mcpa_inventory_office');calls++;return response;}});
+  let person={id:'admin-1',role:'admin'};
+  window.MCPAAuth={requireLive:()=>person};
+  assert.equal((await api.inventoryOffice()).name,'Configured warehouse','No site-name inference');
+  response={error:{message:'Inactive Office'}};
+  await assert.rejects(api.inventoryOffice(),/Office inventory configuration is unavailable/);
+  assert.equal(calls,2,'A previous successful lookup must not mask a disabled Office');
+  response={data:{id:'not-a-uuid',label:'Office'}};
+  await assert.rejects(api.inventoryOffice(),/configuration is unavailable/);
+  person={id:'secretary-1',role:'secretary'};
+  await assert.rejects(api.inventoryOffice(),/Equipment access required/);
+  assert.equal(calls,3,'Unauthorized metadata read rejected before calling transport');
+});
 test('stock requests exclude hidden reservations, pending/refused transfers, damage and holders',()=>{
   const {api,window}=harness();
   const base={id:'T-8861',status:'AVAILABLE',qty:1,siteId:'project',holderId:null,condition:'Good',movementLock:null};

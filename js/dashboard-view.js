@@ -6,7 +6,7 @@
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  const units = tools => tools.reduce((sum,t) => sum + EquipmentTracking.quantity(t),0);
+  const units = (tools, assetsOnly = false) => tools.reduce((sum,t) => sum + (assetsOnly ? Number(EquipmentTracking.quantity(t)>0) : EquipmentTracking.quantity(t)),0);
 
   const glyph = name => icon(name).replace('<svg ', '<svg aria-hidden="true" ');
 
@@ -34,10 +34,10 @@
 
   const actionKey = action => ({createRequest:'request_created',approveRequest:'request_approved',rejectRequest:'request_rejected',releaseRequest:'transfer_created',createTransfer:'transfer_created',receiveTransfer:'transfer_received',createReturn:'return_created',reportRepair:'repair_reported',startRepair:'repair_started',completeRepair:'repair_completed',reportMissing:'missing_reported',recoverMissing:'missing_recovered'}[action] || action);
 
-  function statusChart(tools) {
-    const total=units(tools); let offset=0;
+  function statusChart(tools, assetsOnly) {
+    const total=units(tools,assetsOnly); let offset=0;
 
-    const counts=groups.map(([key,label]) => ({key,label,count:units(tools.filter(t => condition(t)===key))}));
+    const counts=groups.map(([key,label]) => ({key,label,count:units(tools.filter(t => condition(t)===key),assetsOnly)}));
 
     const rings=counts.map(g => {
       const part=total ? g.count/total*100 : 0;
@@ -45,21 +45,21 @@
       offset+=part; return html;
     }).join('');
 
-    return panel('Equipment status',`<div class="status-chart"><div class="status-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="47" fill="none" stroke-width="13"/>${rings}</svg><div><strong>${total}</strong><span>Units</span></div></div><ul class="chart-legend">${counts.filter(g => g.key!=='other'||g.count).map(g => `<li><i class="legend-dot tone-${g.key}"></i><span>${g.label}</span><strong>${g.count}</strong></li>`).join('')}</ul></div><p class="panel-note">Recorded condition · availability tracked separately.</p>`);
+    return panel('Equipment status',`<div class="status-chart"><div class="status-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="47" fill="none" stroke-width="13"/>${rings}</svg><div><strong>${total}</strong><span>${assetsOnly?'Assets':'Units'}</span></div></div><ul class="chart-legend">${counts.filter(g => g.key!=='other'||g.count).map(g => `<li><i class="legend-dot tone-${g.key}"></i><span>${g.label}</span><strong>${g.count}</strong></li>`).join('')}</ul></div><p class="panel-note">Recorded condition · availability tracked separately.</p>`);
   }
 
-  function siteChart(projects,tools) {
+  function siteChart(projects,tools,assetsOnly) {
     const sites=projects, hasSite=t => t.site_id || t.siteId || (t.site && t.site!=='Unassigned');
 
-    const rows=[{name:'Unassigned',count:units(tools.filter(t => !hasSite(t)))}].concat(sites.map(p => ({name:p.name,count:units(tools.filter(t => belongs(t,p)))})).sort((a,b) => b.count-a.count));
+    const rows=[{name:'Unassigned',count:units(tools.filter(t => !hasSite(t)),assetsOnly)}].concat(sites.map(p => ({name:p.name,count:units(tools.filter(t => belongs(t,p)),assetsOnly)})).sort((a,b) => b.count-a.count));
 
-    const other=units(tools.filter(t => hasSite(t) && !sites.some(p => belongs(t,p))));
+    const other=units(tools.filter(t => hasSite(t) && !sites.some(p => belongs(t,p))),assetsOnly);
 
     if(other) rows.push({name:'Other / archived sites',count:other});
 
     const max=Math.max(1,...rows.map(r => r.count));
 
-    return panel('Equipment by project / site',`<div class="site-bars">${rows.slice(0,4).map(r => `<div class="site-bar"><span title="${esc(r.name)}">${esc(r.name)}</span><div class="bar-track"><span style="width:${r.count/max*100}%"></span></div><strong>${r.count}</strong></div>`).join('')}</div><p class="panel-note">Equipment quantities · ${rows.length>4?'top locations shown':'current assignments'}</p>`,go('All projects','sites'));
+    return panel('Equipment by project / site',`<div class="site-bars">${rows.slice(0,4).map(r => `<div class="site-bar"><span title="${esc(r.name)}">${esc(r.name)}</span><div class="bar-track"><span style="width:${r.count/max*100}%"></span></div><strong>${r.count}</strong></div>`).join('')}</div><p class="panel-note">${assetsOnly?'Equipment assets':'Equipment quantities'} · ${rows.length>4?'top locations shown':'current assignments'}</p>`,go('All projects','sites'));
   }
 
   function movementChart(data) {
@@ -78,8 +78,8 @@
     return panel('Asset movement',`<div class="movement-legend">${series.map(([,label,tone]) => `<span><i class="legend-dot tone-${tone}"></i>${label}</span>`).join('')}</div>${chart}<p class="panel-note">Last 7 days · Manila time · recorded events</p>`);
   }
 
-  function filters(data,tools,state) {
-    return `<div class="inventory-tabs" role="group" aria-label="Inventory status">${[['','All equipment'],['available','Available'],['inuse','Deployed'],['repair','Repair'],['missing','Missing']].map(([key,label]) => `<button data-status="${key}" aria-pressed="${state.status===key}" class="inventory-tab">${label} <span>${units(tools.filter(t=>match(t,key,data)))}</span></button>`).join('')}</div><div class="dashboard-filters"><input id="dashboard-search" data-search aria-label="Search inventory" placeholder="Search inventory…" value="${esc(state.query)}"><select id="overview-site" aria-label="Filter inventory by project"><option value="">All projects</option><option value="__unassigned" ${state.site==='__unassigned'?'selected':''}>Unassigned</option>${data.sites.map(p=>`<option value="${esc(p.name)}" ${state.site===p.name?'selected':''}>${esc(p.name)}</option>`).join('')}</select><select id="dashboard-condition" aria-label="Filter inventory by condition"><option value="">All conditions</option>${groups.map(([key,label])=>`<option value="${key}" ${state.condition===key?'selected':''}>${label}</option>`).join('')}</select></div>`;
+  function filters(data,tools,state,assetsOnly) {
+    return `<div class="inventory-tabs" role="group" aria-label="Inventory status">${[['','All equipment'],['available','Available'],['inuse','Deployed'],['repair','Repair'],['missing','Missing']].map(([key,label]) => `<button data-status="${key}" aria-pressed="${state.status===key}" class="inventory-tab">${label} <span>${units(tools.filter(t=>match(t,key,data)),assetsOnly)}</span></button>`).join('')}</div><div class="dashboard-filters"><input id="dashboard-search" data-search aria-label="Search inventory" placeholder="Search inventory…" value="${esc(state.query)}"><select id="overview-site" aria-label="Filter inventory by project"><option value="">All projects</option><option value="__unassigned" ${state.site==='__unassigned'?'selected':''}>Unassigned</option>${data.sites.map(p=>`<option value="${esc(p.name)}" ${state.site===p.name?'selected':''}>${esc(p.name)}</option>`).join('')}</select><select id="dashboard-condition" aria-label="Filter inventory by condition"><option value="">All conditions</option>${groups.map(([key,label])=>`<option value="${key}" ${state.condition===key?'selected':''}>${label}</option>`).join('')}</select></div>`;
   }
 
   function inventory(data,user,state,table) {
@@ -131,15 +131,15 @@
   }
 
   function render(data,user,state,header,table,when) {
-    const admin=['admin','tool_handler'].includes(user.role), tools=scoped(data,user), totals=EquipmentTracking.tally(tools,data), projects=activeSites(data,user);
+    const assetsOnly=['engineer','architect'].includes(user.role), admin=['admin','tool_handler'].includes(user.role), tools=scoped(data,user), totals=EquipmentTracking.tally(tools,data,{assetsOnly}), projects=activeSites(data,user);
 
     const incoming=data.transfers.filter(t=>['pending','refused'].includes(t.status) && (admin || (window.MCPAAuth && !window.MCPAAuth.isDemo ? (t.receiverId===user.id || (t.status==='refused'&&t.senderId===user.id)) : (t.receiver===user.name || (t.status==='refused'&&t.sender===user.name)))));
 
     const requests=data.requests.filter(r=>(admin?['pending','approved']:['pending','approved','released']).includes(r.status) && (admin || addressed(r,user)));
 
-    const repair=units(tools.filter(t=>condition(t)==='repair')), missing=units(tools.filter(t=>condition(t)==='missing'));
+    const repair=units(tools.filter(t=>condition(t)==='repair'),assetsOnly), missing=units(tools.filter(t=>condition(t)==='missing'),assetsOnly);
 
-    const cards=[[totals.total,'Total Equipment','Tracked equipment units','box','masterlist'],[totals.available,'Available',`${totals.total?Math.round(totals.available/totals.total*100):0}% eligible for new requests`,'inbox','masterlist'],[totals.deployed,'Deployed',totals.deployed?'Equipment in use at project sites':'No assets currently deployed','swap','masterlist'],[projects.length,'Active Projects',`${projects.length} active project${projects.length === 1 ? '' : 's'} ${['engineer','architect'].includes(user.role) ? 'assigned to you' : 'tracked'}`,'map','sites']];
+    const cards=[[totals.total,'Total Equipment',assetsOnly?'Tracked asset records':'Tracked equipment units','box','masterlist'],[totals.available,'Available',`${totals.total?Math.round(totals.available/totals.total*100):0}% eligible for new requests`,'inbox','masterlist'],[totals.deployed,'Deployed',totals.deployed?'Equipment in use at project sites':'No assets currently deployed','swap','masterlist'],[projects.length,'Active Projects',`${projects.length} active project${projects.length === 1 ? '' : 's'} ${['engineer','architect'].includes(user.role) ? 'assigned to you' : 'tracked'}`,'map','sites']];
 
     const tasks=[[incoming.length,'Transfers awaiting receipt',admin?'Monitor handovers; named receivers confirm custody.':'Inspect equipment before accepting custody.','swap','transfer'],[requests.length,'Open requests',admin?'Review requests and release approved tools.':'Track approval and release by the Admin.','inbox','request'],[repair,'Maintenance alerts',repair?'Equipment requires maintenance or repair.':'No equipment currently requires repair.','wrench','repair'],[missing,'Missing equipment',missing?'Review unresolved missing equipment.':'No equipment currently reported missing.','alert','missing']];
 
@@ -154,14 +154,14 @@
     }).join('')}</ol>`:empty('No recent equipment movements. Saved actions will appear here.');
 
     const projectCards=projects.length?`<div class="project-overview">${projects.slice(0,3).map(p=>{
-      const assets=data.tools.filter(t=>belongs(t,p)&&EquipmentTracking.quantity(t)>0), tally=EquipmentTracking.tally(assets,data), counts=new Map();
+      const assets=data.tools.filter(t=>belongs(t,p)&&EquipmentTracking.quantity(t)>0), tally=EquipmentTracking.tally(assets,data,{assetsOnly}), counts=new Map();
 
       assets.forEach(t=>counts.set(t.name,(counts.get(t.name)||0)+EquipmentTracking.quantity(t)));
 
-      return `<button class="project-summary" data-go="sites"><span class="project-heading">${glyph('map')}<strong>${esc(p.name)}</strong><span class="project-state">Active</span></span>${p.location?`<span class="project-location">${esc(p.location)}</span>`:''}<span class="project-count"><strong>${tally.deployed}</strong> deployed <span>· ${tally.total} assigned units</span></span><span class="project-tally">${esc([...counts].map(([name,count])=>`${name}: ${count}`).join(' · ')||'No equipment assigned')}</span>${p.assigned_engineer?`<span class="project-tally">Engineer: ${esc(p.assigned_engineer)}</span>`:''}</button>`;
+      return `<button class="project-summary" data-go="sites"><span class="project-heading">${glyph('map')}<strong>${esc(p.name)}</strong><span class="project-state">Active</span></span>${p.location?`<span class="project-location">${esc(p.location)}</span>`:''}<span class="project-count"><strong>${tally.deployed}</strong> deployed <span>· ${tally.total} assigned ${assetsOnly?'assets':'units'}</span></span><span class="project-tally">${esc((assetsOnly ? assets.map(t=>`${t.name} · ${t.id}`) : [...counts].map(([name,count])=>`${name}: ${count}`)).join(' · ')||'No equipment assigned')}</span>${p.assigned_engineer?`<span class="project-tally">Engineer: ${esc(p.assigned_engineer)}</span>`:''}</button>`;
     }).join('')}</div>`:empty('No active projects.');
 
-    const held=units(tools.filter(t=>!!t.holder&&t.holder!=='—'));
+    const held=units(tools.filter(t=>!!t.holder&&t.holder!=='—'),assetsOnly);
 
     const custody=`<div class="custody-list">${[[held,'With assigned holder','users','masterlist'],[totals.total-held,'Without assigned holder','users','masterlist'],[incoming.length,'Awaiting transfer confirmation','clock','transfer']].map(([count,label,symbol,target])=>`<button data-go="${target}">${glyph(symbol)}<span>${label}</span><strong>${count}</strong><span aria-hidden="true">›</span></button>`).join('')}</div><p class="panel-note">Custody changes after confirmed receipt. Pending transfers keep the current holder.</p>`;
 
@@ -176,7 +176,7 @@
       'dashboard-recent'
     );
 
-    return `${fieldRole?'<div class="field-dashboard">':''}${header('Movement overview','Track requests, custody, equipment condition, and movement across project sites.')}<div class="dashboard-toolbar"><p class="dashboard-scope">${admin?'Company equipment':'My assigned equipment'} <span>· Quantities across saved records</span></p>${['engineer','architect'].includes(user.role) ? '<div class="overview-actions">'+[['Request Tools','request','inbox'],['Receive / Transfer','transfer','swap'],['Return Tools','return','undo'],['Report an Issue','repair','alert']].map(([label,target,symbol])=>go(glyph(symbol)+label,target)).join('')+'</div>' : user.role==='admin' ? review(data) : go('View inventory','masterlist')}</div><div class="grid grid-4 overview-kpis">${cards.map(([count,label,description,symbol,target])=>`<button class="card kpi" data-go="${target}"><span class="command-kpi-icon">${glyph(symbol)}</span><span class="command-kpi-copy"><span class="lbl">${label}</span><span class="num">${count}</span><span class="kpi-description">${description}</span></span></button>`).join('')}</div>${fieldRole?recentPanel:''}${fieldRole?'<div class="dashboard-workflow">'+turnover(data,user,when)+requestsOverview(data,user)+'</div>':''}<div class="command-analytics">${statusChart(tools)}${siteChart(projects,tools)}${movementChart(data)}</div><div class="overview-columns">${panel(admin?'Current inventory':'My assigned tools',`${filters({...data,sites:projects},tools,state)}<div id="overview-results">${inventory(data,user,state,table)}</div>`,'','inventory-panel')}${panel('Next actions',`<div class="command-tasks">${tasks.filter(t=>user.role!=='tool_handler'||t[4]!=='request').map(([count,label,description,symbol,target])=>`<div class="command-task ${count?'':'is-clear'}"><span class="task-icon">${glyph(symbol)}</span><div><strong>${label} <span>${count}</span></strong><p>${description}</p></div><button class="btn btn-secondary btn-sm" data-go="${target}" aria-label="Open ${label.toLowerCase()}">Open</button></div>`).join('')}</div>`)}</div><div class="command-bottom">${fieldRole?'':panel('Recent asset activity',timeline,go('View all','activity'))}${panel('Active Projects',projectCards,go('View all','sites'),'dashboard-projects')}${panel('Custody overview',custody)}</div>${fieldRole?'</div>':''}`;
+    return `${fieldRole?'<div class="field-dashboard">':''}${header('Movement overview','Track requests, custody, equipment condition, and movement across project sites.')}<div class="dashboard-toolbar"><p class="dashboard-scope">${admin?'Company equipment':'My assigned equipment'} <span>· ${assetsOnly?'Individual asset records':'Quantities across saved records'}</span></p>${['engineer','architect'].includes(user.role) ? '<div class="overview-actions">'+[['Request Tools','request','inbox'],['Receive / Transfer','transfer','swap'],['Return Tools','return','undo'],['Report an Issue','repair','alert']].map(([label,target,symbol])=>go(glyph(symbol)+label,target)).join('')+'</div>' : user.role==='admin' ? review(data) : go('View inventory','masterlist')}</div><div class="grid grid-4 overview-kpis">${cards.map(([count,label,description,symbol,target])=>`<button class="card kpi" data-go="${target}"><span class="command-kpi-icon">${glyph(symbol)}</span><span class="command-kpi-copy"><span class="lbl">${label}</span><span class="num">${count}</span><span class="kpi-description">${description}</span></span></button>`).join('')}</div>${fieldRole?recentPanel:''}${fieldRole?'<div class="dashboard-workflow">'+turnover(data,user,when)+requestsOverview(data,user)+'</div>':''}<div class="command-analytics">${statusChart(tools,assetsOnly)}${siteChart(projects,tools,assetsOnly)}${movementChart(data)}</div><div class="overview-columns">${panel(admin?'Current inventory':'My assigned tools',`${filters({...data,sites:projects},tools,state,assetsOnly)}<div id="overview-results">${inventory(data,user,state,table)}</div>`,'','inventory-panel')}${panel('Next actions',`<div class="command-tasks">${tasks.filter(t=>user.role!=='tool_handler'||t[4]!=='request').map(([count,label,description,symbol,target])=>`<div class="command-task ${count?'':'is-clear'}"><span class="task-icon">${glyph(symbol)}</span><div><strong>${label} <span>${count}</span></strong><p>${description}</p></div><button class="btn btn-secondary btn-sm" data-go="${target}" aria-label="Open ${label.toLowerCase()}">Open</button></div>`).join('')}</div>`)}</div><div class="command-bottom">${fieldRole?'':panel('Recent asset activity',timeline,go('View all','activity'))}${panel('Active Projects',projectCards,go('View all','sites'),'dashboard-projects')}${panel('Custody overview',custody)}</div>${fieldRole?'</div>':''}`;
   }
 
   window.DashboardView={render,inventory};

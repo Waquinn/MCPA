@@ -20,14 +20,14 @@ function setup(){
   const render=(user={role:'admin'},input=data)=>view.render(input,user,state,()=>'',tools=>tools.map(t=>t.id).join(','),date=>date);
   return {data,state,view,render,context};
 }
-test('dashboard preserves quantity tallies and Engineer custody scope; no invented activity',()=>{
+test('dashboard preserves Admin quantities and counts Engineer assets within custody scope',()=>{
   const {render}=setup();
   const html=render();
   assert.match(html,/<span class="num">6<\/span>/);
   assert.match(html,/No equipment movements recorded in this period/);
   assert.doesNotMatch(html,/Hidden zero/);
   assert.doesNotMatch(html.split('command-panel dashboard-projects')[1],/Archived site/);
-  assert.match(render({role:'engineer',name:'Engineer'}),/<span class="num">4<\/span>/);
+  assert.match(render({role:'engineer',name:'Engineer'}),/<span class="num">2<\/span>/);
   assert.match(render({role:'engineer',name:''}),/<span class="num">0<\/span>/);
 });
 test('dashboard combines search, project, status and condition filters without changing the snapshot',()=>{
@@ -66,7 +66,7 @@ test('live dashboard custody and incoming transfers distinguish duplicate displa
   data.tools[0].holderId='person-a';data.tools[2].holderId='person-b';
   data.transfers=[{id:'TRF-OTHER',status:'pending',receiver:'Engineer',receiverId:'person-b',toolIds:['C']}];
   const html=render({id:'person-a',name:'Engineer',role:'engineer'});
-  assert.match(html,/<span class="num">3<\/span>/);
+  assert.match(html,/<span class="num">1<\/span>/);
   const inventory=view.inventory(data,{id:'person-a',name:'Engineer',role:'engineer'},state,rows=>rows.map(t=>t.id).join(','));
   assert.ok(inventory.startsWith('A<'));
 });
@@ -125,4 +125,23 @@ test('name-only project assignments require explicit demo mode and never overrid
   const html=render(person);
   assert.match(html,/1 active project assigned to you/); assert.match(html,/Demo site/); assert.doesNotMatch(html,/Other site/);
   data.sites[0].is_active=false;assert.match(render(person),/0 active projects assigned to you/);
+});
+
+test('field dashboards count assets consistently in KPIs, charts, filters and project summaries',()=>{
+  const {data,render,context}=setup();
+  context.window.MCPAAuth={isDemo:false};
+  data.sites[0].assigned_engineer_id='person-a';
+  for(const tool of [data.tools[0],data.tools[2]])tool.holderId='person-a';
+  const before=JSON.stringify(data);
+  for(const role of ['engineer','architect']){
+    const html=render({id:'person-a',role});
+    assert.match(html,/<span class="lbl">Total Equipment<\/span><span class="num">2<\/span>/);
+    assert.match(html,/All equipment <span>2<\/span>/);
+    assert.match(html,/<strong>2<\/strong><span>Assets<\/span>/);
+    assert.match(html,/2 assigned assets/);
+    assert.match(html,/Drill · A/);assert.match(html,/Saw · C/);
+    assert.doesNotMatch(html,/Quantities|assigned units|Equipment quantities/);
+  }
+  assert.match(render({role:'tool_handler'}),/<span class="lbl">Total Equipment<\/span><span class="num">6<\/span>/);
+  assert.equal(JSON.stringify(data),before);
 });
