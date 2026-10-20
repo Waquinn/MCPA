@@ -92,7 +92,7 @@ The login combines real project photography with a quiet charcoal and gold sign-
 This document records only the authentication surface in `index.html` and `2-engr/index.html`. Its dark palette is local to login. The workspace continues to use its existing bright default and optional dark mode from `css/global.css` and `css/theme.css`; these login rules do not redefine workspace components.
 
 **Key Characteristics:**
-- Full photographic compositions beside a restrained desktop form.
+- Portrait-sensitive photographic framing beside a restrained desktop form.
 - Gold actions and focus indicators on charcoal login surfaces.
 - A static blurred photograph and glass form container on compact screens.
 - Existing brand typography with naturally scrolling forms.
@@ -125,9 +125,9 @@ The serif heading and gallery title carry identity; the sans-serif form copy and
 
 ## Layout
 
-Above 900px, the gallery width is 75% of the viewport height, capped to leave at least 440px for authentication. The sticky gallery fills the viewport height with zero padding, border, or caption row. The photograph uses contain sizing without stretching or additional cropping; its near-3:4 source fills the dedicated panel almost exactly. The authentication panel centers a form no wider than 360px, with 64px vertical padding and responsive horizontal padding. Photo count, progress and Pause/Play sit at the bottom of the authentication panel, outside the photograph and below the form.
+Desktop targets a 44% gallery / 56% authentication split. The gallery width is clamped between 75% and 80% of viewport height, with a 440px minimum authentication allowance. This retains a near-3:4 frame on short ultrawide screens instead of enlarging the portrait photos into a landscape crop. At 1366×768, 1920×1080 and 2560×1440 the split is 44/56; 1440×900 uses approximately 47/53 to preserve the full width of the photographs. The sticky gallery fills the viewport height with zero padding, border or caption row. Uniform `cover` scaling preserves natural proportions and limits source-height cropping to approximately 6.4%. Photos 4, 5 and 6 anchor at the top to protect roof structure; photos 3, 7 and 9 anchor at the bottom to protect embedded watermarks; the remaining photos stay centered. The authentication panel centers the existing form no wider than 360px, with 64px vertical padding and responsive horizontal padding. Photo count, progress and Pause/Play remain at the bottom of the authentication panel, outside the photograph and below the form.
 
-At 900px and below, a single column uses a static fixed photograph with cover sizing. Safe-area-aware outer padding starts at 28px vertically and 20px horizontally. The content is at most 400px wide; the form card grows naturally. At heights of 600px or less, compact forms align to the top so the document can scroll. Label, field and section spacing follow the frontmatter rather than a newly imposed global scale.
+At 900px and below, or on tablets up to 1200px wide with an aspect ratio of 3:2 or taller, a single column uses the existing static fixed photograph with cover sizing. The slideshow controller uses the same compact condition, so no hidden slideshow timer runs behind that background. Safe-area-aware outer padding starts at 28px vertically and 20px horizontally. The content is at most 400px wide; the form card grows naturally. At heights of 600px or less, compact forms align to the top so the document can scroll. Label, field and section spacing follow the frontmatter rather than a newly imposed global scale.
 
 ## Elevation & Depth
 
@@ -163,14 +163,14 @@ A tabular photo counter, gold progress line and Pause/Play button sit near the b
 
 - **Do** scope login colors and component rules to authentication.
 - **Do** retain Fraunces, Public Sans, the MCPA mark and the supplied image watermarks.
-- **Do** keep the complete photograph visible on desktop and a stable photographic background on compact screens.
+- **Do** protect the building/roof composition using bounded portrait framing and photo-specific positioning; keep the compact photographic background stable.
 - **Do** preserve visible focus, readable fields, reduced motion and natural form scrolling.
 
 ### Don't:
 
 - **Don't** replace the workspace's existing light default or optional dark mode with the login palette.
 - **Don't** extend compact login glass to the desktop form or unrelated workspace surfaces.
-- **Don't** stretch, synthesize detail into or additionally crop the desktop source photographs.
+- **Don't** stretch or synthesize photographic detail, add blurred desktop fill, or force an exact split when it excessively crops the architecture. Keep original image assets unchanged.
 
 <!-- Sources: css/login-slideshow.css; css/global.css; css/components.css; css/theme.css; js/login-slideshow.js; both entry points. Surface contract: .impeccable/surfaces/index-html.md. Verification and limitations: documentation/LOGIN-SLIDESHOW.md. Sidecar tonal ramps are illustrative preview metadata, not additional implemented CSS tokens. -->
 

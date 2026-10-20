@@ -8,7 +8,7 @@
   // Resolve from this script, including /MCPA/ and /MCPA/2-engr/ entry points.
   const directory = new URL('../images/login-slideshow/', document.currentScript.src);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const compact = matchMedia('(max-width: 900px)');
+  const compact = matchMedia('(max-width: 900px), (max-width: 1200px) and (max-aspect-ratio: 3/2)');
   const HOLD = 5500, FADE = 1350;
   const firstLayer = stage.querySelector('.login-slide');
   const layers = [firstLayer, firstLayer.cloneNode(true)];

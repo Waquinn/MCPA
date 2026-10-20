@@ -6,7 +6,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, base }) => {
   const directory = path.join(__dirname, 'artifacts/login-portfolio');
   fs.mkdirSync(directory, { recursive: true });
-  const report = { viewports: [], cycle: [], checks: [] };
+  const report = { viewports: [], photographs: [], cycle: [], checks: [] };
   await command('Page.addScriptToEvaluateOnNewDocument', { source: `
     window.__loginTimers = new Set();
     const originalTimeout = window.setTimeout, originalClearTimeout = window.clearTimeout;
@@ -34,11 +34,23 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
         const stage = document.querySelector('#login-slideshow');
         const slide = stage.querySelector('.login-slide[data-project="' + stage.dataset.project + '"]');
         const image = slide.querySelector('img'), box = image.getBoundingClientRect();
-        const scale = Math.min(box.width / image.naturalWidth, box.height / image.naturalHeight);
-        return {x:box.x+(box.width-image.naturalWidth*scale)/2, y:box.y+(box.height-image.naturalHeight*scale)/2,
-          width:image.naturalWidth*scale, height:image.naturalHeight*scale, opacity:getComputedStyle(slide).opacity};
+        const scale = Math.max(box.width / image.naturalWidth, box.height / image.naturalHeight);
+        const style = getComputedStyle(image);
+        return {x:box.x,y:box.y,width:box.width,height:box.height,
+          naturalWidth:image.naturalWidth,naturalHeight:image.naturalHeight,
+          retainedWidth:box.width/(image.naturalWidth*scale),retainedHeight:box.height/(image.naturalHeight*scale),
+          position:style.objectPosition,fit:style.objectFit,transform:style.transform,
+          project:stage.dataset.project,viewportWidth:innerWidth,viewportHeight:innerHeight,
+          opacity:getComputedStyle(slide).opacity};
       })()`);
       assert.equal(rect.opacity, '1', 'The decoded slide is fully visible after its fade');
+      assert.equal(rect.fit, 'cover', 'Uniform cover scaling fills the gallery without stretching');
+      assert.equal(rect.transform, 'none', 'No additional zoom or image distortion');
+      assert.ok(rect.retainedWidth >= .997, 'Virtually the full original width remains visible');
+      assert.ok(rect.retainedHeight >= .935, 'No more than ~6.5% of source height is cropped, including ratio rounding');
+      if (['4','5','6'].includes(rect.project)) assert.equal(rect.position, '50% 0%', 'Top framing protects roof structure');
+      if (['3','7','9'].includes(rect.project)) assert.equal(rect.position, '50% 100%', 'Bottom framing protects embedded watermark');
+      report.photographs.push({capture:name,...rect});
       const shot = await loadImage(bytes), canvas = createCanvas(shot.width, shot.height), context = canvas.getContext('2d');
       context.drawImage(shot, 0, 0);
       let painted = 0;
@@ -50,7 +62,7 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
     }
   };
   if (!process.argv.includes('--login-slideshow-fallback')) {
-  for (const [width, height] of [[375, 812], [393, 852], [430, 932], [768, 1024], [1366, 768], [1440, 900], [1920, 1080]]) {
+  for (const [width, height] of [[375,812],[393,852],[430,932],[768,1024],[900,900],[901,900],[1024,1366],[1024,768],[1200,800],[1201,800],[1366,768],[1440,900],[1920,1080],[2560,1440],[2560,1080]]) {
     await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 768 });
     await navigate();
     assert.equal(await evaluate(current), '1');
@@ -60,9 +72,11 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
       const gallery=document.querySelector('.login-gallery').getBoundingClientRect();
       const stage=document.querySelector('#login-slideshow').getBoundingClientRect();
       const photo=document.querySelector('.login-photo');
-      const scale=Math.min(stage.width/photo.naturalWidth,stage.height/photo.naturalHeight);
+      const scale=Math.max(stage.width/photo.naturalWidth,stage.height/photo.naturalHeight);
       const controls=document.querySelector('.login-gallery-footer').getBoundingClientRect();
-      return {overflow:document.documentElement.scrollWidth>innerWidth,card:{x:card.x,width:card.width,bottom:card.bottom},
+      return {overflow:document.documentElement.scrollWidth>innerWidth,
+        compact:getComputedStyle(document.querySelector('.login-mobile-backdrop')).display!=='none',
+        card:{x:card.x,width:card.width,bottom:card.bottom},
         gallery:{x:gallery.x,y:gallery.y,width:gallery.width,height:gallery.height,right:gallery.right},
         stage:{x:stage.x,y:stage.y,width:stage.width,height:stage.height},
         photograph:{width:photo.naturalWidth*scale,height:photo.naturalHeight*scale},
@@ -77,25 +91,26 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
     })()`);
     assert.equal(layout.overflow, false);
     assert.equal(layout.interactive, true);
-    assert.ok(Math.abs(layout.card.x + layout.card.width / 2 - (width > 900 ? (layout.gallery.right + width) / 2 : width / 2)) < 1, 'Form centered within its responsive panel');
-    if (width > 900) {
-      assert.ok(Math.abs(layout.gallery.width - height * .75) < 1, 'Gallery width follows portrait ratio and viewport height');
+    assert.ok(Math.abs(layout.card.x + layout.card.width / 2 - (!layout.compact ? (layout.gallery.right + width) / 2 : width / 2)) < 1, 'Form centered within its responsive panel');
+    if (!layout.compact) {
+      assert.ok(layout.gallery.width / height >= .749 && layout.gallery.width / height <= .801, 'Gallery stays near the original portrait proportions');
+      if (width / height > 1.7 && width / height < 1.8) assert.ok(Math.abs(layout.gallery.width/width-.44)<.001, 'Normal 16:9 desktops use a balanced 44/56 split');
       assert.equal(layout.gallery.x, 0);
       assert.equal(layout.gallery.y, 0);
       assert.equal(layout.gallery.height, height, 'Gallery reaches both viewport edges');
       assert.equal(layout.stage.width, layout.gallery.width, 'No horizontal frame around photo');
       assert.equal(layout.stage.height, height, 'No caption row or padding shrinking photo');
-      assert.ok(layout.stage.width - layout.photograph.width < 2 && height - layout.photograph.height < 2, 'Entire photo fills dedicated panel within aspect-ratio rounding');
+      assert.ok(layout.photograph.width >= layout.stage.width-.1 && layout.photograph.height >= height-.1, 'Uniformly scaled photo fills every panel edge without empty margins');
       assert.ok(layout.controls.x >= layout.gallery.right, 'Controls cannot obscure photo or watermark');
       assert.ok(layout.controls.y >= layout.card.bottom, 'Controls cannot overlap the authentication form');
       assert.ok(layout.card.x >= layout.gallery.right, 'Login form cannot overlap the architecture');
     }
     assert.ok(layout.filters.every(filter => filter === 'none'), 'Sharp photographs: no blurred fill or filtering');
-    assert.ok(layout.photos.every(fit => fit === 'contain'), 'Whole source composition is retained');
+    assert.ok(layout.photos.every(fit => fit === 'cover'), 'Aspect-preserving photos fill the bounded gallery');
     assert.ok(layout.card.bottom <= height, 'Form fits the requested viewport');
     assert.equal(await evaluate("document.querySelector('[data-login-number]').textContent"), '01');
     await capture(`login-${width}-early`);
-    if (width <= 900) {
+    if (layout.compact) {
       assert.equal(layout.mobileFilter, 'blur(16px)');
       assert.equal(layout.mobileFit, 'cover');
       assert.equal(layout.glass, 'blur(14px)');
@@ -132,12 +147,12 @@ exports.verify = async ({ evaluate, command, wait, click, fill, login, logout, b
     // Headless Chromium can defer compositor frames. Settle the actual animation,
     // not just wall-clock time, before judging the rendered photograph.
     await wait(`(() => { const slide=document.querySelector('.login-slide[data-project="${number}"]'); return slide.getAnimations().length===0 && getComputedStyle(slide).opacity==='1'; })()`);
-    await capture(`login-1920-project-${number}`, false, true);
-    if (number === 5) {
-      for (const [width, height] of [[1440,900], [1920,1080]]) {
-        await command('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 768 });
-        await capture(`login-${width}-project-5`);
-      }
+    // Every real slideshow photograph is checked at every requested desktop width,
+    // including a short ultrawide where a fixed 44% would cut off roof details.
+    for (const [width,height] of [[1366,768],[1440,900],[2560,1440],[2560,1080],[1920,1080]]) {
+      await command('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+      await capture(`login-${width}x${height}-project-${number}`,true,true);
+      assert.equal(await evaluate(current),String(number),'Capture remains on the same real slideshow frame');
     }
   }
   await wait(`${current}==='1'`);

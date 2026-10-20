@@ -2,7 +2,11 @@
 
 Implemented October 18, 2026; desktop layout corrected October 20, 2026, for both `index.html` and `2-engr/index.html`.
 
-## Design and behavior
+## Current desktop proportions
+
+See [Desktop proportion refinement and fresh screenshots](login-layout/README.md). That review supersedes the historical 75%-of-height/contain geometry below. The current layout targets 44/56 with bounded portrait framing, photo-specific roof protection and an extended compact tablet breakpoint; authentication and all photo assets are unchanged.
+
+## Historical design and behavior
 
 Desktop uses a full-height photographic panel whose width is 75% of viewport height, capped to leave at least 440px for the near-black authentication panel. At 1366×768, 1440×900 and 1920×1080 the gallery is respectively 576×768, 675×900 and 810×1080. There is no gallery padding, frame, border or caption row. The existing near-3:4 photographs use `object-fit: contain`, preserving each entire composition and watermark with no desktop blur, duplicate background, stretching, zoom or extra cropping. The counter, gold progress line and keyboard-operable Pause/Play sit at the bottom of the authentication panel, covering none of the photograph.
 

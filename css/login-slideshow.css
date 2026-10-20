@@ -3,8 +3,9 @@
   --white: #171b19; --black: #f5f3ed; --gray: #b9beb9; --line: #525a54;
   --text-primary: #f5f3ed; --text-secondary: #b9beb9; --text-muted: #b9beb9;
   --background: #202622; --brand-primary: #fabb00; --gold-dim: #fabb00;
-  --login-gallery-width: min(75vh, calc(100vw - 440px));
-  --login-gallery-width: min(75svh, calc(100vw - 440px));
+  /* Aim for 44/56; bound the gallery near the original 3:4 compositions. */
+  --login-gallery-width: min(clamp(75vh, 44vw, 80vh), calc(100vw - 440px));
+  --login-gallery-width: min(clamp(75svh, 44vw, 80svh), calc(100vw - 440px));
   position: relative; isolation: isolate; display: grid; grid-template-columns: var(--login-gallery-width) minmax(0, 1fr);
   align-items: stretch; min-height: 100vh; min-height: 100dvh; padding: 0;
   background: #111312; color: var(--text-primary); color-scheme: dark;
@@ -19,8 +20,11 @@
 .login-slide { position: absolute; inset: 0; opacity: 0; background: #202521; }
 .login-slide:first-child { opacity: 1; }
 .login-scene { position: absolute; inset: 0; }
-/* The new sources are all 3:4. Contain preserves the complete photo and watermark. */
-.login-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; }
+/* Uniform scaling fills the panel; its aspect-ratio bounds limit vertical crop to ~6.4%. */
+.login-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+/* These roofs meet the source's top edge; the other marked photos have footer watermarks. */
+.login-slide:is([data-project="4"], [data-project="5"], [data-project="6"]) .login-photo { object-position: center top; }
+.login-slide:is([data-project="3"], [data-project="7"], [data-project="9"]) .login-photo { object-position: center bottom; }
 .login-mobile-backdrop { display: none; }
 /* Controls belong to the adjacent panel so no photo detail or watermark is covered. */
 .login-gallery-footer { position: absolute; z-index: 2; left: var(--login-gallery-width); right: 0; bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 20px; padding: 0 32px; }
@@ -54,7 +58,7 @@
 #login-screen .btn-secondary:hover { background: #252d27; border-color: #b9beb9; }
 #login-screen .login-card > .link-btn { min-height: 44px; margin: 8px 0 0; padding: 8px 0; text-underline-offset: 4px; }
 #login-screen .auth-help { font-size: 12px; line-height: 1.6; margin: 24px 0 14px; }
-@media (max-width: 900px) {
+@media (max-width: 900px), (max-width: 1200px) and (max-aspect-ratio: 3/2) {
   #login-screen { grid-template-columns: minmax(0, 1fr); place-items: center; padding: max(28px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
   .login-gallery { position: absolute; inset: 0; display: block; height: auto; padding: 0; background: #111312; pointer-events: none; }
   .login-slideshow { position: fixed; inset: 0; width: auto; }
@@ -72,7 +76,7 @@
   #login-screen .auth-help { margin-top: 20px; }
   #login-screen .btn { white-space: normal; }
 }
-@media (max-height: 600px) and (max-width: 900px) {
+@media (max-height: 600px) and (max-width: 900px), (max-height: 600px) and (max-width: 1200px) and (max-aspect-ratio: 3/2) {
   /* The document grows with the form when the software keyboard reduces height. */
   #login-screen { align-items: start; }
 }
