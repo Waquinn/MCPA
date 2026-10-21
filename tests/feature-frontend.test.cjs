@@ -38,11 +38,11 @@ function image(type='image/png',size=100,bytes=[137,80,78,71,13,10,26,10]) {
   return {type,size,slice(){return {arrayBuffer:async()=>Uint8Array.from(bytes).buffer};}};
 }
 function photoHarness() {
-  let user={id:'admin-1',role:'admin'},uploadError=null,signError=null;const uploads=[],signs=[];
-  const storage={async upload(...args){uploads.push(args);return {error:uploadError};},async createSignedUrl(path,seconds){signs.push({path,seconds,user:user.id});return {data:{signedUrl:'https://fixture.example/'+path},error:signError};}};
+  let user={id:'admin-1',role:'admin'},uploadError=null,signError=null;const uploads=[],signs=[],removes=[];
+  const storage={async remove(paths){removes.push(paths);return {error:storage.removeError};},async upload(...args){uploads.push(args);if(storage.throwUpload)throw Error('Response lost');return {error:uploadError};},async createSignedUrl(path,seconds){signs.push({path,seconds,user:user.id});return {data:{signedUrl:'https://fixture.example/'+path},error:signError};}};
   const window={MCPAAuth:{requireLive(){if(!user)throw new Error('Sign in');return user;}},EquipmentTracking:{client:()=>({storage:{from(bucket){assert.equal(bucket,'equipment-photos');return storage;}}})},addEventListener(){}};
   vm.runInNewContext(source('js/equipment-photos.js'),{window,document:{},crypto:{randomUUID:()=> '11111111-1111-4111-8111-111111111111'},Uint8Array,Date,setInterval(){return 1;},clearInterval(){}});
-  return {api:window.EquipmentPhotos,uploads,signs,setUser:value=>{user=value;},failUpload:value=>{uploadError=value;},failSign:value=>{signError=value;}};
+  return {api:window.EquipmentPhotos,uploads,signs,removes,storage,setUser:value=>{user=value;},failUpload:value=>{uploadError=value;},failSign:value=>{signError=value;}};
 }
 test('photo validation enforces MIME, signatures, non-empty files and 5 MB boundary',async()=>{
   const {api}=photoHarness();await api.validate(image());await api.validate(image('image/png',api.maxBytes));
@@ -79,7 +79,7 @@ function masterlistHarness() {
   const submit={textContent:'Update Item',disabled:false};nodes.closeEquipmentModal={disabled:false};
   nodes.equipmentForm={isConnected:true,reset(){},querySelector:()=>submit,querySelectorAll:()=>Object.values(fields).map((_,i)=>nodes[Object.keys(fields)[i]]).concat(submit),setAttribute(){},removeAttribute(){}};
   nodes.equipmentModal={style:{display:'flex'}};nodes.equipmentFormFeedback={isConnected:true,textContent:''};nodes['inventory-sync']={isConnected:true,textContent:''};
-  const document={getElementById:id=>nodes[id]||null},db={from(table){assert.equal(table,'equipment');const q={};return {update(payload){q.payload=payload;return this;},insert(payload){q.payload=payload[0];return this;},eq(key,value){q[key]=value;return this;},select(){return this;},async single(){writes.push(q);if(db.error)return {error:db.error};Object.assign(saved,q.payload);return {data:saved};}};}};
+  const document={getElementById:id=>nodes[id]||null},db={from(table){assert.equal(table,'equipment');const q={};return {update(payload){q.payload=payload;return this;},insert(payload){q.payload=payload[0];return this;},eq(key,value){q[key]=value;return this;},select(columns){q.columns=columns;return this;},limit(){return this;},then(resolve){return Promise.resolve(db.recoveryError?{error:db.recoveryError}:{data:db.committed?[saved]:[]}).then(resolve);},async single(){writes.push(q);if(db.error){if(db.committed)Object.assign(saved,q.payload);return {error:db.error};}Object.assign(saved,q.payload);return {data:saved};}};}};
   let prepareCount=0;
   const window={MCPAAuth:{requireLive:()=>user},EquipmentTracking:{async inventoryOffice(){if(window.officeError)throw new Error(window.officeError);return {id:"office-fixture",label:"Office"};},client:()=>db,matchesStatus:(item,status)=>!status||item.dbStatus===status},EquipmentPhotos:{async prepare(file,assetId,previous){if(window.uploadError)throw new Error('Photo upload failed');prepareCount++;return previous||{reference:'storage://equipment-photos/'+assetId+'/11111111-1111-4111-8111-111111111111.png',file,assetId};}}};
   const context={window,document,supabaseClient:db,URL:{revokeObjectURL(){}},crypto:{randomUUID:()=> '11111111-1111-4111-8111-111111111111'},console};
@@ -130,3 +130,44 @@ test('unavailable Office prevents creation and upload while preserving form and 
   assert.equal(h.writes[0].payload.site_id,'office-fixture');
   assert.equal(h.nodes.equipmentModal.style.display,'none');
 });
+
+ test('new item without a photo never references the optional image column',async()=>{
+  const h=masterlistHarness();h.context.currentEditId=null;await h.save();
+  assert.equal(h.writes.length,1);assert.equal(h.writes[0].columns,'asset_id,site_id');assert.equal(Object.hasOwn(h.writes[0].payload,'image_url'),false);
+  assert.equal(h.writes[0].payload.site_id,'office-fixture');assert.equal(h.prepareCount,0);
+ });
+ test('duplicate Save clicks share one in-flight insert',async()=>{
+  const h=masterlistHarness();h.context.currentEditId=null;await Promise.all([h.save(),h.save(),h.save()]);assert.equal(h.writes.length,1);
+ });
+ test('missing photo schema fails before upload and preserves the selection',async()=>{
+  const h=masterlistHarness(),file=image();h.context.currentEditId=null;h.context.equipmentPhotoState.file=file;
+  h.window.EquipmentPhotos.checkSchema=async()=>{throw Error('Equipment photo setup is missing');};await h.save();
+  assert.equal(h.writes.length,0);assert.equal(h.prepareCount,0);assert.equal(h.context.equipmentPhotoState.file,file);assert.match(h.nodes.equipmentFormFeedback.textContent,/setup is missing/);
+ });
+ test('lost successful insert response is reconciled without a second insert',async()=>{
+  const h=masterlistHarness();h.context.currentEditId=null;h.db.committed=true;h.db.error={message:'Response interrupted'};
+  await h.save();h.db.error=null;await h.save();assert.equal(h.writes.length,1);assert.equal(h.nodes.equipmentModal.style.display,'none');
+ });
+ test('unverifiable previous insert stops retry instead of creating duplicates',async()=>{
+  const h=masterlistHarness();h.context.currentEditId=null;h.db.error={message:'Connection interrupted'};await h.save();
+  h.db.error=null;h.db.recoveryError={message:'Offline'};await h.save();assert.equal(h.writes.length,1);assert.match(h.nodes.equipmentFormFeedback.textContent,/verify the previous save/);
+ });
+
+ test('uncertain upload response retains the exact path and reconciles it without a second upload',async()=>{
+  const h=photoHarness(),file=image();h.storage.throwUpload=true;
+  let staged;try{await h.api.prepare(file,'TOOL-001');}catch(error){staged=error.staged;}
+  assert.ok(staged);assert.equal(staged.uploaded,false);h.storage.throwUpload=false;
+  const recovered=await h.api.prepare(file,'TOOL-001',staged);
+  assert.equal(recovered.path,staged.path);assert.equal(recovered.uploaded,true);assert.equal(h.uploads.length,1);
+ });
+ test('failed upload retry reuses its original path when the object is absent',async()=>{
+  const h=photoHarness(),file=image();h.failUpload({message:'Offline'});let staged;
+  try{await h.api.prepare(file,'TOOL-001');}catch(error){staged=error.staged;}
+  h.failUpload(null);h.failSign({message:'Object absent'});const saved=await h.api.prepare(file,'TOOL-001',staged);
+  assert.equal(h.uploads.length,2);assert.equal(h.uploads[0][0],h.uploads[1][0]);assert.equal(saved.uploaded,true);
+ });
+ test('discard removes only the staged path and reports cleanup failures for retry',async()=>{
+  const h=photoHarness(),staged=await h.api.prepare(image(),'TOOL-001');await h.api.discard(staged);
+  assert.equal(h.removes[0][0],staged.path);h.storage.removeError={message:'Offline'};await assert.rejects(h.api.discard(staged),/could not be cleared/);
+  h.setUser({id:'other-admin',role:'admin'});await assert.rejects(h.api.discard(staged),/uploading account/);
+ });

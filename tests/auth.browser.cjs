@@ -11,10 +11,14 @@ window.supabase={createClient(){let listener;const session=()=>{const key=localS
  channel(){const c={tables:[],on(_type,filter,fn){this.tables.push(filter.table);this.notify=fn;return this},subscribe(){return this}};__channels.add(c);return c;},removeChannel(c){__channels.delete(c);return Promise.resolve();},
  auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange(fn){listener=fn;return {data:{subscription:{unsubscribe(){}}}}},async signInWithPassword({email,password}){const key=email.split('@')[0];if(!['admin','sky','pau','architect','secretary','handler','inactive','missing'].includes(key)||password!=='test-password')return {error:{code:'invalid_credentials'}};localStorage.setItem('fixture.account',key);listener?.('SIGNED_IN',session());return {data:{session:session()}}},async signOut(){localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null);return {error:null}},resetPasswordForEmail:async()=>({error:null}),updateUser:async values=>{window.__savedPassword=values.password;return {error:null}} },
  functions:{invoke:async(name,{body})=>{if(body.action==='capabilities')return {data:window.__accountCapabilities||{invitations_enabled:true,development_enabled:true,pending_development_accounts:[]}};window.__accountRequest={name,body};return window.__developmentFailure?{error:{context:{json:async()=>({error:'Creation interrupted. Retry the same test account.'})}}}:{data:{message:body.action==='invite'?'Invitation sent.':'Test account created.'}};}},
- storage:{from(bucket){return {async upload(name,file,options){if(window.__failUpload)return {error:{message:'Isolated upload failure'}};const bytes=new Uint8Array(await file.arrayBuffer());let raw='';for(const value of bytes)raw+=String.fromCharCode(value);return request({storage:'upload',bucket,name,type:file.type,size:file.size,body:btoa(raw),options});},createSignedUrl(name,expires){return request({storage:'sign',bucket,name,expires});}}}},
+ storage:{from(bucket){return {async upload(name,file,options){if(window.__failUpload)return {error:{message:'Isolated upload failure'}};const bytes=new Uint8Array(await file.arrayBuffer());let raw='';for(const value of bytes)raw+=String.fromCharCode(value);return request({storage:'upload',bucket,name,type:file.type,size:file.size,body:btoa(raw),options});},createSignedUrl(name,expires){return request({storage:'sign',bucket,name,expires});},remove(names){return request({storage:'remove',bucket,names});}}}},
  rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},insert(values){q.write='insert';q.values=values;return this},update(values){q.write='update';q.values=values;return this},single(){q.single=true;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
 }}};`;
 const server=http.createServer(async(req,res)=>{
+ if(process.argv.includes('--equipment-fixes')&&req.url.startsWith('/__qr?')){
+  const asset=new URL(req.url,'http://localhost').searchParams.get('data');
+  res.setHeader('Content-Type','image/png');res.end(await require('qrcode').toBuffer(asset,{width:120,margin:0}));return;
+ }
  if(req.url==='/__sdk.js'){res.setHeader('Content-Type','text/javascript');res.end(sdk+(turnoverRun?`
   const originalFixtureClient=window.supabase.createClient;
   window.supabase.createClient=(...args)=>{const client=originalFixtureClient(...args);let stream=null;const channel=client.channel.bind(client),remove=client.removeChannel.bind(client);
@@ -42,6 +46,8 @@ const server=http.createServer(async(req,res)=>{
      if(!bucket||q.size>Number(bucket.file_size_limit)||!bucket.allowed_mime_types.includes(q.type)||q.options?.upsert)throw new Error('Invalid isolated upload');
      await fixture.query(actor,'insert into storage.objects(bucket_id,name) values($1,$2)',[q.bucket,q.name]);
      storedFiles.set(q.bucket+'/'+q.name,{bytes:Buffer.from(q.body,'base64'),type:q.type});data={path:q.name};
+    }else if(q.storage==='remove'){
+     for(const name of q.names){const rows=(await fixture.query(actor,'delete from storage.objects where bucket_id=$1 and name=$2 returning name',[q.bucket,name])).rows;if(rows.length)storedFiles.delete(q.bucket+'/'+name);}data=[];
     }else if(q.storage==='sign'){
      const rows=(await fixture.query(actor,'select name from storage.objects where bucket_id=$1 and name=$2',[q.bucket,q.name])).rows;
      const file=storedFiles.get(q.bucket+'/'+q.name);if(!rows.length||!file)throw new Error('File access denied');
@@ -62,8 +68,9 @@ const server=http.createServer(async(req,res)=>{
     const values=Array.isArray(q.values)?q.values[0]:q.values,keys=Object.keys(values);
     if(!keys.length||keys.some(key=>!/^[a-z_]+$/.test(key)))throw new Error('Bad write column');
     let result;
-    if(q.write==='insert')result=await fixture.query(actor,`insert into public.equipment(${keys.join(',')}) values(${keys.map((_,i)=>'$'+(i+1)).join(',')}) returning *`,keys.map(key=>values[key]));
-    else if(q.write==='update'&&q.filters.length===1&&q.filters[0][0]==='asset_id')result=await fixture.query(actor,`update public.equipment set ${keys.map((key,i)=>key+'=$'+(i+1)).join(',')} where asset_id=$${keys.length+1} returning *`,[...keys.map(key=>values[key]),q.filters[0][1]]);
+    const returning=q.columns==='*'?'*':q.columns.split(',').map(c=>{if(!/^[a-z_]+$/.test(c))throw new Error('Bad return column');return c;}).join(',');
+    if(q.write==='insert')result=await fixture.query(actor,`insert into public.equipment(${keys.join(',')}) values(${keys.map((_,i)=>'$'+(i+1)).join(',')}) returning ${returning}`,keys.map(key=>values[key]));
+    else if(q.write==='update'&&q.filters.length===1&&q.filters[0][0]==='asset_id')result=await fixture.query(actor,`update public.equipment set ${keys.map((key,i)=>key+'=$'+(i+1)).join(',')} where asset_id=$${keys.length+1} returning ${returning}`,[...keys.map(key=>values[key]),q.filters[0][1]]);
     else throw new Error('Unsupported isolated update');
     data=q.single?result.rows[0]:result.rows;
    }
@@ -81,6 +88,7 @@ const server=http.createServer(async(req,res)=>{
  const file=path.resolve(root,'.'+pathname);
  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.writeHead(404);res.end();return;}
  let content=fs.readFileSync(file);if(file.endsWith('index.html'))content=content.toString().replace(/<script src="https:[^"]+"[^>]*><\/script>/g,'').replace('</head>','<script src="/__sdk.js"></script></head>');
+ if(process.argv.includes('--equipment-fixes')&&file.endsWith('masterlist.js'))content=content.toString().replaceAll('https://api.qrserver.com/v1/create-qr-code/','/__qr');
  res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.png':'image/png','.webp':'image/webp'})[path.extname(file)]||'text/plain');res.end(content);
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
@@ -96,12 +104,12 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(process.argv.includes('--header-notifications')||process.argv.includes('--pdf-reports')||process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
  fixtureMigrations.add('202610120003_optional_request_purpose.sql');
  fixtureMigrations.add('202610150001_inventory_availability.sql');
- if(process.argv.includes('--feature-completion')||process.argv.includes('--global-search')){
+ if(process.argv.includes('--feature-completion')||process.argv.includes('--global-search')||process.argv.includes('--equipment-fixes')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
    alter table storage.objects enable row level security;grant usage on schema storage to authenticated,anon;grant select,insert,update,delete on storage.objects to authenticated,anon;
    alter table equipment alter column id set default gen_random_uuid();`);
-  for(const file of ['202610100003_feature_storage.sql','202610100004_movement_cancellation.sql','202610100005_purchase_ledger.sql','202610100006_monitoring.sql'])fixtureMigrations.add(file);
+  if(!process.argv.includes('--equipment-fixes'))for(const file of ['202610100003_feature_storage.sql','202610100004_movement_cancellation.sql','202610100005_purchase_ledger.sql','202610100006_monitoring.sql'])fixtureMigrations.add(file);
  }
  for(const file of [...fixtureMigrations].sort())await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
  await require('./office-return-fixture.cjs').configure(fixture);
@@ -162,6 +170,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--equipment-fixes')){
+  await require('./equipment-fixes.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,shot,base,artifactDirectory:profile});
+  assert.deepEqual(errors,[],'No uncaught browser errors');return;
+ }
  if(process.argv.includes('--asset-interface')){
   await require('./equipment-office.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,calls,shot,artifactDirectory:profile});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;

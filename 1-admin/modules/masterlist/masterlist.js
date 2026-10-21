@@ -7,13 +7,29 @@ if (typeof supabaseClient === 'undefined') {
 var equipmentList = [];
 var currentEditId = null; 
 var currentProfileId = null;
-var currentProfileId = null;
 
 var currentPage = 1;
 var selectedAssets = [];
 var bulkActionMode = '';
 var itemsPerPage = 10;
 var equipmentPhotoState = {file:null,previewUrl:null,staged:null,revision:0,saving:false,validating:false,newAssetId:null,newRecordId:null};
+
+function setEquipmentModalOpen(open) {
+  const modal = document.getElementById('equipmentModal');
+  if (!modal) return;
+  if (open) {
+    modal.showModal?.();
+    modal.style.display = 'flex';
+    modal.querySelector('.equipment-form-body')?.scrollTo(0,0);
+  } else { modal.close?.(); modal.style.display = 'none'; }
+  document.documentElement?.classList.toggle('equipment-modal-open',open);
+}
+
+async function discardEquipmentUpload() {
+  const state = equipmentPhotoState;
+  if (state.staged && window.EquipmentPhotos?.discard) await window.EquipmentPhotos.discard(state.staged);
+  state.staged = null;
+}
 
 function resetEquipmentPhoto(item = null, keepSelection = false) {
   const state = equipmentPhotoState;
@@ -103,7 +119,6 @@ async function initMasterlist() {
   equipmentList.forEach(item => { item.availability = window.EquipmentTracking.availability(item, item.availabilityData); });
   populateFilters();
   renderTable();
-  if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId, true);
   if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId, true);
   if (!tbody.dataset.listeners) { setupMasterlistListeners(); tbody.dataset.listeners = 'true'; }
   document.getElementById('inventory-sync').textContent = '';
@@ -338,10 +353,12 @@ function showMasterlistView(viewName) {
 
   if (viewName === 'masterlist') {
     currentProfileId = null;
-    currentProfileId = null;
     if (masterlistScreen) masterlistScreen.style.display = 'block';
     if (profileScreen) profileScreen.style.display = 'none';
   } else if (viewName === 'tool-profile') {
+    // A new detail visit must not inherit the inventory's old scroll offset.
+    // History restoration runs afterward and can restore a previous visit.
+    if (profileScreen?.style.display !== 'block') window.scrollTo(0,0);
     if (masterlistScreen) masterlistScreen.style.display = 'none';
     if (profileScreen) profileScreen.style.display = 'block';
   }
@@ -356,7 +373,6 @@ function showToolProfile(assetId, restoring = false) {
     showMasterlistView('tool-profile');
     return;
   }
-  currentProfileId = assetId;
   currentProfileId = assetId;
 
   const content = document.getElementById("profileContent");
@@ -376,12 +392,12 @@ function showToolProfile(assetId, restoring = false) {
         <figure class="equipment-profile-photo">${window.EquipmentVisual.thumbnail(item)}${item.image_url ? '' : '<figcaption>No item photo saved</figcaption>'}</figure>
 
         <div class="section-title"><h2 style="font-size:15px; font-weight:600; margin-bottom:8px;">Movement History</h2></div>
-        <div class="card card-pad" style="background:#fff; padding:16px; border-radius:8px; border:1px solid var(--line);">
+        <div class="card card-pad" style="background:var(--surface); padding:16px; border-radius:8px; border:1px solid var(--line);">
           <div class="timeline">
             <div class="tl-item">
               <div class="tl-date" style="font-size:11px; color:var(--gray);">${formatDate(item.createdAt)}</div>
               <div class="tl-title" style="font-weight:600; font-size:13px;">Registered into Masterlist</div>
-              <div class="tl-detail" style="font-size:12px; color:#555; margin-top:2px;">Item added to inventory database with initial condition: ${escapeHTML(item.condition)}.</div>
+              <div class="tl-detail" style="font-size:12px; color:var(--gray); margin-top:2px;">Item added to inventory database with initial condition: ${escapeHTML(item.condition)}.</div>
               <div class="tl-meta" style="font-size:11px; margin-top:4px;"><span>Status <b>${item.status.toUpperCase()}</b></span></div>
             </div>
           </div>
@@ -390,24 +406,24 @@ function showToolProfile(assetId, restoring = false) {
 
       <div>
         <div class="section-title"><h2 style="font-size:15px; font-weight:600; margin-bottom:8px;">Tool Information</h2></div>
-        <div class="card card-pad" style="background:#fff; padding:16px; border-radius:8px; border:1px solid var(--line); margin-bottom:22px;">
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Tool ID</span><span class="v" style="font-weight:600;"><span class="tool-id-chip">${escapeHTML(item.assetId)}</span></span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Category</span><span class="v" style="font-weight:600;">${escapeHTML(item.category)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Brand</span><span class="v" style="font-weight:600;">${escapeHTML(item.brand)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Model</span><span class="v" style="font-weight:600;">${escapeHTML(item.model)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Serial Number</span><span class="v mono" style="font-weight:600;">${escapeHTML(item.serialNumber)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Condition</span><span class="v" style="font-weight:600;">${escapeHTML(item.condition)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Tracking Type</span><span class="v" style="font-weight:600;">${escapeHTML(item.trackingType)}</span></div>
-          ${item.trackingType === 'Bulk' ? `<div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Quantity & Unit</span><span class="v" style="font-weight:600;">${escapeHTML(item.quantity)}${escapeHTML(item.unit)}</span></div>` : ''}
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Identifying Details</span><span class="v" style="font-weight:600;">${escapeHTML(item.details)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Current Location</span><span class="v" style="font-weight:600;">${escapeHTML(item.site)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0;"><span class="k" style="color:var(--gray); font-size:13px;">Current Holder</span><span class="v" style="font-weight:600;">${escapeHTML(item.holder)}</span></div>
+        <div class="card card-pad" style="background:var(--surface); padding:16px; border-radius:8px; border:1px solid var(--line); margin-bottom:22px;">
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Tool ID</span><span class="v" style="font-weight:600;"><span class="tool-id-chip">${escapeHTML(item.assetId)}</span></span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Category</span><span class="v" style="font-weight:600;">${escapeHTML(item.category)}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Brand</span><span class="v" style="font-weight:600;">${escapeHTML(item.brand)}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Model</span><span class="v" style="font-weight:600;">${escapeHTML(item.model)}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Serial Number</span><span class="v mono" style="font-weight:600;">${escapeHTML(item.serialNumber)}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Condition</span><span class="v" style="font-weight:600;">${escapeHTML(item.condition)}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Tracking Type</span><span class="v" style="font-weight:600;">${escapeHTML(item.trackingType)}</span></div>
+          ${item.trackingType === 'Bulk' ? `<div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Quantity & Unit</span><span class="v" style="font-weight:600;">${escapeHTML(item.quantity)}${escapeHTML(item.unit)}</span></div>` : ''}
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Identifying Details</span><span class="v" style="font-weight:600;">${escapeHTML(item.details)}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Current Location</span><span class="v" style="font-weight:600;">${escapeHTML(item.site)}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Current Holder</span><span class="v" style="font-weight:600;">${escapeHTML(item.holder)}</span></div>
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0;">${window.EquipmentTracking.statusMarkup(item,item.availabilityData)}</div>
         </div>
 
         <div class="section-title"><h2 style="font-size:15px; font-weight:600; margin-bottom:8px;">Actions & QR Tag</h2></div>
-        <div class="card card-pad" style="background:#fff; padding:16px; border-radius:8px; border:1px solid var(--line); text-align:center;">
-          <div id="qrContainerProfile" style="margin:0 auto 12px; display:inline-block; min-width:96px; min-height:96px;"></div>
+        <div class="card card-pad" style="background:var(--surface); padding:16px; border-radius:8px; border:1px solid var(--line); text-align:center;">
+          <div id="qrContainerProfile" class="equipment-qr-surface"></div>
           <div style="font-weight:700; font-size:13px; margin-bottom:14px;">${escapeHTML(item.assetId)}</div>
           
           <div style="display:flex; flex-direction:column; gap:8px;">
@@ -468,7 +484,7 @@ function editTool(assetId) {
     if (modalTitle) modalTitle.innerText = `Edit Tool: ${assetId}`;
     if (modalSubmitBtn) modalSubmitBtn.innerText = 'Update Item';
     
-    modal.style.display = 'flex';
+    setEquipmentModalOpen(true);
   }
 }
 
@@ -553,28 +569,38 @@ function setupMasterlistListeners() {
       if (form) form.reset();
       equipmentPhotoState.newAssetId = null;
       equipmentPhotoState.newRecordId = null;
+      equipmentPhotoState.attempted = false;
       resetEquipmentPhoto();
       
-      modal.style.display = 'flex';
+      setEquipmentModalOpen(true);
     };
   }
 
-  const closeModal = () => {
+  const closeModal = async (saved = false) => {
     if (equipmentPhotoState.saving) return;
-    if (modal) modal.style.display = 'none';
+    try { if (!saved) await discardEquipmentUpload(); }
+    catch (error) { feedback.textContent = error.message; return; }
+    setEquipmentModalOpen(false);
     if (form) form.reset();
     resetEquipmentPhoto();
     equipmentPhotoState.newAssetId = null;
     equipmentPhotoState.newRecordId = null;
+    equipmentPhotoState.attempted = false;
     currentEditId = null;
   };
 
-  if (closeBtn) closeBtn.onclick = closeModal;
-  if (cancelBtn) cancelBtn.onclick = closeModal;
+  if (closeBtn) closeBtn.onclick = () => closeModal();
+  if (cancelBtn) cancelBtn.onclick = () => closeModal();
+  if (modal) modal.oncancel = event => { event.preventDefault(); closeModal(); };
   if (exportBtn) exportBtn.onclick = exportMasterlist;
-  if (photoClear) photoClear.onclick = () => resetEquipmentPhoto(equipmentList.find(item => item.assetId === currentEditId));
+  if (photoClear) photoClear.onclick = async () => {
+    try { await discardEquipmentUpload(); resetEquipmentPhoto(equipmentList.find(item => item.assetId === currentEditId)); }
+    catch (error) { feedback.textContent = error.message; }
+  };
   if (photoInput) photoInput.onchange = async () => {
     const file = photoInput.files?.[0];
+    try { await discardEquipmentUpload(); }
+    catch (error) { photoInput.value = ''; feedback.textContent = error.message; return; }
     resetEquipmentPhoto(equipmentList.find(item => item.assetId === currentEditId), true);
     if (!file) return;
     const state = equipmentPhotoState, revision = state.revision;
@@ -644,19 +670,36 @@ function setupMasterlistListeners() {
       try {
         const office = editId ? null : await window.EquipmentTracking.inventoryOffice();
         if (state.file) {
+          await window.EquipmentPhotos.checkSchema?.();
           state.staged = await window.EquipmentPhotos.prepare(state.file,assetId,state.staged);
           payload.image_url = state.staged.reference;
         }
         if (!form.isConnected || window.MCPAAuth.requireLive().id !== user.id || equipmentPhotoState !== state) throw new Error('Your screen or account changed. Reopen the item before saving.');
         submit.textContent = 'Saving item…';
         const db = window.EquipmentTracking.client();
-        const query = editId ? db.from('equipment').update(payload).eq('asset_id',editId) : db.from('equipment').insert([{...payload,id:state.newRecordId ||= crypto.randomUUID(),asset_id:assetId,status:'AVAILABLE',site_id:office.id}]);
-        const {data,error} = await query.select('asset_id,image_url,site_id').single();
-        if (error) throw new Error('The item could not be saved. Your form and photo selection have been kept. Check your connection and retry. ' + error.message);
-        if (!data || data.asset_id !== assetId) throw new Error('The saved item could not be verified. Refresh the inventory before retrying.');
-        if (!editId && data.site_id !== office.id) throw new Error('The saved Office location could not be verified. Refresh inventory before retrying.');
-        saved = true;
-      } catch (error) { if (feedback.isConnected) feedback.textContent = error.message; }
+        // Resolve an interrupted response before retrying the same stable ID.
+        if (!editId && state.newRecordId && state.attempted) {
+          const recovery = await db.from('equipment').select('*').eq('id',state.newRecordId).limit(1);
+          if (recovery.error) throw new Error('Could not verify the previous save. Check your connection and retry.');
+          const record = recovery.data?.[0];
+          if (record) {
+            if (record.asset_id !== assetId || record.site_id !== office.id || Object.entries(payload).some(([key,value]) => String(record[key] ?? '') !== String(value ?? ''))) throw new Error('This Asset ID was already saved with different details. Refresh inventory and edit that item.');
+            saved = true;
+          }
+        }
+        if (!saved) {
+          state.attempted = true;
+          const query = editId ? db.from('equipment').update(payload).eq('asset_id',editId) : db.from('equipment').insert([{...payload,id:state.newRecordId ||= crypto.randomUUID(),asset_id:assetId,status:'AVAILABLE',site_id:office.id}]);
+          const {data,error} = await query.select('asset_id,site_id').single();
+          if (error) throw new Error('The item could not be saved. Your form and photo selection have been kept. Check your connection and retry. ' + error.message);
+          if (!data || data.asset_id !== assetId) throw new Error('The saved item could not be verified. Refresh the inventory before retrying.');
+          if (!editId && data.site_id !== office.id) throw new Error('The saved Office location could not be verified. Refresh inventory before retrying.');
+          saved = true;
+        }
+      } catch (error) {
+        if (error.staged) state.staged = error.staged;
+        if (feedback.isConnected) feedback.textContent = error.message;
+      }
       finally {
         state.saving = false;
         if (form.isConnected) {
@@ -664,7 +707,7 @@ function setupMasterlistListeners() {
         }
       }
       if (saved && form.isConnected && equipmentPhotoState === state) {
-        closeModal();
+        await closeModal(true);
         const sync = document.getElementById('inventory-sync');
         sync.textContent = editId ? 'Item updated.' : 'Item saved.';
         initMasterlist().catch(() => { if (sync.isConnected) sync.textContent = 'Item saved. Inventory refresh failed; reload to see the changes.'; });
@@ -797,7 +840,17 @@ function formatDate(dateString) {
 
 (function () {
   window.AdminEquipment?.dispose();
-  const owner = {disposed: false, dispose() { this.disposed = true; if (equipmentPhotoState.previewUrl) URL.revokeObjectURL(equipmentPhotoState.previewUrl); ++equipmentPhotoState.revision; stop(); }};
+  const viewport = window.visualViewport;
+  const resize = () => {
+    const style = document.getElementById('equipmentModal')?.style;
+    style?.setProperty('--equipment-viewport-height',(viewport?.height || window.innerHeight) + 'px');
+    style?.setProperty('--equipment-viewport-top',(viewport?.offsetTop || 0) + 'px');
+  };
+  viewport?.addEventListener('resize',resize);
+  viewport?.addEventListener('scroll',resize);
+  window.addEventListener('resize',resize);
+  resize();
+  const owner = {disposed: false, dispose() { this.disposed = true; setEquipmentModalOpen(false); viewport?.removeEventListener('resize',resize); viewport?.removeEventListener('scroll',resize); window.removeEventListener('resize',resize); if (equipmentPhotoState.previewUrl) URL.revokeObjectURL(equipmentPhotoState.previewUrl); ++equipmentPhotoState.revision; stop(); }};
   let stop = () => {};
   window.AdminEquipment = owner;
   stop = window.EquipmentTracking.watch(initMasterlist, message => {

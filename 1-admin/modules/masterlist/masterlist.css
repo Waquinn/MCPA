@@ -37,3 +37,30 @@
 #equipmentForm[aria-busy="true"] :disabled{cursor:wait;opacity:.65}
 @media(max-width:600px){#equipmentPhoto{font-size:16px}#equipmentForm button{min-height:44px}#profileContent>.two-col{grid-template-columns:1fr!important}}
 
+/* Equipment-only surfaces; QR ink keeps its own quiet white margin. */
+#profileContent .two-col>div{min-width:0}
+#profileContent .kv{gap:16px;align-items:baseline}
+#profileContent .kv .v{text-align:right;overflow-wrap:anywhere;min-width:0}
+#profileContent .tl-meta{color:var(--gray);font-size:12px}
+#profileContent .equipment-qr-surface{display:inline-block;padding:12px;margin:0 auto 12px;background:#fff;min-width:120px;min-height:120px;border-radius:4px}
+#screen-tool-profile{scroll-margin-top:120px}
+html.equipment-modal-open,html.equipment-modal-open body{overflow:hidden}
+#equipmentModal{position:fixed;inset:calc(var(--equipment-viewport-top,0px) + 12px) 0 auto;width:calc(100% - 24px);max-width:520px;max-height:calc(var(--equipment-viewport-height,100dvh) - 24px);padding:0;margin:0 auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--text-primary);overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,.2)}
+#equipmentModal::backdrop{background:var(--overlay)}
+.equipment-modal-panel{display:flex;flex-direction:column;min-height:0;width:100%;max-height:inherit}
+.equipment-modal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 24px;border-bottom:1px solid var(--line);flex-shrink:0}
+#closeEquipmentModal{min-width:44px;min-height:44px}
+#equipmentForm{display:flex;flex-direction:column;min-height:0;margin:0;overflow:hidden}
+.equipment-form-body{display:flex;flex-direction:column;gap:14px;overflow-y:auto;overscroll-behavior:contain;min-height:0;padding:20px 24px;scroll-padding-block:16px;scrollbar-color:var(--border-strong) var(--surface)}
+.equipment-form-body>div,.equipment-form-body .field{min-width:0;flex-shrink:0}
+.equipment-form-body input,.equipment-form-body select,.equipment-form-body textarea{min-width:0;max-width:100%}
+.equipment-modal-footer{display:flex;gap:10px;padding:12px 24px max(12px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface);flex-shrink:0}
+.equipment-modal-footer button{min-height:44px}
+@media(max-width:600px){
+  .equipment-modal-header{padding-inline:16px}
+  .equipment-form-body{padding:16px}
+  .equipment-modal-footer{padding-inline:16px}
+  #equipmentForm input,#equipmentForm select,#equipmentForm textarea{font-size:16px;min-height:44px}
+  #equipmentForm .equipment-form-body>div[style*="grid-template-columns"]{grid-template-columns:minmax(0,1fr)!important}
+}
+

@@ -31,17 +31,46 @@
     await validate(file);
     if (!assetId || !String(assetId).trim()) throw new Error('Save the photo with a valid equipment ID.');
     // Reuse the staged upload after a metadata error; keep the existing photo untouched.
-    if (previous?.file === file && previous.assetId === assetId && previous.ownerId === user.id) return previous;
+    const sameUpload = previous?.file === file && previous.assetId === assetId && previous.ownerId === user.id;
+    if (sameUpload && previous.uploaded !== false) return previous;
     // Storage paths use safe identifiers; unusual legacy IDs still associate
     // through equipment.image_url without depending on URL percent decoding.
     const folder = /^[A-Za-z0-9_-]{1,120}$/.test(String(assetId)) ? String(assetId) : 'asset-' + crypto.randomUUID();
-    const path = folder + '/' + crypto.randomUUID() + '.' + types[file.type];
+    const path = sameUpload ? previous.path : folder + '/' + crypto.randomUUID() + '.' + types[file.type];
+    const staged = sameUpload ? previous : {file,assetId,ownerId:user.id,path,reference:prefix + path,uploaded:false};
+    const failure = message => Object.assign(new Error(message),{staged});
+    if (sameUpload && staged.uncertain) {
+      // A dropped upload response can still mean the immutable object exists.
+      // Reconcile that exact path instead of creating a second file.
+      try {
+        const check = await window.EquipmentTracking.client().storage.from(bucket).createSignedUrl(path,60);
+        if (!check.error && check.data?.signedUrl) { identity(true); staged.uploaded = true; return staged; }
+      } catch (_) { /* The normal upload will report a genuine access/network failure. */ }
+    }
     let result;
     try { result = await window.EquipmentTracking.client().storage.from(bucket).upload(path, file, {contentType:file.type,cacheControl:'3600',upsert:false}); }
-    catch (_) { throw new Error('Photo upload could not complete. Your item has not been saved. Check your connection and retry.'); }
-    if (result.error) throw new Error('Photo upload failed. Check your connection and that equipment photo storage is installed, then retry. Your item has not been saved.');
-    if (identity(true).id !== user.id) throw new Error('Your account changed during the upload. Sign in again before saving the item.');
-    return {file, assetId, ownerId:user.id, path, reference:prefix + path};
+    catch (_) { staged.uncertain = true; throw failure('Photo upload could not complete. Your item has not been saved. Check your connection and retry.'); }
+    if (result.error) throw failure('Photo upload failed. Check your connection and that equipment photo storage is installed, then retry. Your item has not been saved.');
+    if (identity(true).id !== user.id) throw failure('Your account changed during the upload. Sign in again before saving the item.');
+    staged.uploaded = true;
+    return staged;
+  }
+  async function checkSchema() {
+    identity(true);
+    const {error} = await window.EquipmentTracking.client().from('equipment').select('image_url').limit(0);
+    if (error) {
+      if (['42703','PGRST204'].includes(error.code)) throw new Error('Equipment photo setup is missing. Ask Admin to complete the manual equipment-photo migration, then retry. Your form and selected photo have been kept.');
+      throw new Error('Equipment photo access could not be verified. Check your connection and retry. ' + error.message);
+    }
+  }
+  async function discard(staged) {
+    const user = identity(true);
+    const path = pathFromReference(staged?.reference);
+    if (!path || staged.ownerId !== user.id) throw new Error('Sign in with the uploading account to clear the pending photo.');
+    const {error} = await window.EquipmentTracking.client().storage.from(bucket).remove([path]);
+    // RLS permits deleting unlinked uploads only; a committed image is protected
+    // even when its save response was lost. Never delete equipment to compensate.
+    if (error) throw new Error('The pending photo could not be cleared. Check your connection and retry Cancel. Your form has been kept.');
   }
   async function resolve(reference) {
     const path = pathFromReference(reference);
@@ -74,7 +103,7 @@
       }).catch(() => { if (target.isConnected) target.title = 'Photo unavailable. The equipment details remain available.'; });
     });
   }
-  window.EquipmentPhotos = {bucket, maxBytes, validate, prepare, resolve, pathFromReference, hydrate};
+  window.EquipmentPhotos = {bucket, maxBytes, validate, prepare, checkSchema, discard, resolve, pathFromReference, hydrate};
   if (typeof MutationObserver === 'function') {
     const observer = new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => {if (node.nodeType === 1) hydrate(node);} )));
     observer.observe(document.body,{childList:true,subtree:true});
