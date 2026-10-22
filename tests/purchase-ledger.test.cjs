@@ -6,8 +6,8 @@ async function fixture(){
  const f=await authDatabase();
  await f.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
  create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
- alter table storage.objects enable row level security;grant usage on schema storage to authenticated,anon;grant select,insert,update,delete on storage.objects to authenticated,anon;`);
- await f.db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610100003_feature_storage.sql'),'utf8'));
+ alter table storage.objects enable row level security;alter table storage.buckets enable row level security;grant usage on schema storage to authenticated,anon;grant select,insert,update,delete on storage.objects to authenticated,anon;`);
+ for(const file of ['202610210001_equipment_photo_compatibility.sql','202610230001_purchase_receipts_compatibility.sql'])await f.db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations',file),'utf8'));
  await f.db.exec(fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610100005_purchase_ledger.sql'),'utf8'));
  f.save=async(actor,id,version,op,record)=>(await f.query(actor,'select public.mcpa_save_purchase($1,$2,$3,$4) as value',[id,version,op,record])).rows[0].value;
  f.snapshot=async actor=>(await f.query(actor,'select public.mcpa_purchase_snapshot() as value')).rows[0].value;

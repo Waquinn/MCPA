@@ -12,6 +12,10 @@ test('Admin indexes real records across modules and exact reference routes',()=>
  assert.ok(match(rows,'Pala').length>=7);assert.equal(match(rows,'Casa Buena').filter(r=>r.module==='sites').length,2);assert.equal(match(rows,'no-match').length,0);
  for(const field of ['serial','brand','tools'])assert.ok(match(rows,field).some(r=>r.module==='masterlist'));
 });
+test('Archived consumables are excluded from active search while historical request references remain available',()=>{
+ const rows=index({materials:[{id:'sample',name:'Archived sample',archived_at:'2026-10-22T00:00:00Z'},{id:'active',name:'Active disc'}],materialRequests:[{id:'old-request',item_name:'Historical request',request_number:1,status:'cancelled'}]},user('admin'));
+ assert.equal(rows.some(r=>r.id==='sample'),false);assert.equal(rows.some(r=>r.id==='active'),true);assert.equal(rows.some(r=>r.id==='old-request'),true);
+});
 test('Engineer and Architect assignments use IDs, never ambiguous display names',()=>{
  for(const role of ['engineer','architect']){const rows=index(data,user(role));assert.equal(rows.filter(r=>r.module==='sites').length,1);assert.ok(rows.every(r=>!['purchase','reports','consumables'].includes(r.module)));}
 });

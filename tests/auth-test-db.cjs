@@ -46,6 +46,13 @@ async function authDatabase({accountManagement=true,engineerPortal=false,missing
   }
   const rpc=async(actor,name,args={})=>{
     const allowed={mcpa_inventory_office:[],mcpa_return_destination:[],mcpa_my_profile:[],mcpa_movement_snapshot:[],mcpa_personal_equipment_snapshot:[],mcpa_project_snapshot:[],mcpa_create_receiving_qr:['p_site_id'],mcpa_resolve_receiving_qr:['p_token'],mcpa_revoke_receiving_qr:['p_token'],mcpa_accounts:[],mcpa_movement_action:['p_action','p_payload','p_operation_id'],mcpa_save_account:['p_id','p_name','p_role','p_status','p_auth_user_id'],mcpa_purchase_snapshot:[],mcpa_save_purchase:['p_id','p_version','p_operation_id','p_record'],mcpa_monitoring_snapshot:[],mcpa_monitoring_mark_read:['p_id'],mcpa_monitoring_report:['p_start','p_end']};
+    Object.assign(allowed,{
+      consumables_save_item:['p_id','p_version','p_name','p_unit','p_minimum','p_opening',...(Object.hasOwn(args,'p_category')?['p_category','p_specification','p_item_code']:[])],
+      consumables_adjust_stock:['p_operation_id','p_item_id','p_version','p_kind','p_quantity','p_note'],
+      consumables_create_request:['p_id','p_item_id','p_quantity','p_requester','p_purpose','p_needed_by'],
+      consumables_receive_request:['p_operation_id','p_request_id','p_version','p_quantity','p_note'],
+      consumables_cancel_request:['p_request_id','p_version','p_reason']
+    });
     if(!allowed[name])throw new Error('Unknown test RPC');
     const keys=allowed[name];const result=await query(actor,`select public.${name}(${keys.map((_,i)=>'$'+(i+1)).join(',')}) as value`,keys.map(key=>args[key]??null));return result.rows[0].value;
   };

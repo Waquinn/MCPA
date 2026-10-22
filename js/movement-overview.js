@@ -3,6 +3,7 @@
   'use strict';
   let root, screen, controller, query = '', status = '', mine = false, site = '', inventory = null, stopWatching;
   let loading = false, reloadPending = false;
+  let consumablesSummary = null;
   const viewData = () => ({...store().getState(), ...(inventory || {})});
   const store = () => window.MovementStore;
   const personal = () => screen === 'masterlist' && window.MCPAPermissions.operational(store().getContext().role);
@@ -37,7 +38,7 @@
   let dashboardCondition = '';
   const dashboardState = () => ({query, status, site, condition: dashboardCondition});
   function dashboard(data, user) {
-    return window.DashboardView.render(data,user,dashboardState(),header,toolsTable,when);
+    return window.DashboardView.render({...data,consumablesSummary},user,dashboardState(),header,toolsTable,when);
   }
   function render() {
     if (!root?.isConnected) return;
@@ -115,7 +116,16 @@
       }
       const [, latest] = await Promise.all([
         store().refresh().catch(error => { movementError = error; }),
-        store().mode === 'live' && screen !== 'activity' ? window.EquipmentTracking.snapshot() : Promise.resolve(null)
+        store().mode === 'live' && screen !== 'activity' ? window.EquipmentTracking.snapshot() : Promise.resolve(null),
+        (async () => {
+          if (sourceMode !== 'live' || screen !== 'dashboard' || store().getContext().role !== 'admin') return;
+          try {
+            // Reuse the existing dashboard refresh/watch cycle; no extra timer.
+            // Generated stock_status is the same authority used by Consumables.
+            const items = await window.EquipmentTracking.readAll('consumables');
+            if (root === owner) consumablesSummary = {count: window.ConsumablesCatalog.attentionCount(items)};
+          } catch (_) { if (root === owner) consumablesSummary = {error: true}; }
+        })()
       ]);
       if (root !== owner || !owner.isConnected || store().mode !== sourceMode) return;
       if (movementError && !latest) throw movementError;
@@ -138,12 +148,12 @@
       }
     }
   }
-  function dispose() { stopWatching?.(); stopWatching = null; controller?.abort(); controller = null; root = null; inventory = null; loading = false; reloadPending = false; }
+  function dispose() { stopWatching?.(); stopWatching = null; controller?.abort(); controller = null; root = null; inventory = null; consumablesSummary = null; loading = false; reloadPending = false; }
   function watch() {
     stopWatching?.(); stopWatching = null;
     if (store().mode === 'live') stopWatching = window.EquipmentTracking.watch(() => load(true), message => {
       const label = root?.querySelector('[data-sync-warning]'); if (label) label.textContent = message;
-    }, {tables: ['equipment','sites','mcpa_notifications']});
+    }, {tables: ['equipment','sites','mcpa_notifications', ...(screen === 'dashboard' && userRole() === 'admin' ? ['consumables'] : [])]});
   }
   async function mount(id) {
     const target = document.getElementById('screen-' + id); if (!target) return;

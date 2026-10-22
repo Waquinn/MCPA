@@ -104,17 +104,28 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(process.argv.includes('--header-notifications')||process.argv.includes('--pdf-reports')||process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
  fixtureMigrations.add('202610120003_optional_request_purpose.sql');
  fixtureMigrations.add('202610150001_inventory_availability.sql');
- if(process.argv.includes('--feature-completion')||process.argv.includes('--global-search')||process.argv.includes('--equipment-fixes')){
+ if(process.argv.includes('--feature-completion')||process.argv.includes('--global-search')||process.argv.includes('--equipment-fixes')||process.argv.includes('--consumables-upgrade')){
   await fixture.db.exec(`create schema storage;create table storage.buckets(id text primary key,name text not null,public boolean default false,file_size_limit bigint,allowed_mime_types text[]);
    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,unique(bucket_id,name));
-   alter table storage.objects enable row level security;grant usage on schema storage to authenticated,anon;grant select,insert,update,delete on storage.objects to authenticated,anon;
+   alter table storage.objects enable row level security;alter table storage.buckets enable row level security;grant usage on schema storage to authenticated,anon;grant select,insert,update,delete on storage.objects to authenticated,anon;
    alter table equipment alter column id set default gen_random_uuid();`);
-  if(!process.argv.includes('--equipment-fixes'))for(const file of ['202610100003_feature_storage.sql','202610100004_movement_cancellation.sql','202610100005_purchase_ledger.sql','202610100006_monitoring.sql'])fixtureMigrations.add(file);
+  if(!process.argv.includes('--equipment-fixes')){
+   // Reproduce the split production dependency order; never execute legacy
+   // feature_storage.sql over the deployed Equipment Photo cleanup policy.
+   for(const file of ['202610210001_equipment_photo_compatibility.sql','202610230001_purchase_receipts_compatibility.sql'])await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
+   for(const file of ['202610100004_movement_cancellation.sql','202610100005_purchase_ledger.sql','202610100006_monitoring.sql'])fixtureMigrations.add(file);
+  }
  }
  for(const file of [...fixtureMigrations].sort())await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations',file),'utf8'));
  await require('./office-return-fixture.cjs').configure(fixture);
  await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations/202610120004_equipment_office_default.sql'),'utf8'));
  await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations/202610200001_verified_request_inventory.sql'),'utf8'));
+ if(process.argv.includes('--consumables-upgrade')){
+  await require('./consumables-upgrade-fixture.cjs').createSample(fixture);
+  await require('./consumables-upgrade-fixture.cjs').upgrade(fixture);
+  await fixture.db.exec(require('./consumables-upgrade-fixture.cjs').read('documentation/consumables-upgrade-2026-10-22/02-archive-sample.sql'));
+  await fixture.db.exec(require('./consumables-upgrade-fixture.cjs').seed);
+ }
  await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
  server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new',...(process.env.MCPA_CHROME_NO_SANDBOX==='1'?['--no-sandbox','--disable-gpu','--disable-gpu-sandbox']:[]),'--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
@@ -170,6 +181,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--consumables-upgrade')){
+  await require('./consumables-upgrade.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,shot,base,artifactDirectory:profile});
+  assert.deepEqual(errors,[],'No uncaught browser errors');return;
+ }
  if(process.argv.includes('--equipment-fixes')){
   await require('./equipment-fixes.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,shot,base,artifactDirectory:profile});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;

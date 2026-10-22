@@ -69,6 +69,15 @@
 .command-kpi-icon svg{width:27px;height:27px}
 #screen-dashboard .kpi:nth-child(2) .command-kpi-icon{color:var(--success)}
 .command-kpi-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+.consumables-shortcut{text-align:left;color:var(--black);min-width:0}
+.consumables-shortcut .kpi-description{white-space:normal;line-height:1.5}
+.consumables-warning{align-self:flex-start;font-size:11px;font-weight:600;color:var(--gold-dim);background:var(--warning-bg);border-radius:20px;padding:3px 8px}
+.consumables-warning::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:middle}
+.consumables-shortcut:hover{border-color:var(--gold-dim)}
+.consumables-shortcut:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.consumables-shortcut:active{background:var(--input-background)}
+@media(min-width:1051px){#screen-dashboard .overview-kpis:has(.consumables-shortcut){grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:1050px){#screen-dashboard .consumables-shortcut{grid-column:1/-1}}
 #screen-dashboard .kpi .lbl{font-size:11px;font-weight:550;color:var(--text-secondary)}
 #screen-dashboard .kpi .num{font-family:var(--font-body);font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
 .kpi-description{font-size:10px;line-height:1.4;color:var(--text-muted)}

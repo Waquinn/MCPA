@@ -5,12 +5,16 @@
   if (!root) return;
   const $ = selector => root.querySelector(selector);
   const dialog = $('#consumables-dialog');
+  const catalog = window.ConsumablesCatalog;
+  const identity = item => [item.item_code, item.name || item.item_name, item.specification].filter(Boolean).join(' · ');
+  const categoryOptions = value => catalog.categories.map(category => `<option value="${escape(category.name)}"${category.name === value ? ' selected' : ''}>${escape(category.name)}</option>`).join('');
   const state = { items: [], requests: [], ready: false, loading: false, saving: false, loadError: false };
   const statuses = { out: ['Out of Stock', 'low'], low: ['Low Stock', 'low'], ok: ['OK', 'ok'], pending: ['Pending', 'pending'], partial: ['Partially Received', 'inuse'], received: ['Received', 'verified'], cancelled: ['Cancelled', 'disposed'] };
   let returnFocus = null;
   let formContext = null;
   let dialogRevision = 0;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+  $('#consumables-category').insertAdjacentHTML('beforeend', categoryOptions(''));
   const normalize = value => value.trim().replace(/\s+/g, ' ');
   const number = value => Number(value).toLocaleString('en-US', { maximumFractionDigits: 3 });
   const round = value => Math.round(value * 1000) / 1000;
@@ -54,9 +58,10 @@
   function errorMessage(error) {
     if (['PGRST205', 'PGRST202', '42P01', '42703', '42883'].includes(error.code)) return 'Consumables database setup is incomplete. Ask your administrator to complete setup, then refresh.';
     if (error.code === '42501') return 'Consumables access is blocked by database permissions. Ask your administrator to apply the Consumables setup, then retry.';
-    if (error.code === '23505') return error.message?.includes('open purchase') ? error.message : 'An item with this name or an open request for this item already exists. Check the existing records.';
+    if (error.code === '23505') return error.message?.includes('open purchase') ? error.message : 'This item code or name/specification/unit already exists, or the item has an open request. Check the existing records.';
     if (['23514', '23502', '22003'].includes(error.code)) return 'Check all required fields and quantities. Values must fit the allowed limits.';
     if (['PGRST301', 'PGRST303'].includes(error.code)) return 'Your database session is invalid or expired. Sign in again and retry.';
+    if (error.message?.includes('Usage cannot exceed')) return 'Insufficient stock. Refresh to check the available quantity.';
     return error.message || 'The database could not be reached. Please try again.';
   }
   async function readAll(table, itemId) {
@@ -98,7 +103,7 @@
     root.querySelectorAll('button[data-action]').forEach(control => {
       if (dialog.contains(control)) { control.disabled = state.saving; return; }
       control.disabled = state.loading || state.saving || (control.dataset.action !== 'refresh' && !state.ready);
-      if (control.dataset.action === 'request' && !control.dataset.id) control.disabled ||= !state.items.some(item => !openRequest(item.id));
+      if (control.dataset.action === 'request' && !control.dataset.id) control.disabled ||= !state.items.some(item => catalog.isActive(item) && !openRequest(item.id));
     });
     $('#consumables-inventory').setAttribute('aria-busy', String(state.loading || state.saving));
   }
@@ -121,21 +126,24 @@
     } finally { state.loading = false; syncControls(); }
   }
   function render() {
-    const attention = state.items.filter(item => item.stock_status !== 'ok');
+    const activeItems = state.items.filter(catalog.isActive);
+    const attention = activeItems.filter(item => ['out', 'low'].includes(item.stock_status));
     const covered = attention.filter(item => openRequest(item.id)).length;
     const alert = $('#consumables-alert');
-    alert.className = `notice cons-alert ${attention.length ? 'is-low' : state.items.length ? 'is-ok' : ''}`;
-    alert.innerHTML = `<div><div class="t">${attention.length ? `${attention.length} consumable${attention.length === 1 ? '' : 's'} need${attention.length === 1 ? 's' : ''} restocking` : state.items.length ? 'All consumables meet their minimum stock levels' : 'Start monitoring your consumables'}</div><div class="d">${attention.length ? `${attention.filter(item => item.stock_status === 'out').length} out of stock. ${covered} covered by open requests. Purchase requests are recommended for the remaining ${attention.length - covered}.` : state.items.length ? 'Stock below the minimum or at zero will appear here. Open requests stay visible until received or cancelled.' : 'Add your materials, opening stock, and minimum levels to receive stock alerts.'}</div></div>`;
+    alert.className = `notice cons-alert ${attention.length ? 'is-low' : activeItems.length ? 'is-ok' : ''}`;
+    alert.innerHTML = `<div><div class="t">${attention.length ? `${attention.length} consumable${attention.length === 1 ? '' : 's'} need${attention.length === 1 ? 's' : ''} restocking` : activeItems.length ? 'All consumables meet their minimum stock levels' : 'Start monitoring your consumables'}</div><div class="d">${attention.length ? `${attention.filter(item => item.stock_status === 'out').length} out of stock. ${covered} covered by open requests. Purchase requests are recommended for the remaining ${attention.length - covered}.` : activeItems.length ? 'Stock below the minimum or at zero will appear here. Open requests stay visible until received or cancelled.' : 'Add your materials, opening stock, and minimum levels to receive stock alerts.'}</div></div>`;
     renderItems(); renderRequests(); syncControls();
   }
   function renderItems() {
     const search = $('#consumables-search').value.trim().toLowerCase();
     const filter = $('#consumables-filter').value;
-    const items = state.items.filter(item => `${item.name} ${item.unit}`.toLowerCase().includes(search) && (!filter || (filter === 'attention' ? item.stock_status !== 'ok' : item.stock_status === filter)));
-    $('#consumables-count').textContent = `${items.length} of ${state.items.length} items`;
+    const archived = filter === 'archived';
+    const items = catalog.filter(state.items, {search, category: $('#consumables-category').value, status: archived ? '' : filter, archived});
+    const total = state.items.filter(item => catalog.isActive(item) !== archived).length;
+    $('#consumables-count').textContent = `${items.length} of ${total} ${archived ? 'archived ' : ''}items`;
     $('#consumables-rows').innerHTML = items.length ? items.map(item => {
       const request = openRequest(item.id);
-      return `<tr data-item-id="${escape(item.id)}"><td class="cell-name cons-item">${escape(item.name)}<div class="cell-sub">${escape(item.unit)}</div></td><td class="mono">${number(item.current_stock)}</td><td class="mono">${number(item.minimum_stock)}</td><td>${badge(item.stock_status)}${request ? `<div class="cell-sub">${reference(request)} · ${number(round(request.quantity - request.received_quantity))} outstanding</div>` : ''}</td><td><div class="cons-actions">${request ? button('view-request', 'View Request', request.id) : button('request', item.stock_status === 'ok' ? 'Request Stock' : 'Purchase Required', item.id)}${button('stock', 'Update Stock', item.id)}${button('edit', 'Edit', item.id)}${button('history', 'History', item.id)}</div></td></tr>`;
+      return `<tr data-item-id="${escape(item.id)}"><td class="cell-name cons-item"><div class="cell-sub mono">${escape(item.item_code || 'Code pending')}</div>${escape(item.name)}<div class="cell-sub">${escape(item.specification || 'Specification not recorded')}</div><div class="cell-sub">${escape(item.category || 'Category not assigned')} · ${escape(item.unit)}</div></td><td class="mono">${number(item.current_stock)}</td><td class="mono">${number(item.minimum_stock)}</td><td>${item.archived_at ? '<span class="badge badge-disposed">Archived</span>' : badge(item.stock_status)}${request ? `<div class="cell-sub">${reference(request)} · ${number(round(request.quantity - request.received_quantity))} outstanding</div>` : ''}</td><td><div class="cons-actions">${item.archived_at ? '' : request ? button('view-request', 'View Request', request.id) : button('request', item.stock_status === 'ok' ? 'Request Stock' : 'Purchase Required', item.id)}${item.archived_at ? '' : button('stock', 'Update Stock', item.id) + button('edit', 'Edit', item.id)}${button('history', 'History', item.id)}</div></td></tr>`;
     }).join('') : `<tr><td colspan="5" class="empty-state">${state.items.length ? 'No consumables match your search or filter.' : 'No consumables yet. Add your first material to start monitoring stock.'}</td></tr>`;
     syncControls();
   }
@@ -143,7 +151,7 @@
     const filter = $('#consumables-request-filter').value;
     const requests = state.requests.filter(request => !filter || (filter === 'open' ? isOpen(request) : request.status === filter));
     $('#consumables-request-count').textContent = `${state.requests.filter(isOpen).length} open · ${state.requests.length} total`;
-    $('#consumables-request-rows').innerHTML = requests.length ? requests.map(request => `<tr data-request-id="${escape(request.id)}"><td class="cons-item"><span class="mono">${reference(request)}</span><div class="cell-name">${escape(request.item_name)}</div></td><td class="mono">${number(request.quantity)} ${escape(request.unit)}</td><td class="mono">${number(request.received_quantity)}</td><td class="cons-item">${escape(request.requester)}<div class="cell-sub">${date(request.needed_by)}</div></td><td>${badge(request.status)}</td><td><div class="cons-actions">${button('view-request', 'View', request.id)}${isOpen(request) ? button('receive', 'Receive Stock', request.id) + button('cancel-request', 'Cancel', request.id) : ''}</div></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">No purchase requests match this status.</td></tr>';
+    $('#consumables-request-rows').innerHTML = requests.length ? requests.map(request => `<tr data-request-id="${escape(request.id)}"><td class="cons-item"><span class="mono">${reference(request)}</span><div class="cell-name">${escape(identity(request))}</div></td><td class="mono">${number(request.quantity)} ${escape(request.unit)}</td><td class="mono">${number(request.received_quantity)}</td><td class="cons-item">${escape(request.requester)}<div class="cell-sub">${date(request.needed_by)}</div></td><td>${badge(request.status)}</td><td><div class="cons-actions">${button('view-request', 'View', request.id)}${isOpen(request) ? button('receive', 'Receive Stock', request.id) + button('cancel-request', 'Cancel', request.id) : ''}</div></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">No purchase requests match this status.</td></tr>';
     syncControls();
   }
   function openDialog(title, content, context = null, wide = false) {
@@ -173,10 +181,13 @@
   }
   const numeric = 'type="number" min="0" max="999999999.999" step="0.001" required';
   function editItem(item = null) {
-    openDialog(item ? 'Edit Consumable' : 'Add Consumable', `<p class="cons-description">${item ? 'Update the item name and minimum stock. Record quantity changes with Update Stock. Units stay fixed to preserve stock history.' : 'Enter actual opening stock. Required fields are marked *. Quantities support up to three decimal places.'}</p>` + form(
+    openDialog(item ? 'Edit Consumable' : 'Add Consumable', `<p class="cons-description">${item ? 'Update the item details and minimum stock. Record quantity changes with Update Stock. Units stay fixed to preserve stock history.' : 'Enter actual opening stock. Required fields are marked *. Quantities support up to three decimal places.'}</p>` + form(
       field('name', 'Item name *', item?.name, 'maxlength="120" required autofocus', true) +
+      `<div class="field full"><label for="cons-category">Category *</label><select id="cons-category" name="category" required><option value="">Choose a category</option>${categoryOptions(item?.category)}</select></div>` +
+      field('code', 'Item code', item?.item_code, `maxlength="30" pattern="[A-Z][A-Z0-9]{1,9}-[0-9]{3,9}" placeholder="Assigned automatically if blank" ${item ? 'required' : ''}`) +
+      field('specification', 'Specification', item?.specification, 'maxlength="160" placeholder="e.g. 4 inch, Grit 80"') +
       field('unit', 'Unit *', item?.unit, `maxlength="30" placeholder="e.g. pieces, kg, rolls" required ${item ? 'readonly' : ''}`) +
-      field('minimum', 'Minimum stock *', item?.minimum_stock ?? 0, numeric) +
+      field('minimum', 'Minimum stock *', item?.minimum_stock ?? catalog.defaultMinimum, numeric) +
       (item ? '' : field('opening', 'Opening stock *', 0, numeric)), item ? 'Save Changes' : 'Add Consumable'),
     { type: 'item', item, id: item?.id || uuid() });
   }
@@ -199,10 +210,10 @@
   }
   function requestForm(item) {
     if (item && openRequest(item.id)) return viewRequest(openRequest(item.id));
-    const available = state.items.filter(entry => !openRequest(entry.id));
+    const available = state.items.filter(entry => catalog.isActive(entry) && !openRequest(entry.id));
     if (!available.length) return feedback('All consumables already have open requests. View a request below.');
     openDialog('Purchase Request', '<p class="cons-description">Request stock for one consumable. Submitting a request does not change available stock. Required fields are marked *.</p>' + form(
-      `<div class="field full"><label for="cons-item">Consumable *</label><select id="cons-item" name="item" required autofocus>${available.map(entry => `<option value="${escape(entry.id)}"${entry.id === item?.id ? ' selected' : ''}>${escape(entry.name)} (${escape(entry.unit)})</option>`).join('')}</select></div>` +
+      `<div class="field full"><label for="cons-item">Consumable *</label><select id="cons-item" name="item" required autofocus>${available.map(entry => `<option value="${escape(entry.id)}"${entry.id === item?.id ? ' selected' : ''}>${escape(identity(entry))} (${escape(entry.unit)})</option>`).join('')}</select></div>` +
       '<p id="cons-request-hint" class="cons-muted full"></p>' +
       field('quantity', 'Quantity requested *', '', numeric.replace('min="0"', 'min="0.001"')) +
       field('needed', 'Needed by', '', `type="date" min="${today()}"`) +
@@ -217,14 +228,14 @@
     $('#cons-request-hint').textContent = `Available: ${number(item.current_stock)} ${item.unit}. Minimum: ${number(item.minimum_stock)}. Suggested quantity: ${number(shortage || 1)}; adjust to your actual requirement.`;
   }
   function viewRequest(request) {
-    const details = [ ['Item', request.item_name], ['Requested', `${number(request.quantity)} ${request.unit}`], ['Received', `${number(request.received_quantity)} ${request.unit}`], ['Outstanding', `${number(round(request.quantity - request.received_quantity))} ${request.unit}`], ['Requested by', request.requester], ['Created', date(request.created_at, true)], ['Needed by', date(request.needed_by)], ['Purpose', request.purpose] ];
+    const details = [ ['Item', identity(request)], ['Requested', `${number(request.quantity)} ${request.unit}`], ['Received', `${number(request.received_quantity)} ${request.unit}`], ['Outstanding', `${number(round(request.quantity - request.received_quantity))} ${request.unit}`], ['Requested by', request.requester], ['Created', date(request.created_at, true)], ['Needed by', date(request.needed_by)], ['Purpose', request.purpose] ];
     if (request.cancellation_reason) details.push(['Cancellation reason', request.cancellation_reason]);
     openDialog(reference(request), badge(request.status) + details.map(([label, value]) => `<div class="kv"><span class="k">${label}</span><span class="v">${escape(value)}</span></div>`).join('') +
       `<div class="cons-dialog-actions">${button('history', 'Stock History', request.consumable_id)}${isOpen(request) ? button('cancel-request', 'Cancel Request', request.id) + button('receive', 'Receive Stock', request.id, 'primary') : button('close', 'Close')}</div>`);
   }
   function receiveForm(request) {
     const outstanding = round(request.quantity - request.received_quantity);
-    openDialog('Receive Stock', `<p class="cons-description">${reference(request)} · ${escape(request.item_name)}. Outstanding: ${number(outstanding)} ${escape(request.unit)}. Record only the quantity delivered; it will be added to available stock.</p>` + form(
+    openDialog('Receive Stock', `<p class="cons-description">${reference(request)} · ${escape(identity(request))}. Outstanding: ${number(outstanding)} ${escape(request.unit)}. Record only the quantity delivered; it will be added to available stock.</p>` + form(
       field('quantity', 'Quantity received *', outstanding, `type="number" min="0.001" max="${outstanding}" step="0.001" required autofocus`, true) + note('note', 'Delivery reference / notes *'), 'Confirm Receipt'), { type: 'receive', request, operationId: uuid() });
   }
   function cancelForm(request) {
@@ -237,7 +248,7 @@
       const movements = await readAll('consumable_stock_movements', item.id);
       if (!root.isConnected || !dialog.open || revision !== dialogRevision) return;
       movements.sort((a, b) => b.created_at.localeCompare(a.created_at));
-      $('#consumables-dialog-content').innerHTML = `<p class="cons-description">Quantities in ${escape(item.unit)}. Dates use Manila time.</p><div class="table-wrap"><table><thead><tr><th>Date</th><th>Change</th><th>Quantity</th><th>Balance</th><th>Reason / Reference</th></tr></thead><tbody>${movements.length ? movements.map(movement => `<tr><td>${date(movement.created_at, true)}</td><td>${escape(({ opening: 'Opening stock', usage: 'Usage', restock: 'Restock', correction: 'Correction', receipt: 'Request receipt' })[movement.kind])}</td><td class="mono">${movement.quantity_change > 0 ? '+' : ''}${number(movement.quantity_change)}</td><td class="mono">${number(movement.balance_after)}</td><td class="cons-item">${escape(movement.note)}${movement.request_id && requestById(movement.request_id) ? `<div class="cell-sub">${reference(requestById(movement.request_id))}</div>` : ''}</td></tr>`).join('') : '<tr><td colspan="5" class="empty-state">No stock movements recorded.</td></tr>'}</tbody></table></div><div class="cons-dialog-actions">${button('close', 'Close')}</div>`;
+      $('#consumables-dialog-content').innerHTML = `<p class="cons-description">${item.archived_at ? `Archived ${escape(date(item.archived_at, true))}: ${escape(item.archive_reason)}. History is read-only. ` : ''}Quantities in ${escape(item.unit)}. Dates use Manila time.</p><div class="table-wrap"><table><thead><tr><th>Date</th><th>Change</th><th>Quantity</th><th>Previous</th><th>Balance</th><th>Actor</th><th>Reason / Reference</th></tr></thead><tbody>${movements.length ? movements.map(movement => `<tr><td>${date(movement.created_at, true)}</td><td>${escape(({ opening: 'Opening stock', usage: 'Usage', restock: 'Restock', correction: 'Correction', receipt: 'Request receipt' })[movement.kind])}</td><td class="mono">${movement.quantity_change > 0 ? '+' : ''}${number(movement.quantity_change)}</td><td class="mono">${number(movement.balance_before ?? Number(movement.balance_after) - Number(movement.quantity_change))}</td><td class="mono">${number(movement.balance_after)}</td><td>${escape(movement.actor_name || 'Legacy actor not recorded')}</td><td class="cons-item">${escape(movement.note)}${movement.request_id && requestById(movement.request_id) ? `<div class="cell-sub">${reference(requestById(movement.request_id))}</div>` : ''}</td></tr>`).join('') : '<tr><td colspan="7" class="empty-state">No stock movements recorded.</td></tr>'}</tbody></table></div><div class="cons-dialog-actions">${button('close', 'Close')}</div>`;
     } catch (error) {
       if (root.isConnected && dialog.open && revision === dialogRevision) $('#consumables-dialog-content').innerHTML = `<p role="alert" class="cons-form-error">${escape(errorMessage(error))}</p><div class="cons-dialog-actions">${button('history', 'Try Again', item.id)}${button('close', 'Close')}</div>`;
     }
@@ -245,6 +256,7 @@
   function quantity(formData, key) {
     const raw = String(formData.get(key) ?? '');
     const value = Number(raw);
+    if (value < 0) throw new Error('Stock quantity cannot be negative.');
     if (!raw.trim() || !Number.isFinite(value) || value < 0 || value > 999999999.999 || Math.abs(value * 1000 - Math.round(value * 1000)) > 0.0001) throw new Error('Enter valid quantities with up to three decimal places.');
     return value;
   }
@@ -255,9 +267,11 @@
     }
     if (context.type === 'item') {
       const name = normalize(text('name'));
-      if (state.items.some(item => item.id !== context.id && normalize(item.name).toLowerCase() === name.toLowerCase())) throw new Error('A consumable with this name already exists.');
-      return ['consumables_save_item', { p_id: context.id, p_version: context.item?.version ?? null, p_name: name, p_unit: normalize(text('unit')), p_minimum: quantity(formData, 'minimum'), p_opening: context.item ? 0 : quantity(formData, 'opening') }, 'Consumable saved.'];
+      if (!catalog.categories.some(category => category.name === text('category'))) throw new Error('Choose a valid consumable category.');
+      if (state.items.some(item => catalog.isActive(item) && item.id !== context.id && catalog.normalize(item.name) === catalog.normalize(name) && catalog.normalize(item.specification) === catalog.normalize(text('specification')) && catalog.normalize(item.unit) === catalog.normalize(text('unit')))) throw new Error('This name, specification and unit already exist.');
+      return ['consumables_save_item', { p_id: context.id, p_version: context.item?.version ?? null, p_name: name, p_category: text('category'), p_specification: text('specification'), p_item_code: text('code') || null, p_unit: normalize(text('unit')), p_minimum: quantity(formData, 'minimum'), p_opening: context.item ? 0 : quantity(formData, 'opening') }, 'Consumable saved.'];
     }
+    if (context.type === 'stock' && text('kind') === 'usage' && quantity(formData, 'quantity') > Number(context.item.current_stock)) throw new Error(`Insufficient stock. Available quantity: ${number(context.item.current_stock)}.`);
     if (context.type === 'stock') return ['consumables_adjust_stock', { p_operation_id: context.operationId, p_item_id: context.item.id, p_version: context.item.version, p_kind: text('kind'), p_quantity: quantity(formData, 'quantity'), p_note: text('note') }, 'Stock updated.'];
     if (context.type === 'request') {
       if (text('needed') && text('needed') < today()) throw new Error('Needed-by date cannot be in the past.');
@@ -310,6 +324,7 @@
     if (action === 'refresh') return refresh();
     if (!state.ready || state.loading) return;
     const item = itemById(id); const request = requestById(id);
+    if (item?.archived_at && ['request','edit','stock'].includes(action)) return feedback('This consumable is archived. An Admin must explicitly restore it before changes.', true);
     if (action === 'add') editItem();
     else if (action === 'request') requestForm(item);
     else if (action === 'edit' && item) editItem(item);
@@ -320,12 +335,19 @@
     else if (action === 'cancel-request' && request && isOpen(request)) cancelForm(request);
   });
   root.addEventListener('submit', event => { if (event.target.id === 'consumables-form') submit(event); });
+  root.addEventListener('invalid', event => {
+    const input = event.target;
+    if (input.type !== 'number') return;
+    if (input.value && Number(input.value) < 0) formError('Stock quantity cannot be negative.');
+    else if (formContext?.type === 'stock' && $('#cons-kind')?.value === 'usage' && Number(input.value) > Number(formContext.item.current_stock)) formError(`Insufficient stock. Available quantity: ${number(formContext.item.current_stock)}.`);
+    else formError('Enter a required, finite quantity with up to three decimal places within the allowed limits.');
+  }, true);
   root.addEventListener('input', event => {
     if (event.target.id === 'consumables-search') renderItems();
     if (event.target.id === 'cons-quantity' && formContext?.type === 'stock') stockPreview();
   });
   root.addEventListener('change', event => {
-    if (event.target.id === 'consumables-filter') renderItems();
+    if (['consumables-filter', 'consumables-category'].includes(event.target.id)) renderItems();
     if (event.target.id === 'consumables-request-filter') renderRequests();
     if (event.target.id === 'cons-kind') stockPreview();
     if (event.target.id === 'cons-item') requestSuggestion();

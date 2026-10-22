@@ -30,6 +30,15 @@ test('dashboard preserves Admin quantities and counts Engineer assets within cus
   assert.match(render({role:'engineer',name:'Engineer'}),/<span class="num">2<\/span>/);
   assert.match(render({role:'engineer',name:''}),/<span class="num">0<\/span>/);
 });
+test('Consumables navigation shortcut has no large total and only displays current singular/plural stock warnings',()=>{
+ const {view,render,data}=setup();
+ assert.doesNotMatch(view.consumablesCard({count:0}),/consumables-warning|class="num"/);
+ assert.match(view.consumablesCard({count:1}),/1 item low stock/);assert.match(view.consumablesCard({count:2}),/2 items low stock/);
+ assert.match(view.consumablesCard({error:true}),/Stock status unavailable/);
+ assert.match(view.consumablesCard({count:0}),/<button type="button"[^>]*data-go="consumables"/);
+ assert.match(render({role:'admin'},{...data,consumablesSummary:{count:3}}),/3 items low stock/);
+ assert.doesNotMatch(render({role:'engineer',name:'Engineer'}),/consumables-shortcut/);
+});
 test('dashboard combines search, project, status and condition filters without changing the snapshot',()=>{
   const {data,state,view}=setup(), before=JSON.stringify(data);
   const read=()=>view.inventory(data,{role:'admin'},state,rows=>rows.map(t=>t.id).join(','));

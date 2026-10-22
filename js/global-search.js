@@ -36,7 +36,7 @@
       add('activity',r.id,r.action,join([r.summary,...(r.toolIds || [])]),'activity?record='+encodeURIComponent(r.id),r.entityId || r.id);
     });
     (data.purchases || []).forEach(r => add('purchase',r.id,r.supplier,join([r.reference,r.delivery_status,...(r.items || []).map(i=>i.description)]),'purchase?record='+encodeURIComponent(r.id),'PUR-'+r.purchase_number));
-    (data.materials || []).forEach(r => add('consumables',r.id,r.name,join([r.unit,r.stock_status]),'consumables?record='+encodeURIComponent(r.id)));
+    (data.materials || []).filter(r => !r.archived_at).forEach(r => add('consumables',r.id,r.name,join([r.unit,r.stock_status]),'consumables?record='+encodeURIComponent(r.id)));
     (data.materialRequests || []).forEach(r => add('consumables',r.id,r.item_name,join([r.status,r.requester]),'consumables?record='+encodeURIComponent(r.id),'CR-'+String(r.request_number).padStart(5,'0')));
     // These are real report views, not invented saved reports or historical snapshots.
     [['current','Current inventory report'],['history','Historical inventory report'],['activity','Movement activity report']].forEach(([id,title]) => add('reports',id,title,'Choose a date range in Reports','reports?record='+id,'Report'));

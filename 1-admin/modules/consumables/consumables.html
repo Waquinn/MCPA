@@ -15,12 +15,13 @@
     <div><div class="t">Checking stock levels…</div><div class="d">Loading your consumables and purchase requests.</div></div>
   </div>
   <div class="table-toolbar cons-toolbar">
-    <div class="field cons-search"><label for="consumables-search">Search consumables</label><input id="consumables-search" type="search" placeholder="Item name or unit"></div>
-    <div class="field"><label for="consumables-filter">Stock status</label><select id="consumables-filter"><option value="">All stock</option><option value="attention">Needs restocking</option><option value="out">Out of stock</option><option value="low">Low stock</option><option value="ok">OK</option></select></div>
+    <div class="field cons-search"><label for="consumables-search">Search consumables</label><input id="consumables-search" type="search" placeholder="Name, code, specification or unit"></div>
+    <div class="field cons-category"><label for="consumables-category">Category</label><select id="consumables-category"><option value="">All Categories</option></select></div>
+    <div class="field"><label for="consumables-filter">Stock status</label><select id="consumables-filter"><option value="">All stock</option><option value="attention">Needs restocking</option><option value="out">Out of stock</option><option value="low">Low stock</option><option value="ok">OK</option><option value="archived">Archived history</option></select></div>
     <span id="consumables-count" class="cons-muted" aria-live="polite"></span>
   </div>
   <div class="card" id="consumables-inventory" aria-busy="true">
-    <div class="table-wrap">
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Consumable inventory; scroll horizontally for stock and actions">
       <table>
         <caption class="cons-sr-only">Consumable stock levels and actions</caption>
         <thead><tr><th scope="col">Item</th><th scope="col">Current Stock</th><th scope="col">Minimum Level</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
