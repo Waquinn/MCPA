@@ -2,6 +2,7 @@
   "name": "mcpa-movement-tests",
   "private": true,
   "scripts": {
+    "test:project-construction": "node --test --test-concurrency=1 project-construction.test.cjs project-history-dependency.test.cjs project-history-repair.test.cjs && node auth.browser.cjs --project-construction",
     "test:purchase-receipts": "node --test --test-concurrency=1 purchase-receipts-compatibility.test.cjs purchase-ledger.test.cjs consumables-archive.test.cjs && node auth.browser.cjs --feature-completion && node auth.browser.cjs --consumables-upgrade",
     "test:consumables-upgrade": "node --test --test-concurrency=1 consumables-upgrade.test.cjs consumables-archive.test.cjs dashboard-view.test.cjs && node auth.browser.cjs --consumables-upgrade",
     "test:equipment-office": "node --test equipment-office.database.test.cjs && node auth.browser.cjs --asset-interface",

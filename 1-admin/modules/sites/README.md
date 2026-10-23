@@ -1,97 +1,66 @@
 # Projects module
 
-Projects manages records in the unchanged Supabase `sites` table and reads
-equipment linked by the unchanged `site_id` field. Projects are archived instead
-of deleted; equipment assignments and historical references are retained.
+Projects uses existing `public.sites` IDs, profile assignments and equipment
+`site_id` links. Admins create/edit/archive/restore projects. Engineers and
+Architects use the existing assigned-project RPC; Tool Handlers retain their
+existing read visibility. Demo projects remain read-only.
 
-## Database setup
+## Construction tracking upgrade (2026-10-23)
 
-1. Run the current `setup.sql` in this project's Supabase SQL Editor. It creates `sites`,
-   adds the nullable `equipment.site_id` foreign key and index, enables row-level
-   security, and adds validation and an update timestamp trigger. It does not
-   insert sample records, assign existing equipment, or change equipment policies.
-2. The setup grants Projects select/insert/update to `anon` and `authenticated`,
-   with matching row-level policies. The current app's Sign In button only reveals
-   the UI and does not establish a Supabase session, so it uses `anon`. This means
-   site CRUD is public to callers of this project's API, matching the current
-   prototype. RLS remains enabled, and equipment policies remain unchanged.
-   When the app adopts real authentication, replace these public policies with
-   the intended user/role restrictions. See [Supabase's RLS documentation](https://supabase.com/docs/guides/database/postgres/row-level-security).
-3. Run [realtime-archive.sql](realtime-archive.sql) after `setup.sql`. It adds and
-   backfills `is_active`, synchronizes it with the legacy `archived_at` field,
-   revokes browser deletion, and adds `equipment` and `sites` to the existing
-   Supabase Realtime publication. It preserves other published tables.
-4. Open Projects. Records update through Realtime, with automatic checks every
-   30 seconds and on reconnect/tab focus. Use Add Project for new records.
-   Archive writes `is_active: false`; Restore writes `true`. Active dashboard
-   projects are queried with `.eq('is_active', true)`.
+The editor separates Operational Status, Project Stage and Current Work Area.
+Work-area tracking is explicitly configured per project, with six independent
+completion percentages, scope weights, applicability and notes. Applicable
+weights must total exactly 100%. The database calculates Construction Completion
+to two decimals. Legacy `progress` and `phase` are preserved.
 
-The migration is supplied for the Supabase SQL Editor; it has not been applied
-to the live project by this frontend change. See [frontend update notes](../../../FRONTEND-UPDATES.md)
-for the availability rule, code locations, and current focused tests.
+Project History displays immutable old/new values, recorded actors, timestamps,
+reasons, site updates and correction references. Search and event filters are
+available. Corrections append entries. Archive/restore preserves references.
+Saves use server authorization, a project revision and an idempotency key.
 
-### If Add Site reports a permission error after the original setup
+Read the [engineering report and manual deployment instructions](../../../documentation/project-construction-2026-10-23/REPORT.md)
+before rollout. This upgrade has **not** been applied to production.
 
-Rerun the **updated `setup.sql`**. The original script granted writes only to
-`authenticated`, while the app sends `anon` requests. Changing a browser API key
-or reloading cannot fix that database permission mismatch.
+## Database deployment
 
-The updated setup is repeatable: it preserves existing records and assignments,
-replaces only this module's trigger/policies/date constraint, and repairs the
-grants for create, edit and delete. It also aligns inventory dates with Manila
-time so a valid date is not rejected around midnight. `prototype-access.sql`
-remains a repeatable permissions-only repair for older installations; it is not
-a second required step after the updated setup.
+The files in this module (`setup.sql`, `prototype-access.sql`,
+`realtime-archive.sql`) are historical prototype/fixture sources. **Do not rerun
+them over an authenticated installation.** They can restore public prototype
+policies or introduce legacy baseline records. A permissions error is not an
+instruction to rerun those files.
 
-The configured public key can access application data, but cannot execute the
-schema setup. Run the SQL through the project's SQL Editor with administrative
-database access. Never add a secret or service-role key to the frontend.
+Use the [manual migration gate](../../../supabase/migrations/README.md).
+For an existing authenticated installation with reviewed project history:
+
+1. Review `supabase/project-construction-preflight.sql` results.
+2. Manually apply only `supabase/migrations/202610230002_project_construction.sql`.
+3. Review `supabase/project-construction-verify.sql` and compare fingerprints.
+4. Roll out the frontend after database and staging verification.
+
+Missing or nonstandard prerequisites require separate schema review. Do not
+replay the historical migration directory or bypass RLS.
 
 ## Equipment and movement
 
-- Inventory joins equipment to sites by `equipment.site_id`, so renaming a site
-  preserves its assignments. Unassigned equipment is not attributed to a default
-  site. The current live equipment table had no location column when inspected.
-- Actual assignments must populate `equipment.site_id` from the future
-  assignment/movement workflow or an authorized database import. This module does
-  not assign, transfer, create, edit, or delete equipment.
-- Counts sum quantities rather than record counts. The inventory hides zero
-  quantities; Review Assigned Tools includes those records. Missing and disposed
-  quantities remain visible, and both repair statuses count as Repair.
-- Holders resolve `current_holder_id` against `profiles.id` and display `profiles.name`.
-  If a profile is inaccessible or absent, the stored ID remains visible. Unassigned
-  holders display a dash.
-- A site with any linked equipment cannot be deleted, including zero-quantity
-  equipment. Both the UI and a restrictive foreign key enforce this.
-- `repository.movements(siteId, equipmentId)` now reads confirmed transfers and
-  returns from the [movement workflow](../movements/README.md). Source and
-  destination IDs retain history after site renames and after equipment leaves.
-  The movement schema restricts deletion of historically referenced sites.
-  Engineer and demo views are read-only; demo inventory comes from browser data.
+This module reads equipment, quantities, holders and existing movement records.
+Project saves only modify site metadata. They do not transfer equipment, change
+custody, stock, requests, purchases, or movement records. Foreign keys retain
+historical project references. Archive uses `is_active`/`archived_at` independently
+of lifecycle stage. Existing Realtime/polling behavior remains; an open editor
+is not replaced by background updates.
 
 ## Verification
 
-Run `node modules/sites/tests/sites.browser.cjs` with Node 22+ and Chrome or Edge.
-Set `CHROME_PATH` if the browser is installed elsewhere. Tests use a temporary
-browser profile and a local mock Supabase client, with all external requests
-blocked; they never write to the live project.
+From `tests/`, run:
 
-Checks cover CRUD, persistence across reloads, duplicate/blank validation,
-concurrent edits, failed saves, deletion protection, pagination, equipment search
-and details, module reloads, escaped content, read-only movement, and mobile/dark
-mode, interrupted loads, server pagination limits, and retaining review filters.
-Temporary screenshot paths are printed by the runner.
-
-Database regression tests execute the actual SQL using local PostgreSQL (PGlite):
-
-```sh
-npm ci --prefix modules/sites/tests
-node modules/sites/tests/sites.database.cjs
+```powershell
+npm.cmd run test:project-construction
+npm.cmd run test:projects
+npm.cmd test
 ```
 
-They reproduce the original permission failure, rerun the setup on existing
-records, and test CRUD as both `anon` and `authenticated`, row-level security,
-duplicate/invalid data, Manila dates, stale writes, and restrictive deletion.
-The test dependency is confined to the test folder, not loaded by the application.
-Run both suites with `npm test --prefix modules/sites/tests`. Neither suite writes
-to the live Supabase project. The SQL must still be applied in its SQL Editor.
+The harness uses isolated PGlite PostgreSQL and local Chrome transport with
+external HTTPS blocked. No production accounts or records are fixtures.
+On this Windows runner Chrome requires `MCPA_CHROME_NO_SANDBOX=1`; this is a
+local test setting, not an application or deployment setting. Results and
+screenshots are linked in the engineering report.

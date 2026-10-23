@@ -25,7 +25,7 @@
 #sites-module .sites-dialog::backdrop{background:rgba(0,0,0,.45);}
 #sites-module .sites-dialog-head{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px;}
 #sites-module .sites-dialog-head h2{font-size:22px; overflow-wrap:anywhere;}
-#sites-module .sites-close{color:var(--gray); font-size:24px;}
+#sites-module .sites-close{color:var(--gray); font-size:24px; min-width:44px; min-height:44px;}
 #sites-module .sites-close:hover{color:var(--black); background:var(--off-white);}
 #sites-module .sites-dialog .field{margin-bottom:0;}
 #sites-module .sites-dialog .form-grid{grid-template-columns:1fr 1fr;}
@@ -40,7 +40,45 @@
 #sites-module .sites-dialog .section-title{margin-top:24px;}
 #sites-module .sites-movement-empty{padding:22px 16px;}
 body.dark #sites-module{color-scheme:dark;}
+#sites-module .project-section{border:0; border-top:1px solid var(--line); margin:28px 0 0; padding:20px 0 0; min-width:0;}
+#sites-module .project-section>legend{font-size:17px; font-weight:700; padding:0 12px 0 0;}
+#sites-module .project-section>.sites-muted{margin:10px 0;}
+#sites-module .project-legacy{overflow-wrap:anywhere;}
+#sites-module .project-enable, #sites-module .project-applicable{display:flex; align-items:center; gap:10px; min-height:44px; font-size:13px; cursor:pointer;}
+#sites-module input[type=checkbox]{width:18px; height:18px; flex:none; accent-color:var(--gold-dim);}
+#sites-module .project-computed{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; margin:16px 0 8px; font-size:14px;}
+#sites-module .project-computed output{font-size:20px; font-weight:700; font-variant-numeric:tabular-nums;}
+#sites-module progress{width:100%; height:10px; display:block; margin-bottom:18px; accent-color:var(--gold-dim); border:0; border-radius:4px; overflow:hidden; background:var(--off-white);}
+#sites-module progress::-webkit-progress-bar{background:var(--off-white);}
+#sites-module progress::-webkit-progress-value{background:var(--gold-dim);}
+#sites-module summary{cursor:pointer; min-height:44px; padding:12px 0; font-size:13px; font-weight:600; overflow-wrap:anywhere;}
+#sites-module summary:focus-visible, #sites-module textarea:focus-visible{outline:2px solid var(--gold); outline-offset:3px;}
+#sites-module .project-area-list{display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:20px;}
+#sites-module .project-area{border:0; border-top:1px solid var(--line); margin:0; padding:8px 0 0; min-width:0;}
+#sites-module .project-area>legend{font-weight:600; font-size:14px; padding-right:8px; overflow-wrap:anywhere; max-width:100%;}
+#sites-module .project-weight-total{margin:20px 0 10px; font-size:14px; font-weight:600; font-variant-numeric:tabular-nums;}
+#sites-module .project-history-filters{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;}
+#sites-module .project-timeline{list-style:none; padding:0; margin:16px 0;}
+#sites-module .project-history-event{border-top:1px solid var(--line); padding:24px 0; overflow-wrap:anywhere;}
+#sites-module .project-event-head{display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px 16px; margin-bottom:6px;}
+#sites-module .project-event-head h3{font-size:16px; line-height:1.5; flex:1 1 220px;}
+#sites-module .project-event-head time{font-size:12px; color:var(--gray); line-height:2; font-variant-numeric:tabular-nums;}
+#sites-module .project-change-list{list-style:none; margin:16px 0; padding:0; font-size:13px;}
+#sites-module .project-change-list li{display:grid; grid-template-columns:minmax(120px,1fr) minmax(0,2fr); gap:8px 16px; padding:8px 0;}
+#sites-module .project-change-list li>span{font-weight:600;}
+#sites-module .project-change-list del{text-decoration:none; color:var(--gray);}
+#sites-module .project-change-list ins{text-decoration:none; font-weight:600;}
+#sites-module .project-history-note{white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.7; font-size:13px; margin:14px 0;}
+#sites-module .project-event-reference{font-size:12px; color:var(--gray);}
+#sites-module .project-event-reference summary{font-weight:400;}
+#sites-module .sites-dialog textarea{width:100%; box-sizing:border-box; resize:vertical; min-height:90px; font:inherit; font-size:14px; color:var(--black); background:var(--white); border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 12px;}
+#sites-module .sites-dialog .field, #sites-module .sites-dialog input, #sites-module .sites-dialog select{min-width:0; max-width:100%;}
+#sites-module .sites-dialog input:not([type=checkbox]), #sites-module .sites-dialog select, #sites-module .sites-dialog .btn{min-height:44px;}
+#sites-module .sites-dialog input[type=number]{font-variant-numeric:tabular-nums;}
 @media (max-width:600px){
+  #sites-module .project-area-list, #sites-module .project-history-filters{grid-template-columns:1fr;}
+  #sites-module .project-change-list li{grid-template-columns:1fr; gap:3px;}
+  #sites-module .sites-dialog input:not([type=checkbox]), #sites-module .sites-dialog textarea, #sites-module .sites-dialog select{font-size:16px;}
   #sites-module .sites-dialog{padding:20px; max-height:calc(100dvh - 24px);}
   #sites-module .sites-dialog .form-grid{grid-template-columns:1fr;}
   #sites-module .sites-dialog-actions .btn{flex:1;}

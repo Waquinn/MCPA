@@ -16,6 +16,12 @@
     idle: ['Idle Stock', 'available'], planning: ['Planning', 'pending'],
     completed: ['Completed', 'verified']
   };
+  const workAreas = ['Structural', 'Mechanical', 'Electrical', 'Plumbing', 'Fire Safety', 'Architectural / Finishing Stage'];
+  const projectStages = ['Planning/Designing', 'Permitting', 'Groundbreaking', 'Construction Phase', 'Turnover'];
+  const updateTypes = ['Site inspection', 'Milestone', 'Delay', 'Work started', 'Work completed', 'Safety inspection', 'Work suspended', 'Work resumed', 'Correction', 'Other'];
+  const defaultWeights = [30, 15, 15, 10, 10, 20];
+  const percent = value => Number(value).toLocaleString('en-PH', {maximumFractionDigits: 2}) + '%';
+  const options = (items, selected, empty = 'Not recorded') => `<option value="">${empty}</option>` + items.map(label => `<option${selected === label ? ' selected' : ''}>${escape(label)}</option>`).join('');
   const toolStatuses = {
     available: ['Available', 'available'], inuse: ['In Use', 'inuse'],
     repair: ['For Repair', 'repair'], underrepair: ['Under Repair', 'underrepair'],
@@ -91,6 +97,7 @@
     if (error.code === '42501') return 'Your account does not have permission to perform this project action. Contact your administrator if you need access.';
     if (['PGRST301', 'PGRST303'].includes(error.code)) return 'Your database session has expired or is invalid. Sign in again, then retry.';
     if (error.code === '23514') return 'Some project details are invalid. Please check the form and try again.';
+    if (error.code === '40001') return 'This project changed while you were editing. Close the form, reload the project and apply your changes again.';
     if (error.projectUserMessage) return error.projectUserMessage;
     if (navigator.onLine === false || /failed to fetch|networkerror|network request failed|load failed/i.test(error.message || '')) {
       return 'The project service could not be reached. Check your connection and try again.';
@@ -138,7 +145,7 @@
       const holders = new Map(profiles.map(profile => [profile.id, profile.name]));
       return {
         sites: sites.map(site=>({...site,assigned_engineer:site.assigned_engineer_id?holders.get(site.assigned_engineer_id)||'Accountable profile unavailable':site.assigned_engineer})).sort((a, b) => a.name.localeCompare(b.name)),
-        profiles: profiles.filter(profile => !profile.role || /engineer|architect/i.test(profile.role)),
+        profiles: profiles.filter(profile => /^(engineer|architect)$/.test(profile.role)),
         equipment: equipment.map(item => {
           const status = String(item.status || '').toLowerCase().replace(/[\s_-]/g, '');
           const quantity = Number(item.quantity ?? (item.tracking_type === 'Individual' ? 1 : 0));
@@ -146,15 +153,15 @@
         })
       };
     },
-    async save(values, original) {
+    async save(values, original, operationId, reason) {
       if (readOnly || isEngineer()) throw projectError('Only an Admin can edit live project records.');
-      let query = original
-        ? client().from('sites').update(values).eq('id', original.id).eq('updated_at', original.updated_at)
-        : client().from('sites').insert(values);
-      const { data, error } = await query.select('*');
+      const { data, error } = await client().rpc('mcpa_save_project', {
+        p_id: original?.id || null, p_version: original?.project_version ?? null,
+        p_operation_id: operationId, p_patch: values, p_reason: reason || null
+      });
       if (error) throw error;
-      if (!data?.length) throw projectError('This project changed or is no longer editable. Close this form and retry after the next update.');
-      return data[0];
+      if (!data?.id) throw projectError('This project changed or is no longer editable. Close this form and retry after the next update.');
+      return data;
     },
     async history(siteId) {
       if (demo) return [];
@@ -166,7 +173,7 @@
       }
       const rows = [];
       for (let offset = 0; ; offset += 500) {
-        const { data, count, error } = await client().from('project_history').select('*', {count: 'exact'}).eq('project_id', siteId).order('changed_at', {ascending: false}).range(offset, offset + 499);
+        const { data, count, error } = await client().from('project_history').select('*', {count: 'exact'}).eq('project_id', siteId).order('changed_at', {ascending: false}).order('id', {ascending: false}).range(offset, offset + 499);
         if (error) throw error;
         rows.push(...(data || []));
         if (!data?.length || (count != null ? rows.length >= count : data.length < 500)) return rows;
@@ -209,7 +216,7 @@
 
   function syncControls() {
     root.querySelectorAll('[data-action="refresh"]').forEach(button => { button.disabled = state.loading || state.saving; });
-    root.querySelectorAll('[data-action="add-site"], [data-action="edit-site"], [data-action="archive-site"]').forEach(button => {
+    root.querySelectorAll('[data-action="add-site"], [data-action="edit-site"], [data-action="archive-site"], [data-action="site-update"]').forEach(button => {
       if(readOnly){button.remove();return;}
       button.disabled = readOnly || isEngineer() || !state.ready || state.loading || state.saving;
       button.hidden = readOnly || isEngineer();
@@ -266,7 +273,7 @@
       if (count('missing')) stats.push(['Missing', count('missing')]);
       if (count('disposed')) stats.push(['Disposed', count('disposed')]);
       return `<button type="button" class="card site-card" data-action="open-site" data-id="${escape(site.id)}" aria-label="View ${escape(site.name)}">
-        <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.phase || 'Phase not specified')}</span><span class="sites-muted">${escape(site.location)}</span></span>${site.is_active === false ? '<span class="badge badge-disposed">Archived</span>' : badge(site.status, siteStatuses)}</span>
+        <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.current_work_area || site.phase || 'Work area not recorded')}</span><span class="sites-muted">${escape(site.location)}${site.project_stage ? ' · ' + escape(site.project_stage) : ''}</span></span>${site.is_active === false ? '<span class="badge badge-disposed">Archived</span>' : badge(site.status, siteStatuses)}</span>
         <span class="site-stat-row">${stats.filter(([, number]) => number > 0).map(([label, number]) => `<span class="site-stat"><span class="n">${number}</span><span class="l">${label}</span></span>`).join('')}</span>
       </button>`;
     }).join('') : `<div class="card empty-state sites-full"><p class="t">${state.scope === 'mine' ? 'No projects assigned to you' : 'No matching projects'}</p><p class="d">${state.scope === 'mine' ? 'An Admin can assign your profile to a project.' : 'Adjust the filters or add a project to track its equipment.'}</p><button type="button" class="btn btn-secondary btn-sm" data-action="add-site">+ Add Project</button></div>`;
@@ -296,10 +303,12 @@
       <div class="page-head"><div>
         <button type="button" class="sites-back eyebrow" data-action="all-sites">← All Projects</button>
         <h1 class="display" id="site-heading">${escape(site.name)}</h1>
-        <p class="sub">${escape(site.location)} · ${escape(site.phase)} — ${site.progress}% complete</p>
+        <p class="sub">${escape(site.location)} · ${escape(site.current_work_area || 'Current work area not recorded')} · ${escape(site.project_stage || 'Project stage not recorded')}</p>
+        <p class="sites-muted">${site.construction_completion != null ? `Construction Completion: ${percent(site.construction_completion)} · ` : 'Construction Completion: Not configured · '}Legacy completion: ${percent(site.progress)}${site.phase ? ' · Legacy phase: ' + escape(site.phase) : ''}</p>
       </div><div class="page-head-actions">
         ${badge(site.status, siteStatuses)}
         <button type="button" class="btn btn-secondary btn-sm" data-action="project-history">Project History</button>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="site-update">Add Site Update</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="edit-site">Edit Project</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="archive-site">${site.is_active === false ? 'Restore Project' : 'Archive Project'}</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="review-tools">Review Assigned Tools</button>
@@ -347,13 +356,23 @@
     }
     dialog.close();
     state.dirty = false;
-    void refresh(true);
-    if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus();
-    else root.querySelector('#screen-site-detail.active [data-action="edit-site"], #screen-sites.active [data-action="add-site"]')?.focus();
+    const returnAction = dialogReturnFocus?.dataset?.action;
+    const restoreFocus = () => {
+      if (dialog.open || !root.isConnected) return;
+      if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus();
+      else root.querySelector(returnAction ? `[data-action="${returnAction}"]` : '#screen-site-detail.active [data-action="edit-site"], #screen-sites.active [data-action="add-site"]')?.focus();
+    };
+    restoreFocus();
+    void refresh(true).then(() => {
+      // Refresh replaces detail controls; restore only if the user has not
+      // already moved focus to another live control while it was loading.
+      if (document.activeElement === document.body) restoreFocus();
+    });
   }
 
   function editSite(site = null) {
     if (readOnly || isEngineer() || !state.ready || state.loading) return;
+    if (site && site.project_version == null) { feedback('Projects needs a database configuration update. Contact your administrator, then retry.', true); return; }
     const value = (field, fallback = '') => escape(site?.[field] ?? fallback);
     const legacy = site && !state.profiles.some(profile => profile.id === site.assigned_engineer_id);
     state.dirty = false;
@@ -361,46 +380,109 @@
       <form id="sites-form" data-id="${value('id')}">
         <p class="sites-dialog-description">Changes retain the previous and new values in Project History. Select an existing Engineer / Architect profile; one person may handle multiple projects. Required fields are marked *.</p>
         <div id="sites-form-error" class="sites-form-error hidden" role="alert" tabindex="-1"></div>
-        <div class="form-grid">
+        <fieldset class="project-section"><legend>Project Information</legend><div class="form-grid">
           <div class="field full"><label for="site-name">Project Name *</label><input id="site-name" name="name" value="${value('name')}" maxlength="120" required autofocus autocomplete="off"></div>
           <div class="field full"><label for="site-location">Location *</label><input id="site-location" name="location" value="${value('location')}" maxlength="240" required></div>
           <div class="field"><label for="site-engineer">Engineer / Architect *</label><select id="site-engineer" name="assigned_engineer_id" required><option value="">Select an existing profile</option>${legacy ? `<option value="legacy" selected>${value('assigned_engineer')} (existing assignment)</option>` : ''}${state.profiles.map(profile => `<option value="${escape(profile.id)}"${profile.id === site?.assigned_engineer_id ? ' selected' : ''}>${escape(profile.name)}</option>`).join('')}</select>${!state.profiles.length ? '<small class="sites-muted">No accessible profiles. An Admin must add or make the actual Engineer / Architect profiles available before assigning a new project.</small>' : ''}</div>
-          <div class="field"><label for="site-phase">Project Phase</label><input id="site-phase" name="phase" value="${value('phase')}" maxlength="80" placeholder="Enter the phase used by your team"><small class="sites-muted">Use your actual project terminology, or leave blank.</small></div>
-          <div class="field"><label for="site-status">Status *</label><select id="site-status" name="status" required>${Object.entries(siteStatuses).map(([key, [label]]) => `<option value="${key}"${(site?.status || 'planning') === key ? ' selected' : ''}>${label}</option>`).join('')}</select></div>
-          <div class="field"><label for="site-progress">Completion (%) *</label><input id="site-progress" name="progress" type="number" value="${value('progress', 0)}" min="0" max="100" step="1" required></div>
+          <div class="field"><label for="site-status">Operational Status *</label><select id="site-status" name="status" required>${Object.entries(siteStatuses).map(([key, [label]]) => `<option value="${key}"${(site?.status || 'planning') === key ? ' selected' : ''}>${label}</option>`).join('')}</select><small class="sites-muted">Archive and restore remain separate actions.</small></div>
           <div class="field full"><label for="site-check">Last Inventory Check</label><input id="site-check" name="last_inventory_check" type="date" value="${value('last_inventory_check')}" max="${today()}"></div>
-        </div>
+        </div></fieldset>
+        <fieldset class="project-section"><legend>Construction Lifecycle</legend><div class="form-grid">
+          <div class="field"><label for="site-stage">Project Stage</label><select id="site-stage" name="project_stage">${options(projectStages, site?.project_stage)}</select></div>
+          <div class="field"><label for="site-phase">Current Work Area</label><select id="site-phase" name="current_work_area">${options(workAreas, site?.current_work_area, 'Select when known')}</select></div>
+        </div>${site?.phase ? `<p class="sites-muted project-legacy">Original phase retained: <strong>${value('phase')}</strong>. ${workAreas.some(area => area.toLowerCase() === site.phase.trim().toLowerCase()) ? 'Select its matching area when ready.' : 'Review this legacy value before choosing a work area.'}</p>` : ''}<p class="sites-muted">Work areas may overlap. Construction completion does not change the project stage.</p></fieldset>
+        <fieldset class="project-section"><legend>Construction Progress</legend>
+          <p class="sites-muted">${site ? `Legacy completion: ${percent(site.progress)} (preserved). ` : ''}Enable measured tracking after reviewing the scope and measurements.</p>
+          <label class="project-enable"><input type="checkbox" id="project-progress-enabled"${site?.construction_work_areas ? ' checked disabled' : ''}> Use work-area measurements</label>
+          <div class="project-computed"><span>Construction Completion</span><output id="project-computed-value" aria-live="polite">Not configured</output></div>
+          <progress id="project-progress-bar" max="100" value="0" aria-label="Construction Completion"></progress>
+          <details id="project-progress-editor"${site?.construction_work_areas ? ' open' : ''}><summary>Manage Work Area Progress</summary>
+            <p class="sites-muted">Starting weights are illustrative, not construction standards. Adjust them to this project's quantities, effort or budget. N/A requires zero weight; redistribute applicable weights to total 100%.</p>
+            <div class="project-area-list">${workAreas.map((label, i) => {
+              const area = site?.construction_work_areas?.[label] || {completion: 0, weight: defaultWeights[i], applicable: true, note: ''};
+              return `<fieldset class="project-area" data-area="${escape(label)}"><legend>${escape(label)}</legend>
+                <label class="project-applicable"><input type="checkbox" data-progress="applicable"${area.applicable ? ' checked' : ''}> Applicable</label>
+                <div class="form-grid"><div class="field"><label for="area-completion-${i}">Completion (%)</label><input id="area-completion-${i}" data-progress="completion" type="number" min="0" max="100" step="0.01" value="${escape(area.completion)}" required></div>
+                <div class="field"><label for="area-weight-${i}">Scope weight (%)</label><input id="area-weight-${i}" data-progress="weight" type="number" min="0" max="100" step="0.01" value="${escape(area.weight)}" required></div>
+                <div class="field full"><label for="area-note-${i}">Progress note (optional)</label><input id="area-note-${i}" data-progress="note" value="${escape(area.note)}" maxlength="1000"></div></div></fieldset>`;
+            }).join('')}</div>
+            <p id="project-weight-total" class="project-weight-total" aria-live="polite"></p>
+            <p id="project-progress-error" class="sites-form-error hidden" role="alert"></p>
+          </details>
+        </fieldset>
+        <fieldset class="project-section"><legend>Project Update</legend><div class="field"><label for="site-reason">Reason / Progress Note (optional)</label><textarea id="site-reason" name="reason" rows="3" maxlength="4000" placeholder="Explain the change for Project History"></textarea></div></fieldset>
         <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="btn btn-primary">${site ? 'Save Changes' : 'Create Project'}</button></div>
-      </form>`);
+      </form>`, true, 'edit');
+    state.editOriginal = site ? structuredClone(site) : null;
+    updateProgressPreview();
+  }
+
+  // Integer basis points match PostgreSQL NUMERIC round(...,2); no binary-float
+  // multiplication of user percentages. Six bounded rows stay within safe ints.
+  function readProgress() {
+    if (!root.querySelector('#project-progress-enabled').checked) return {areas: null, completion: null, total: 0};
+    const areas = {}; let total = 0, weighted = 0;
+    for (const row of root.querySelectorAll('[data-area]')) {
+      const get = key => row.querySelector(`[data-progress="${key}"]`);
+      const completion = get('completion').value, weight = get('weight').value;
+      const applicable = get('applicable').checked;
+      if (![completion, weight].every(value => /^(?:\d+)(?:\.\d{1,2})?$/.test(value) && Number(value) <= 100)) throw new Error('Enter completion and scope weight from 0 to 100, with at most two decimal places.');
+      const c = Math.round(Number(completion) * 100), w = Math.round(Number(weight) * 100);
+      if (!applicable && w !== 0) throw new Error('Set N/A work areas to zero weight, then redistribute the remaining weights.');
+      if (applicable) { total += w; weighted += c * w; }
+      areas[row.dataset.area] = {completion: c / 100, weight: w / 100, applicable, note: get('note').value.trim()};
+    }
+    if (total !== 10000) throw new Error(`Applicable scope weights total ${percent(total / 100)}. Adjust them to exactly 100%.`);
+    return {areas, completion: Math.floor((weighted + 5000) / 10000) / 100, total: total / 100};
+  }
+
+  function updateProgressPreview() {
+    const enabled = root.querySelector('#project-progress-enabled').checked;
+    const editor = root.querySelector('#project-progress-editor');
+    editor.hidden = !enabled;
+    editor.querySelectorAll('input').forEach(input => { input.disabled = !enabled; });
+    const result = root.querySelector('#project-computed-value'), bar = root.querySelector('#project-progress-bar'), error = root.querySelector('#project-progress-error');
+    let total = 0;
+    editor.querySelectorAll('[data-area]').forEach(row => { if (row.querySelector('[data-progress="applicable"]').checked) total += Math.round(Number(row.querySelector('[data-progress="weight"]').value) * 100) || 0; });
+    root.querySelector('#project-weight-total').textContent = 'Applicable scope weight: ' + percent(total / 100) + ' / 100%';
+    try { const data = readProgress(); result.textContent = data.completion == null ? 'Not configured' : percent(data.completion); bar.value = data.completion || 0; error.classList.add('hidden'); }
+    catch (e) { result.textContent = 'Check weights and values'; bar.value = 0; error.textContent = e.message; error.classList.remove('hidden'); }
+  }
+
+  function operationFor(form, payload) {
+    const serialized = JSON.stringify(payload);
+    if (form.dataset.request !== serialized) { form.dataset.request = serialized; form.dataset.operation = crypto.randomUUID(); }
+    return form.dataset.operation;
   }
 
   async function saveSite(form) {
     if (readOnly || isEngineer() || state.saving || state.loading || !form.reportValidity()) return;
-    const original = state.sites.find(site => site.id === form.dataset.id);
+    const original = state.editOriginal;
     const values = Object.fromEntries(new FormData(form));
+    const reason = values.reason; delete values.reason;
     const profile = state.profiles.find(profile => profile.id === values.assigned_engineer_id);
     if (values.assigned_engineer_id === 'legacy' && original) {
       values.assigned_engineer_id = original.assigned_engineer_id || null;
-      values.assigned_engineer = original.assigned_engineer;
-    } else if (profile) values.assigned_engineer = profile.name;
+    } else if (profile) { /* Database snapshots the selected profile's name. */ }
     else { formError('Select an existing Engineer / Architect profile.'); return; }
-    values.phase = normalizeName(values.phase || '');
-    for (const field of ['name', 'location', 'assigned_engineer']) {
+    for (const field of ['name', 'location']) {
       values[field] = normalizeName(values[field]);
       if (!values[field]) { formError('Please complete all required fields. Blank spaces are not valid values.'); return; }
     }
     if (state.sites.some(site => site.id !== original?.id && normalizeName(site.name).toLowerCase() === values.name.toLowerCase())) {
       formError('A site with this name already exists. Please use a different name.'); return;
     }
-    values.progress = Number(values.progress);
-    if (!Number.isInteger(values.progress) || values.progress < 0 || values.progress > 100) { formError('Completion must be a whole number from 0 to 100.'); return; }
+    values.project_stage ||= null;
+    values.current_work_area ||= null;
+    try { const progress = readProgress(); if (progress.areas) values.construction_work_areas = progress.areas; }
+    catch (error) { formError(error.message); root.querySelector('#project-progress-editor').open = true; return; }
     if (!(values.status in siteStatuses)) { formError('Please select a valid project status.'); return; }
     if (values.last_inventory_check > today()) { formError('The inventory check cannot be in the future.'); return; }
     values.last_inventory_check ||= null;
     formError('');
     setSaving(true);
     try {
-      const saved = await repository.save(values, original);
+      const saved = await repository.save(values, original, operationFor(form, {values, reason}), reason);
       if (!root.isConnected) return;
       state.sites = [...state.sites.filter(site => site.id !== saved.id), saved].sort((a, b) => a.name.localeCompare(b.name));
       state.selectedId = saved.id;
@@ -418,7 +500,10 @@
     state.saving = saving;
     syncControls();
     dialog.setAttribute('aria-busy', String(saving));
-    dialog.querySelectorAll('button, input, select').forEach(element => { element.disabled = saving; });
+    dialog.querySelectorAll('button, input, select, textarea').forEach(element => {
+      if (saving) { element.dataset.wasDisabled = String(element.disabled); element.disabled = true; }
+      else if (element.dataset.wasDisabled !== undefined) { element.disabled = element.dataset.wasDisabled === 'true'; delete element.dataset.wasDisabled; }
+    });
     const submit = dialog.querySelector('[type="submit"], [data-action="confirm-archive"]');
     if (submit) {
       if (saving) { submit.dataset.label = submit.textContent; submit.textContent = 'Saving…'; }
@@ -430,6 +515,8 @@
     if (readOnly || isEngineer()) return;
     const site = currentSite();
     if (!site) return;
+    state.archiveOriginal = structuredClone(site);
+    state.archiveOperation = crypto.randomUUID();
     openDialog(site.is_active === false ? 'Restore Project' : 'Archive Project', `
       <div id="sites-form-error" class="sites-form-error hidden" role="alert" tabindex="-1"></div>
       <p class="sites-dialog-description">${site.is_active === false ? 'Restore' : 'Archive'} ${escape(site.name)}? Its equipment assignments and full history will remain available. Archiving does not transfer or return equipment.</p>
@@ -438,12 +525,12 @@
 
   async function confirmArchive() {
     if (readOnly || isEngineer() || state.saving) return;
-    const site = currentSite();
+    const site = state.archiveOriginal;
     if (!site) return;
     setSaving(true);
     try {
       const restore = site.is_active === false;
-      const saved = await repository.save({ is_active: restore, archived_at: restore ? null : new Date().toISOString() }, site);
+      const saved = await repository.save({ is_active: restore }, site, state.archiveOperation);
       if (!root.isConnected) return;
       state.sites = state.sites.map(record => record.id === site.id ? saved : record);
       render();
@@ -452,6 +539,96 @@
       showScreen('sites');
       feedback(`${site.name} ${saved.is_active === false ? 'archived' : 'restored'}. Its history has been preserved.`);
     } catch (error) { formError(databaseError(error, 'archive')); }
+    finally { setSaving(false); }
+  }
+
+  const historyLabels = {
+    created: 'Project created', baseline: 'Legacy snapshot recorded', engineer: 'Assignment updated', phase: 'Legacy phase updated',
+    name: 'Project name updated', location: 'Location updated', current_work_area: 'Current work area updated',
+    project_stage: 'Project stage updated', status: 'Operational status updated', last_inventory_check: 'Inventory check updated',
+    progress: 'Legacy completion updated', construction_progress: 'Construction progress updated', weights: 'Work-area weights updated',
+    archived: 'Project archived', restored: 'Project restored', details: 'Project details updated', site_update: 'Site update'
+  };
+  const fieldLabels = {name: 'Project name', location: 'Location', assigned_engineer: 'Engineer / Architect', assigned_engineer_id: 'Assigned profile reference', phase: 'Legacy phase', status: 'Operational status', is_active: 'Active', archived_at: 'Archived at', progress: 'Legacy completion', last_inventory_check: 'Last Inventory Check', project_stage: 'Project Stage', current_work_area: 'Current Work Area', construction_completion: 'Construction Completion'};
+  function historyValue(key, value) {
+    if (value == null || value === '') return 'Not recorded';
+    if (['progress', 'construction_completion', 'completion', 'weight'].includes(key)) return percent(value);
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (key === 'status') return siteStatuses[value]?.[0] || String(value);
+    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+  }
+  function historyChanges(record) {
+    const before = record.before_values || {}, after = record.after_values || {};
+    const initial = !record.before_values;
+    const changes = [];
+    const add = (label, key, oldValue, newValue) => {
+      if (JSON.stringify(oldValue) === JSON.stringify(newValue)) return;
+      changes.push(`<li><span>${escape(label)}</span><div>${initial ? '' : `<del>${escape(historyValue(key, oldValue))}</del><span aria-hidden="true"> → </span><span class="sr-only"> changed to </span>`}<ins>${escape(historyValue(key, newValue))}</ins></div></li>`);
+    };
+    Object.entries(fieldLabels).forEach(([key, label]) => add(label, key, before[key], after[key]));
+    workAreas.forEach(area => {
+      const oldArea = before.construction_work_areas?.[area] || {}, newArea = after.construction_work_areas?.[area] || {};
+      [['completion', 'completion'], ['weight', 'scope weight'], ['applicable', 'applicable'], ['note', 'note']].forEach(([key, label]) => add(`${area} · ${label}`, key, oldArea[key], newArea[key]));
+    });
+    // Legacy/custom fields remain visible when the deployed schema contains more
+    // detail than this interface knows. No missing values or actors are invented.
+    const excluded = new Set([...Object.keys(fieldLabels), 'id', 'created_at', 'updated_at', 'project_version', 'construction_work_areas']);
+    [...new Set([...Object.keys(before), ...Object.keys(after)])].filter(key => !excluded.has(key)).forEach(key => add(key.replaceAll('_', ' '), key, before[key], after[key]));
+    return changes.length ? `<ul class="project-change-list">${changes.join('')}</ul>` : '<p class="sites-muted">No field differences recorded in this entry.</p>';
+  }
+  async function viewProjectHistory() {
+    const site = currentSite(); if (!site) return;
+    const navigation = state.navigation;
+    try {
+      const records = await repository.history(site.id);
+      if (!root.isConnected || currentSite()?.id !== site.id || state.navigation !== navigation) return;
+      state.projectHistory = records.sort((a, b) => (b.changed_at || '').localeCompare(a.changed_at || '') || b.id.localeCompare(a.id));
+      openDialog(`Project History — ${site.name}`, `<p class="sites-dialog-description">Permanent, read-only activity. Newest first. Times shown in Asia/Manila. Older records retain only the information originally recorded.</p>
+        <div class="project-history-filters"><div class="field"><label for="project-history-search">Search history</label><input id="project-history-search" type="search" placeholder="Person, change, value or note"></div>
+        <div class="field"><label for="project-history-type">Event type</label><select id="project-history-type"><option value="">All events</option>${[...new Set(records.flatMap(row => row.change_types || []))].map(type => `<option value="${escape(type)}">${escape(historyLabels[type] || type)}</option>`).join('')}</select></div></div>
+        <p id="project-history-count" class="sites-muted" aria-live="polite"></p><ol id="project-history-events" class="project-timeline"></ol>
+        <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true, 'history');
+      filterHistory();
+    } catch (error) { feedback(databaseError(error, 'history'), true); }
+  }
+  function filterHistory() {
+    const search = root.querySelector('#project-history-search').value.trim().toLowerCase(), type = root.querySelector('#project-history-type').value;
+    const records = state.projectHistory.filter(record => (!type || record.change_types.includes(type)) && (!search || JSON.stringify(record).toLowerCase().includes(search) || record.change_types.some(kind => (historyLabels[kind] || kind).toLowerCase().includes(search))));
+    root.querySelector('#project-history-count').textContent = `${records.length} of ${state.projectHistory.length} recorded events`;
+    root.querySelector('#project-history-events').innerHTML = records.length ? records.map(record => `<li class="project-history-event"><article>
+      <div class="project-event-head"><h3>${escape(record.site_update_type || record.change_types.map(kind => historyLabels[kind] || kind).join(' · '))}</h3><time datetime="${escape(record.changed_at || '')}">${escape(formatTimestamp(record.changed_at))}</time></div>
+      <p class="sites-muted">Recorded by: ${escape(record.actor_name || 'Actor not recorded')}${record.work_area ? ' · ' + escape(record.work_area) : ''}</p>
+      ${record.change_types.includes('site_update') ? '' : historyChanges(record)}
+      ${record.reason ? `<p class="project-history-note">${escape(record.reason)}</p>` : ''}
+      <details class="project-event-reference"><summary>Record references</summary><p>Event: ${escape(record.id)}</p>${record.actor_id ? `<p>Actor: ${escape(record.actor_id)}</p>` : ''}${record.correction_of ? `<p>Corrects event: ${escape(record.correction_of)}</p>` : ''}</details>
+      ${!readOnly && !isEngineer() ? `<button type="button" class="sites-text-button" data-action="correct-site-update" data-id="${escape(record.id)}">Add a correction</button>` : ''}
+    </article></li>`).join('') : '<li class="empty-state">No project history matches. Older activity may not have been recorded.</li>';
+  }
+  function addSiteUpdate(correctionOf = '') {
+    if (readOnly || isEngineer() || !currentSite()) return;
+    const site = currentSite();
+    openDialog(`Add Site Update — ${site.name}`, `<form id="site-update-form" data-project="${escape(site.id)}" data-correction="${escape(correctionOf)}">
+      <p class="sites-dialog-description">This update becomes a permanent part of Project History. Your signed-in identity and submission time are recorded by the server.</p>
+      <div id="sites-form-error" class="sites-form-error hidden" role="alert" tabindex="-1"></div>
+      ${correctionOf ? `<p class="project-history-note">Correction to event: ${escape(correctionOf)}. The original entry is retained.</p>` : ''}
+      <div class="form-grid"><div class="field"><label for="site-update-type">Update type *</label><select id="site-update-type" name="type" required>${options(updateTypes, correctionOf ? 'Correction' : '', 'Choose an update type')}</select></div>
+      <div class="field"><label for="site-update-area">Relevant work area (optional)</label><select id="site-update-area" name="area">${options(workAreas, '', 'Project-wide')}</select></div>
+      <div class="field full"><label for="site-update-description">Description *</label><textarea id="site-update-description" name="description" rows="6" maxlength="4000" required autofocus></textarea></div></div>
+      <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Cancel</button><button type="submit" class="btn btn-primary">Record Site Update</button></div>
+      </form>`, false, 'site-update');
+  }
+  async function saveSiteUpdate(form) {
+    if (readOnly || state.saving || !form.reportValidity()) return;
+    const data = Object.fromEntries(new FormData(form));
+    if (!data.description.trim()) { formError('Describe the site update before recording it.'); return; }
+    const args = {p_project_id: form.dataset.project, p_type: data.type, p_description: data.description.trim(), p_work_area: data.area || null, p_correction_of: form.dataset.correction || null};
+    const operation = operationFor(form, args); setSaving(true);
+    try {
+      const {error} = await client().rpc('mcpa_add_site_update', {...args, p_operation_id: operation});
+      if (error) throw error;
+      if (!root.isConnected) return;
+      setSaving(false); closeDialog(); feedback('Site update recorded in Project History.');
+    } catch (error) { formError(databaseError(error, 'site-update')); }
     finally { setSaving(false); }
   }
 
@@ -518,14 +695,8 @@
       'all-sites': () => { feedback(''); showScreen('sites'); },
       'edit-site': () => { if (currentSite()) editSite(currentSite()); },
       'archive-site': archiveSite, 'confirm-archive': confirmArchive,
-      'project-history': async () => {
-        const site = currentSite(); if (!site) return;
-        try {
-          const records = await repository.history(site.id);
-          if (!root.isConnected) return;
-          openDialog('Project History', records.length ? records.map(record => `<p>${escape(formatTimestamp(record.changed_at))} · ${escape(record.change_types.join(', '))}</p>`).join('') : '<p>No project changes recorded.</p>');
-        } catch (error) { feedback(databaseError(error, 'history'), true); }
-      },
+      'project-history': viewProjectHistory,
+      'site-update': () => addSiteUpdate(), 'correct-site-update': () => addSiteUpdate(button.dataset.id),
       'review-tools': () => window.MCPAMovementLinks.parse(location.hash).tool && window.MCPANavigation.canBack() ? window.MCPANavigation.back() : reviewTools(),
       'view-tool': () => showScreen('site-detail?record=' + encodeURIComponent(state.selectedId) + '&tool=' + encodeURIComponent(button.dataset.id)),
       'view-movements': viewMovements, 'close-dialog': closeDialog
@@ -533,15 +704,20 @@
     actions[button.dataset.action]?.();
   });
   root.addEventListener('submit', event => {
-    if (event.target.id !== 'sites-form') return;
+    if (!['sites-form', 'site-update-form'].includes(event.target.id)) return;
     event.preventDefault();
-    saveSite(event.target);
+    if (event.target.id === 'sites-form') saveSite(event.target);
+    else saveSiteUpdate(event.target);
   });
   root.addEventListener('input', event => {
+    if (event.target.closest('#sites-form')) { state.dirty = true; if (event.target.matches('[data-progress], #project-progress-enabled')) updateProgressPreview(); }
+    if (event.target.id === 'project-history-search') filterHistory();
     if (event.target.id === 'sites-tool-search') filterTools();
     if (event.target.id === 'projects-search') { state.search = event.target.value.trim().toLowerCase(); render(); }
   });
   root.addEventListener('change', event => {
+    if (event.target.id === 'project-history-type') filterHistory();
+    if (event.target.id === 'project-progress-enabled') { updateProgressPreview(); if (event.target.checked) root.querySelector('#project-progress-editor').open = true; }
     if (event.target.id === 'sites-tool-status') filterTools();
     if (event.target.id === 'projects-scope' && !readOnly) { state.scope = event.target.value; render(); }
     if (event.target.id === 'projects-archived') { state.includeArchived = event.target.checked; render(); }

@@ -94,6 +94,7 @@ const server=http.createServer(async(req,res)=>{
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
  fixture=await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ if(process.argv.includes('--project-construction'))await require('./project-construction-fixture.cjs').upgrade(fixture);
  console.log('Browser fixture ready; isolated local database');
  // Compose each fixture dependency once, then install Office returns after the
  // existing optional-purpose patch to reproduce the already-deployed SQL order.
@@ -181,6 +182,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await login('inactive');await wait("document.querySelector('#auth-feedback').textContent.includes('inactive')");await logout();
  await login('missing');await wait("document.querySelector('#auth-feedback').textContent.includes('not assigned')");await logout();
  await login('admin');await wait("document.querySelector('.admin-review')");
+ if(process.argv.includes('--project-construction')){
+  await require('./project-construction.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,shot,artifactDirectory:profile,base});
+  assert.deepEqual(errors,[],'No uncaught browser errors');return;
+ }
  if(process.argv.includes('--consumables-upgrade')){
   await require('./consumables-upgrade.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,shot,base,artifactDirectory:profile});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;

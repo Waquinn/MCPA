@@ -1,5 +1,14 @@
 # Manual migration gate
 
+For the Admin Projects construction/history upgrade, use the separate
+[Projects engineering report and deployment order](../../documentation/project-construction-2026-10-23/REPORT.md).
+Run the read-only `supabase/project-construction-preflight.sql`, review its actual
+schema/security results, then manually apply only the new
+`202610230002_project_construction.sql` when prerequisites match. Verify with
+`supabase/project-construction-verify.sql` before frontend rollout. This upgrade
+does not authorize reapplying prototype setup, the historical history repair,
+any Storage migration, or any other migration in this directory.
+
 This directory is a historical SQL source archive, not an approved chronological
 deployment queue for the current production project. It contains original and
 scoped compatibility implementations for different reviewed live states.
