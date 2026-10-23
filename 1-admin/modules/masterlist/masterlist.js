@@ -70,6 +70,22 @@ function filterAndResetPage() {
   renderTable();
 }
 
+// Status has one owner: the existing dropdown. Use the app's hash/history
+// navigation so dashboard links, local filters, back and reload agree.
+function navigateEquipmentStatus(value) {
+  const key = {'':'all',Available:'available','In Use':'inuse','For Repair':'repair',Missing:'missing'}[value] || value;
+  if (['all','available','inuse','repair','missing'].includes(key)) showScreen('masterlist?status=' + key);
+}
+
+function updateEquipmentSummary() {
+  const tools = equipmentList.filter(item => window.EquipmentTracking.quantity(item) > 0);
+  const totals = window.AdminEquipment?.loaded ? window.EquipmentTracking.tally(tools, tools[0]?.availabilityData) : null;
+  document.querySelectorAll('[data-equipment-count]').forEach(el => { el.textContent = totals ? totals[el.dataset.equipmentCount] : '—'; });
+  const status = document.getElementById('statusFilter')?.value || '';
+  const selected = {'':'all',Available:'available','In Use':'inuse'}[status];
+  document.querySelectorAll('[data-equipment-status]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.equipmentStatus === selected)));
+}
+
 async function initMasterlist() {
   const tbody = document.getElementById("equipmentTableBody");
   const owner = window.AdminEquipment;
@@ -93,10 +109,13 @@ async function initMasterlist() {
   const holderNames = new Map((holderResult.data || []).map(profile => [profile.id, profile.name]));
   const movementTools = new Map((movement?.tools || []).map(tool => [tool.id, tool]));
   equipmentList = (data || []).map(item => ({
+    id: item.asset_id || item.id,
+    archived_at: item.archived_at,
+    is_active: item.is_active,
     site_id: item.site_id,
     current_holder_id: item.current_holder_id,
     movementLock: movementTools.get(item.asset_id)?.movementLock,
-    availabilityData: movement || {requests:[],transfers:[]},
+    availabilityData: movement || {availabilityError:true,requests:[],transfers:[]},
     image_url: item.image_url,
     assetId: item.asset_id,
     equipmentType: item.name,
@@ -117,6 +136,7 @@ async function initMasterlist() {
   }));
 
   equipmentList.forEach(item => { item.availability = window.EquipmentTracking.availability(item, item.availabilityData); });
+  owner.loaded = true;
   populateFilters();
   renderTable();
   if (currentProfileId && document.getElementById('screen-tool-profile')?.style.display === 'block') showToolProfile(currentProfileId, true);
@@ -245,6 +265,7 @@ function closeBulkModal() {
 // ---------------------------------
 
 function renderTable() {
+  updateEquipmentSummary();
   const filtered = filteredEquipment();
 
   const tbody = document.getElementById("equipmentTableBody");
@@ -853,13 +874,33 @@ function formatDate(dateString) {
   const owner = {disposed: false, dispose() { this.disposed = true; setEquipmentModalOpen(false); viewport?.removeEventListener('resize',resize); viewport?.removeEventListener('scroll',resize); window.removeEventListener('resize',resize); if (equipmentPhotoState.previewUrl) URL.revokeObjectURL(equipmentPhotoState.previewUrl); ++equipmentPhotoState.revision; stop(); }};
   let stop = () => {};
   window.AdminEquipment = owner;
+  document.querySelectorAll('[data-equipment-icon]').forEach(el => { el.innerHTML = icon(el.dataset.equipmentIcon); });
+  document.querySelectorAll('[data-equipment-status]').forEach(el => {
+    el.addEventListener('click', () => navigateEquipmentStatus(el.dataset.equipmentStatus));
+  });
+  owner.setStatus = key => {
+    if (owner.disposed) return;
+    const select = document.getElementById('statusFilter');
+    const value = {all:'',available:'Available',inuse:'In Use',repair:'For Repair',missing:'Missing'}[key];
+    if (!select || value === undefined) return;
+    if (select.value !== value) currentPage = 1;
+    select.value = value;
+    renderTable();
+  };
+  owner.capture = () => owner.disposed ? null : ({search:document.getElementById('searchEquipment')?.value || '',category:document.getElementById('typeFilter')?.value || '',site:document.getElementById('siteFilter')?.value || '',page:currentPage});
+  owner.restore = saved => {
+    if (!saved || owner.disposed) return;
+    for (const [id,key] of [['searchEquipment','search'],['typeFilter','category'],['siteFilter','site']]) document.getElementById(id).value = saved[key] || '';
+    currentPage = saved.page || 1;
+    renderTable();
+  };
   stop = window.EquipmentTracking.watch(initMasterlist, message => {
     const target = document.getElementById('inventory-sync');
     if (target && !owner.disposed) target.textContent = message;
   }, {tables:['equipment','sites','mcpa_notifications']});
   const ready = initMasterlist().catch(() => {
     const target = document.getElementById('inventory-sync');
-    if (target && !owner.disposed) target.textContent = 'Projects could not load. Retrying automatically.';
+    if (target && !owner.disposed) target.textContent = 'Equipment could not load. Retrying automatically.';
   });
   owner.openRecord = assetId => showToolProfile(assetId, true);
   window.MCPANavigation?.track(document.getElementById('content').firstElementChild, ready);

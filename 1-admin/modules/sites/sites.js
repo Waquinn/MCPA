@@ -273,7 +273,7 @@
       if (count('missing')) stats.push(['Missing', count('missing')]);
       if (count('disposed')) stats.push(['Disposed', count('disposed')]);
       return `<button type="button" class="card site-card" data-action="open-site" data-id="${escape(site.id)}" aria-label="View ${escape(site.name)}">
-        <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.current_work_area || site.phase || 'Work area not recorded')}</span><span class="sites-muted">${escape(site.location)}${site.project_stage ? ' · ' + escape(site.project_stage) : ''}</span></span>${site.is_active === false ? '<span class="badge badge-disposed">Archived</span>' : badge(site.status, siteStatuses)}</span>
+        <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.current_work_area || site.phase || 'Work area not recorded')}</span><span class="sites-muted">${escape(site.location)}${site.project_stage ? ' · ' + escape(site.project_stage) : ''}</span></span>${site.is_active === false ? '<span class="badge badge-disposed">Archived</span>' : ''}</span>
         <span class="site-stat-row">${stats.filter(([, number]) => number > 0).map(([label, number]) => `<span class="site-stat"><span class="n">${number}</span><span class="l">${label}</span></span>`).join('')}</span>
       </button>`;
     }).join('') : `<div class="card empty-state sites-full"><p class="t">${state.scope === 'mine' ? 'No projects assigned to you' : 'No matching projects'}</p><p class="d">${state.scope === 'mine' ? 'An Admin can assign your profile to a project.' : 'Adjust the filters or add a project to track its equipment.'}</p><button type="button" class="btn btn-secondary btn-sm" data-action="add-site">+ Add Project</button></div>`;
@@ -306,7 +306,7 @@
         <p class="sub">${escape(site.location)} · ${escape(site.current_work_area || 'Current work area not recorded')} · ${escape(site.project_stage || 'Project stage not recorded')}</p>
         <p class="sites-muted">${site.construction_completion != null ? `Construction Completion: ${percent(site.construction_completion)} · ` : 'Construction Completion: Not configured · '}Legacy completion: ${percent(site.progress)}${site.phase ? ' · Legacy phase: ' + escape(site.phase) : ''}</p>
       </div><div class="page-head-actions">
-        ${badge(site.status, siteStatuses)}
+        ${site.is_active === false ? '<span class="badge badge-disposed">Archived</span>' : ''}
         <button type="button" class="btn btn-secondary btn-sm" data-action="project-history">Project History</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="site-update">Add Site Update</button>
         <button type="button" class="btn btn-secondary btn-sm" data-action="edit-site">Edit Project</button>
@@ -384,8 +384,7 @@
           <div class="field full"><label for="site-name">Project Name *</label><input id="site-name" name="name" value="${value('name')}" maxlength="120" required autofocus autocomplete="off"></div>
           <div class="field full"><label for="site-location">Location *</label><input id="site-location" name="location" value="${value('location')}" maxlength="240" required></div>
           <div class="field"><label for="site-engineer">Engineer / Architect *</label><select id="site-engineer" name="assigned_engineer_id" required><option value="">Select an existing profile</option>${legacy ? `<option value="legacy" selected>${value('assigned_engineer')} (existing assignment)</option>` : ''}${state.profiles.map(profile => `<option value="${escape(profile.id)}"${profile.id === site?.assigned_engineer_id ? ' selected' : ''}>${escape(profile.name)}</option>`).join('')}</select>${!state.profiles.length ? '<small class="sites-muted">No accessible profiles. An Admin must add or make the actual Engineer / Architect profiles available before assigning a new project.</small>' : ''}</div>
-          <div class="field"><label for="site-status">Operational Status *</label><select id="site-status" name="status" required>${Object.entries(siteStatuses).map(([key, [label]]) => `<option value="${key}"${(site?.status || 'planning') === key ? ' selected' : ''}>${label}</option>`).join('')}</select><small class="sites-muted">Archive and restore remain separate actions.</small></div>
-          <div class="field full"><label for="site-check">Last Inventory Check</label><input id="site-check" name="last_inventory_check" type="date" value="${value('last_inventory_check')}" max="${today()}"></div>
+          <div class="field"><label for="site-check">Last Inventory Check</label><input id="site-check" name="last_inventory_check" type="date" value="${value('last_inventory_check')}" max="${today()}"></div>
         </div></fieldset>
         <fieldset class="project-section"><legend>Construction Lifecycle</legend><div class="form-grid">
           <div class="field"><label for="site-stage">Project Stage</label><select id="site-stage" name="project_stage">${options(projectStages, site?.project_stage)}</select></div>
@@ -476,7 +475,8 @@
     values.current_work_area ||= null;
     try { const progress = readProgress(); if (progress.areas) values.construction_work_areas = progress.areas; }
     catch (error) { formError(error.message); root.querySelector('#project-progress-editor').open = true; return; }
-    if (!(values.status in siteStatuses)) { formError('Please select a valid project status.'); return; }
+    // The RPC defaults new projects to planning and retains existing status.
+    // Operational status is intentionally absent from this metadata patch.
     if (values.last_inventory_check > today()) { formError('The inventory check cannot be in the future.'); return; }
     values.last_inventory_check ||= null;
     formError('');

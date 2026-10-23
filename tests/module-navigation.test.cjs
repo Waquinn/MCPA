@@ -11,7 +11,7 @@ const navigationSource = fs.readFileSync(path.join(__dirname, '../js/navigation.
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
 function harness() {
-  const fetches = [], scripts = [], opened = [], focused = [], events = [];
+  const fetches = [], scripts = [], opened = [], focused = [], events = [], appliedStatuses = [];
   const screens = new Map();
   const classes = () => {
     const values = new Set();
@@ -67,7 +67,7 @@ function harness() {
     location, history: {replaceState(_state, _title, hash) {location.hash = hash;}},
     MCPAPermissions: {operational: () => false}, AbortController, URLSearchParams, console,
     fetch(url, options) {return new Promise((resolve, reject) => fetches.push({url, options, resolve, reject}));},
-    ensureModuleCSS() {},
+    ensureModuleCSS() {}, showMasterlistView() {},
     loadModuleScript(mod, _source, callback, failed) {scripts.push({mod, callback, failed});}
   });
   vm.runInContext(loaderSource, context);
@@ -79,14 +79,32 @@ function harness() {
   };
   const finishScript = index => {
     const pending = scripts[index];
+    if (pending.mod === 'masterlist') window.AdminEquipment = {disposed:false,dispose(){this.disposed=true;},setStatus(value){appliedStatuses.push(value);}};
     // Shipped module stubs mount the screen before their onload callback.
     const id = ({requests:'request', transfers:'transfer', dashboard:'dashboard', activity:'activity'})[pending.mod];
     if (screens.has('screen-' + id)) activeUI = id;
     pending.callback();
   };
-  return {go, respond, finishScript, fetches, scripts, opened, focused, events, content, retry, location,
+  return {go, respond, finishScript, fetches, scripts, opened, focused, events, appliedStatuses, content, retry, location,
     get disposed() {return disposed;}, get activeUI() {return activeUI;}};
 }
+
+test('equipment shortcuts apply only the latest status after a pending module script loads and retain it on retry',async()=>{
+  const app=harness();
+  app.go('masterlist?status=available');
+  await app.respond(0,'masterlist');
+  app.go('masterlist?status=inuse');
+  assert.deepEqual(app.appliedStatuses,[]);
+  app.scripts[0].failed(new Error('isolated script failure'));
+  app.retry.onclick();
+  await app.respond(1,'masterlist');
+  app.finishScript(1);
+  await flush();
+  assert.equal(app.location.hash,'#masterlist?status=inuse');
+  assert.deepEqual(app.appliedStatuses,['inuse']);
+  app.go('masterlist?status=all');await flush();
+  assert.deepEqual(app.appliedStatuses,['inuse','all']);
+});
 
 test('same pending module fetch serves the latest requested record after its script is ready', async () => {
   const app = harness();

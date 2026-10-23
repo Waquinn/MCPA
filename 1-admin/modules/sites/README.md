@@ -7,7 +7,9 @@ existing read visibility. Demo projects remain read-only.
 
 ## Construction tracking upgrade (2026-10-23)
 
-The editor separates Operational Status, Project Stage and Current Work Area.
+The editor includes Project Stage and Current Work Area. Operational status is
+kept internally: metadata saves omit it, and the existing save RPC defaults new
+projects to `planning`. Archive/restore uses `is_active` independently.
 Work-area tracking is explicitly configured per project, with six independent
 completion percentages, scope weights, applicability and notes. Applicable
 weights must total exactly 100%. The database calculates Construction Completion

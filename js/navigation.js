@@ -100,17 +100,19 @@ window.MCPAMovementLinks = {
     const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail','activity','purchase','consumables','reports'].includes(screen)) && record && record.length <= 120 ? record : ''};
     if (screen === 'site-detail' && params.get('tool')?.length <= 120) result.tool = params.get('tool');
     if (screen === 'transfer' && ['send','receive','history'].includes(params.get('view'))) result.view = params.get('view');
+    if (screen === 'masterlist' && ['all','available','inuse','repair','missing'].includes(params.get('status'))) result.status = params.get('status');
     return result;
   }
 };
 
 function showScreen(route, afterActivate, options){
-  const {screen:id, record, tool, view} = window.MCPAMovementLinks.parse(route);
+  const {screen:id, record, tool, view, status} = window.MCPAMovementLinks.parse(route);
   if (!window.MCPAAuth?.profile) return;
   const params = new URLSearchParams();
   if (record) params.set('record', record);
   if (tool) params.set('tool', tool);
   if (view) params.set('view', view);
+  if (status) params.set('status', status);
   const normalized = id + (params.size ? '?' + params.toString().replaceAll('+', '%20') : '');
   const navigation = window.MCPANavigation;
   const ticket = navigation?.begin(normalized, options);
@@ -134,6 +136,11 @@ function showScreen(route, afterActivate, options){
       if(afterActivate) await afterActivate();
       if (ticket && !navigation.isCurrent(ticket)) return;
       if (view) await window.MovementUI?.showTransferView(view);
+      // activate waits for the module's registered data-loading promise.
+      if (id === 'masterlist' && status && window.MCPAAuth.profile.role === 'admin') {
+        if (window.AdminEquipment && !window.AdminEquipment.disposed) window.AdminEquipment.setStatus(status);
+        else window.MovementOverview?.setStatus?.(status);
+      }
       if (id === 'site-detail') await window.MCPAProjects?.openRecord(record, tool);
       else if (record && ['masterlist','tool-profile'].includes(id)) {
         if (window.AdminEquipment && !window.AdminEquipment.disposed) window.AdminEquipment.openRecord(record);

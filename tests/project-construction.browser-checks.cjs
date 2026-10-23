@@ -8,6 +8,8 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  await f.query(f.actors.admin,"update sites set phase='Unmatched legacy phase',progress=73,status='active' where id=$1",[f.sites.casa]);
  await go('sites');await wait("document.querySelector('.site-card')");await click(`[data-action="open-site"][data-id="${f.sites.casa}"]`);
  await click('[data-action=edit-site]');
+ assert.equal(await evaluate("document.querySelector('#site-status, #sites-form [name=status]')"),null);
+ assert.equal(await evaluate("document.querySelector('#sites-form').textContent.includes('Operational Status')"),false);
  assert.deepEqual(await evaluate("[...document.querySelector('#site-phase').options].map(o=>o.text).slice(1)"),labels);
  assert.deepEqual(await evaluate("[...document.querySelector('#site-stage').options].map(o=>o.text).slice(1)"),['Planning/Designing','Permitting','Groundbreaking','Construction Phase','Turnover']);
  assert.ok((await evaluate("document.querySelector('#sites-form').textContent")).includes('Unmatched legacy phase'));
@@ -31,6 +33,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  await evaluate("document.querySelector('#sites-form').requestSubmit();document.querySelector('#sites-form').requestSubmit()");await wait("!document.querySelector('#sites-dialog').open");
  let row=(await f.db.query('select * from sites where id=$1',[f.sites.casa])).rows[0];assert.equal(Number(row.construction_completion),45);assert.equal(row.progress,73);assert.equal(row.phase,'Unmatched legacy phase');assert.equal(row.status,'active');assert.equal(row.project_stage,'Construction Phase');
  assert.equal((await f.db.query("select count(*)::int as n from project_history where project_id=$1 and reason='Structural works inspected.'",[f.sites.casa])).rows[0].n,1);
+ assert.equal((await f.db.query("select change_types from project_history where project_id=$1 and reason='Structural works inspected.'",[f.sites.casa])).rows[0].change_types.includes('status'),false);
  await command('Page.reload');await wait("document.querySelector('.site-card')");await click(`[data-action="open-site"][data-id="${f.sites.casa}"]`);await click('[data-action=edit-site]');
  assert.equal(await evaluate("document.querySelector('#site-stage').value"),'Construction Phase');assert.equal(await evaluate("document.querySelector('#site-phase').value"),'Structural');
  assert.equal(await evaluate("document.querySelector('#project-computed-value').textContent"),'45%');
@@ -87,8 +90,11 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  assert.equal((await f.db.query('select count(*)::int as n from project_history where correction_of=$1',[correctionId])).rows[0].n,1);
  await wait("!document.querySelector('[data-action=archive-site]').disabled");await click('[data-action=archive-site]');await click('[data-action=confirm-archive]');await wait("!document.querySelector('#sites-dialog').open");await fill('#projects-archived',true);await evaluate("document.querySelector('#projects-archived').checked=true;document.querySelector('#projects-archived').dispatchEvent(new Event('change',{bubbles:true}))");await click(`[data-action="open-site"][data-id="${f.sites.casa}"]`);await click('[data-action=archive-site]');await click('[data-action=confirm-archive]');await wait("!document.querySelector('#sites-dialog').open");
  // Creation uses server-generated history and never accepts an arbitrary %.
- await go('sites');await wait("!document.querySelector('[data-action=add-site]').disabled");await click('[data-action=add-site]');await fill('#site-name','Browser-created fixture');await fill('#site-location','Isolated local fixture');await fill('#site-engineer',f.actors.architect.id);await fill('#site-stage','Planning/Designing');await submit('#sites-form');await wait("!document.querySelector('#sites-dialog').open");
- const created=(await f.db.query("select * from sites where name='Browser-created fixture'")).rows[0];assert.equal(created.construction_completion,null);assert.equal(created.assigned_engineer_id,f.actors.architect.id);
+ await go('sites');await wait("!document.querySelector('[data-action=add-site]').disabled");await click('[data-action=add-site]');
+ assert.equal(await evaluate("document.querySelector('#site-status, #sites-form [name=status]')"),null);
+ assert.equal(await evaluate("document.querySelector('#sites-form').textContent.includes('Operational Status')"),false);
+ await fill('#site-name','Browser-created fixture');await fill('#site-location','Isolated local fixture');await fill('#site-engineer',f.actors.architect.id);await fill('#site-stage','Planning/Designing');await submit('#sites-form');await wait("!document.querySelector('#sites-dialog').open");
+ const created=(await f.db.query("select * from sites where name='Browser-created fixture'")).rows[0];assert.equal(created.construction_completion,null);assert.equal(created.assigned_engineer_id,f.actors.architect.id);assert.equal(created.status,'planning');
  const creation=(await f.db.query('select * from project_history where project_id=$1',[created.id])).rows;assert.equal(creation.length,1);assert.deepEqual(creation[0].change_types,['created']);
  for(const [account,projectId]of [['sky',f.sites.casa],['architect',created.id],['handler',f.sites.casa]]){
   await logout();await login(account);await wait(`MCPAAuth.profile?.role===${JSON.stringify(f.actors[account].role)}`);await go('sites');await wait("document.querySelector('.site-card')");await click(`[data-action="open-site"][data-id="${projectId}"]`);

@@ -194,6 +194,11 @@
   window.MovementOverview = {
     mount(id) { const promise = mount(id); window.MCPANavigation?.track(root, promise); return promise; },
     dispose, contextBar, escape, setSearch, openRecord: detail,
+    setStatus(value) {
+      if (screen !== 'masterlist' || !root?.isConnected || userRole() !== 'admin') return;
+      status = value === 'all' ? '' : value;
+      render();
+    },
     openActivity(id) {
       const record=store().getState().activity.find(r=>r.id===id);
       const feedback=root?.querySelector('#overview-feedback');

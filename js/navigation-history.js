@@ -33,7 +33,8 @@
     return {
       overview: window.MovementOverview?.capture?.(),
       movement: window.MovementUI?.capture?.(),
-      projects: window.MCPAProjects?.capture?.()
+      projects: window.MCPAProjects?.capture?.(),
+      equipment: window.AdminEquipment?.capture?.()
     };
   }
   function save() {
@@ -89,6 +90,7 @@
       window.MovementOverview?.restore?.(state.overview);
       window.MovementUI?.restore?.(state.movement);
       window.MCPAProjects?.restore?.(state.projects);
+      window.AdminEquipment?.restore?.(state.equipment);
     }
     await afterActivate();
     if (!isCurrent(ticket)) return;
