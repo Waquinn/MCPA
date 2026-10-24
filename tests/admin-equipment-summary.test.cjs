@@ -10,7 +10,7 @@ test('status route accepts only existing masterlist statuses',()=>{
 
 test('Admin dashboard shortcuts carry statuses while other roles keep existing targets',()=>{
  const c=vm.createContext({window:{},icon:()=>'<svg></svg>'});
- for(const file of ['equipment-tracking','project-scope','dashboard-view']){vm.runInContext(read('js/'+file+'.js'),c);c.EquipmentTracking=c.window.EquipmentTracking;}
+ for(const file of ['display','equipment-tracking','project-scope','dashboard-view']){vm.runInContext(read('js/'+file+'.js'),c);c.EquipmentTracking=c.window.EquipmentTracking;}
  const data={tools:[],sites:[],activity:[],transfers:[],requests:[],repairs:[],missing:[]},state={query:'',status:'',site:'',condition:''};
  const render=role=>c.window.DashboardView.render(data,{role},state,()=>'',()=>'',x=>x);
  for(const key of ['all','available','inuse'])assert.match(render('admin'),new RegExp('data-go="masterlist\\?status='+key+'"'));

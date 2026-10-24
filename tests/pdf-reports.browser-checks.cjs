@@ -51,7 +51,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,go,login,logout
  // An immutable saved snapshot is exported, not the later current inventory.
  const snapshotId=await f.serviceRpc('mcpa_capture_inventory_snapshot');
  await click('#report-refresh');await wait("!document.querySelector('#report-export').disabled");await fill('#report-kind','history');
- const saved=await capture(harness);assert.ok(compact(saved.text).includes(snapshotId));assert.ok(saved.text.includes('Saved Inventory Snapshot'));await saved.pdf.destroy();
+ const saved=await capture(harness);assert.equal(await evaluate('document.querySelector("#report-snapshot").value'),snapshotId);assert.ok(compact(saved.text).includes(compact(await evaluate('document.querySelector("#report-snapshot").selectedOptions[0].textContent'))));assert.ok(!saved.text.includes(snapshotId),'Snapshot reference stays in record selection; exported metadata uses the capture date');assert.ok(saved.text.includes('Saved Inventory Snapshot'));await saved.pdf.destroy();
  console.log('PDF saved snapshot passed');
  // Retry after resource/generation failure must be possible and announced.
  await evaluate("window.__pdfOriginalBlob=window.Blob;window.Blob=function(){throw Error('Local simulated PDF failure')};");
@@ -68,7 +68,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,go,login,logout
   const expected=await evaluate('MovementStore.getState().activity');
   const report=await capture(harness,'[data-export]');assert.equal(report.filename,'SiteTrace_Activity_Logs_'+date+'.pdf');assert.ok(report.text.includes('Records: '+expected.length));
   const text=compact(report.text);
-  for(const row of expected)for(const value of [row.createdAt,row.action,row.entityId,row.actor,row.summary,...row.toolIds])assert.ok(text.includes(compact(value)),'Missing authorized field for '+key+': '+value);
+  for(const row of expected)for(const value of [await evaluate('SiteTracePDF.dateTime('+JSON.stringify(row.createdAt)+')'),'Equipment Request Submitted',row.entityId,row.actor,await evaluate('MCPADisplay.activity('+JSON.stringify(row)+').description'),...row.toolIds])assert.ok(text.includes(compact(value)),'Missing authorized field for '+key+': '+value);
   if(['sky','pau','architect'].includes(key)){
    for(const other of ['sky','pau','architect'].filter(other=>other!==key))assert.ok(!report.text.includes(privateRequests[other].id),'Private reference leaked from '+other+' to '+key);
   }

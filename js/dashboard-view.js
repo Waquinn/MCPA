@@ -30,13 +30,13 @@
 
   const match = (t,status,data) => status === 'repair' ? condition(t)==='repair' : EquipmentTracking.matchesStatus(t,status,data);
 
-  const groups = [['available','Available'],['deployed','Deployed'],['repair','Repair / under repair'],['missing','Missing'],['other','Other / retired']];
+  const groups = [['available','Available'],['deployed',window.MCPADisplay.status('inuse')],['repair','Repair / under repair'],['missing','Missing'],['other','Other / retired']];
 
-  const names = {request_created:'Tools requested',request_approved:'Request approved',request_rejected:'Request rejected',transfer_created:'Equipment released',transfer_received:'Transfer confirmed',return_created:'Equipment returned',repair_reported:'Repair reported',repair_started:'Repair started',repair_completed:'Repair completed',missing_reported:'Equipment reported missing',missing_recovered:'Equipment recovered',withdrawRequest:'Request withdrawn',cancelReservation:'Reservation cancelled',cancelTransfer:'Handover cancelled',refuseTransfer:'Damaged equipment refused',reopenTransfer:'Inspection reopened',request_withdrawn:'Request withdrawn',reservation_cancelled:'Reservation cancelled',transfer_cancelled:'Handover cancelled',transfer_refused:'Damaged equipment refused',transfer_reopened:'Inspection reopened'};
+  const display = window.MCPADisplay;
 
   // The live RPC audit uses operation names; demo history uses event names.
 
-  const actionKey = action => ({createRequest:'request_created',approveRequest:'request_approved',rejectRequest:'request_rejected',releaseRequest:'transfer_created',createTransfer:'transfer_created',receiveTransfer:'transfer_received',createReturn:'return_created',reportRepair:'repair_reported',startRepair:'repair_started',completeRepair:'repair_completed',reportMissing:'missing_reported',recoverMissing:'missing_recovered'}[action] || action);
+  const actionKey = action => ({createRequest:'request_created',approveRequest:'request_approved',rejectRequest:'request_rejected',releaseRequest:'transfer_created',createTransfer:'transfer_created',receiveTransfer:'transfer_received',createReturn:'return_created',reportRepair:'repair_reported',startRepair:'repair_started',completeRepair:'repair_completed',reportMissing:'missing_reported',recoverMissing:'missing_recovered'}[display.actionKey(action)] || '');
 
   function statusChart(tools, assetsOnly) {
     const total=units(tools,assetsOnly); let offset=0;
@@ -83,7 +83,7 @@
   }
 
   function filters(data,tools,state,assetsOnly) {
-    return `<div class="inventory-tabs" role="group" aria-label="Inventory status">${[['','All equipment'],['available','Available'],['inuse','Deployed'],['repair','Repair'],['missing','Missing']].map(([key,label]) => `<button data-status="${key}" aria-pressed="${state.status===key}" class="inventory-tab">${label} <span>${units(tools.filter(t=>match(t,key,data)),assetsOnly)}</span></button>`).join('')}</div><div class="dashboard-filters"><input id="dashboard-search" data-search aria-label="Search inventory" placeholder="Search inventory…" value="${esc(state.query)}"><select id="overview-site" aria-label="Filter inventory by project"><option value="">All projects</option><option value="__unassigned" ${state.site==='__unassigned'?'selected':''}>Unassigned</option>${data.sites.map(p=>`<option value="${esc(p.name)}" ${state.site===p.name?'selected':''}>${esc(p.name)}</option>`).join('')}</select><select id="dashboard-condition" aria-label="Filter inventory by condition"><option value="">All conditions</option>${groups.map(([key,label])=>`<option value="${key}" ${state.condition===key?'selected':''}>${label}</option>`).join('')}</select></div>`;
+    return `<div class="inventory-tabs" role="group" aria-label="Inventory status">${[['','All equipment'],['available','Available'],['inuse',window.MCPADisplay.status('inuse')],['repair','Repair'],['missing','Missing']].map(([key,label]) => `<button data-status="${key}" aria-pressed="${state.status===key}" class="inventory-tab">${label} <span>${units(tools.filter(t=>match(t,key,data)),assetsOnly)}</span></button>`).join('')}</div><div class="dashboard-filters"><input id="dashboard-search" data-search aria-label="Search inventory" placeholder="Search inventory…" value="${esc(state.query)}"><select id="overview-site" aria-label="Filter inventory by project"><option value="">All projects</option><option value="__unassigned" ${state.site==='__unassigned'?'selected':''}>Unassigned</option>${data.sites.map(p=>`<option value="${esc(p.name)}" ${state.site===p.name?'selected':''}>${esc(p.name)}</option>`).join('')}</select><select id="dashboard-condition" aria-label="Filter inventory by condition"><option value="">All conditions</option>${groups.map(([key,label])=>`<option value="${key}" ${state.condition===key?'selected':''}>${label}</option>`).join('')}</select></div>`;
   }
 
   function inventory(data,user,state,table) {
@@ -102,7 +102,7 @@
     ? Boolean(user.id) && record.receiverId === user.id
     : Boolean(user.name) && (record.receiver === user.name || record.requester === user.name);
 
-  const requestLabels = {pending:'Pending review',approved:'Approved',rejected:'Rejected',released:'Released / awaiting receipt',received:'Received / completed',withdrawn:'Withdrawn',canceled:'Canceled'};
+  const requestLabels = display.statuses.request;
 
   const recordDate = record => record.updatedAt || record.createdAt || '';
 
@@ -129,7 +129,7 @@
 
     const summary=Object.entries(requestLabels).filter(([status])=>records.some(record=>record.status===status)).map(([status,label])=>`<span>${label}: <strong>${records.filter(record=>record.status===status).length}</strong></span>`).join('');
 
-    const rows=records.slice(0,5).map(record=>`<li class="dashboard-request" data-request-id="${esc(record.id)}"><div class="workflow-row-head"><strong>${esc(record.id)}</strong><span class="badge badge-${record.status==='rejected'?'discrepancy':record.status==='received'?'verified':'pending'}">${esc(requestLabels[record.status]||record.status)}</span></div><p>${esc(record.destination||'Destination not recorded')} · ${(record.toolIds||[]).length} equipment record${(record.toolIds||[]).length===1?'':'s'}</p>${recordLink('View request','request',record,'request')}</li>`).join('');
+    const rows=records.slice(0,5).map(record=>`<li class="dashboard-request" data-request-id="${esc(record.id)}"><div class="workflow-row-head"><strong>${esc(record.id)}</strong><span class="badge badge-${record.status==='rejected'?'discrepancy':record.status==='received'?'verified':'pending'}">${esc(display.status(record.status, 'request'))}</span></div><p>${esc(record.destination||'Destination not recorded')} · ${(record.toolIds||[]).length} equipment record${(record.toolIds||[]).length===1?'':'s'}</p>${recordLink('View request','request',record,'request')}</li>`).join('');
 
     return panel('My Requests',records.length?`<div class="request-phase-summary" aria-label="Request statuses">${summary}</div><ul class="workflow-list">${rows}</ul>${records.length>5?`<p class="panel-note">Showing 5 of ${records.length} requests. Open Requests for your full history.</p>`:''}`:empty('No equipment requests yet. Submit a request for available tools.'),go('All requests','request'),'dashboard-requests');
   }
@@ -144,18 +144,19 @@
     const repair=units(tools.filter(t=>condition(t)==='repair'),assetsOnly), missing=units(tools.filter(t=>condition(t)==='missing'),assetsOnly);
 
     const equipmentTarget = status => user.role === 'admin' ? 'masterlist?status=' + status : 'masterlist';
-    const cards=[[totals.total,'Total Equipment',assetsOnly?'Tracked asset records':'Tracked equipment units','box',equipmentTarget('all')],[totals.available,'Available',`${totals.total?Math.round(totals.available/totals.total*100):0}% eligible for new requests`,'inbox',equipmentTarget('available')],[totals.deployed,'Deployed',totals.deployed?'Equipment currently in use':'No assets currently deployed','swap',equipmentTarget('inuse')],[projects.length,'Active Projects',`${projects.length} active project${projects.length === 1 ? '' : 's'} ${['engineer','architect'].includes(user.role) ? 'assigned to you' : 'tracked'}`,'map','sites']];
+    const cards=[[totals.total,'Total Equipment',assetsOnly?'Tracked asset records':'Tracked equipment units','box',equipmentTarget('all')],[totals.available,'Available',`${totals.total?Math.round(totals.available/totals.total*100):0}% eligible for new requests`,'inbox',equipmentTarget('available')],[totals.deployed,display.status('inuse'),totals.deployed?'Equipment currently in use':'No equipment currently in use','swap',equipmentTarget('inuse')],[projects.length,'Active Projects',`${projects.length} active project${projects.length === 1 ? '' : 's'} ${['engineer','architect'].includes(user.role) ? 'assigned to you' : 'tracked'}`,'map','sites']];
 
     const tasks=[[incoming.length,'Transfers awaiting receipt',admin?'Monitor handovers; named receivers confirm custody.':'Inspect equipment before accepting custody.','swap','transfer'],[requests.length,'Open requests',admin?'Review requests and release approved tools.':'Track approval and release by the Admin.','inbox','request'],[repair,'Maintenance alerts',repair?'Equipment requires maintenance or repair.':'No equipment currently requires repair.','wrench','repair'],[missing,'Missing equipment',missing?'Review unresolved missing equipment.':'No equipment currently reported missing.','alert','missing']];
 
-    const recent=[...data.activity].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,4);
+    const recent=[...data.activity].sort((a,b)=>String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0,4);
 
     const timeline=recent.length?`<ol class="asset-timeline">${recent.map(r=>{
       const href=window.MCPAMovementLinks?.href(r,data);
 
-      const content=`<span class="timeline-mark">${glyph(actionKey(r.action).startsWith('transfer')?'swap':actionKey(r.action).startsWith('return')?'undo':'clock')}</span><div><strong>${esc(names[actionKey(r.action)]||r.action.replaceAll('_',' '))}</strong><p>${esc(r.summary)}</p><span>${esc(r.actor)} · <time datetime="${esc(r.createdAt)}">${esc(when(r.createdAt))}</time></span></div>`;
+      const event = display.activity(r, data);
+      const content=`<span class="timeline-mark">${glyph(actionKey(r.action).startsWith('transfer')?'swap':actionKey(r.action).startsWith('return')?'undo':'clock')}</span><div><strong>${esc(event.title)}</strong><p>${esc(event.description)}</p><span class="cell-sub">${esc(event.reference)}</span><span>${esc(event.actor)} · <time datetime="${esc(r.createdAt)}">${esc(when(r.createdAt))}</time></span></div>`;
 
-      return `<li>${href ? `<a class="activity-timeline-link" data-movement-link href="${esc(href)}" aria-label="Open ${esc(r.entityId)}: ${esc(names[actionKey(r.action)]||r.action)}">${content}</a>` : content}</li>`;
+      return `<li>${href ? `<a class="activity-timeline-link" data-movement-link href="${esc(href)}" aria-label="Open ${esc(event.reference)}: ${esc(event.title)}">${content}</a>` : content}</li>`;
     }).join('')}</ol>`:empty('No recent equipment movements. Saved actions will appear here.');
 
     const projectCards=projects.length?`<div class="project-overview">${projects.slice(0,3).map(p=>{
@@ -163,7 +164,7 @@
 
       assets.forEach(t=>counts.set(t.name,(counts.get(t.name)||0)+EquipmentTracking.quantity(t)));
 
-      return `<button class="project-summary" data-go="sites"><span class="project-heading">${glyph('map')}<strong>${esc(p.name)}</strong><span class="project-state">Active</span></span>${p.location?`<span class="project-location">${esc(p.location)}</span>`:''}<span class="project-count"><strong>${tally.deployed}</strong> deployed <span>· ${tally.total} assigned ${assetsOnly?'assets':'units'}</span></span><span class="project-tally">${esc((assetsOnly ? assets.map(t=>`${t.name} · ${t.id}`) : [...counts].map(([name,count])=>`${name}: ${count}`)).join(' · ')||'No equipment assigned')}</span>${p.assigned_engineer?`<span class="project-tally">Engineer: ${esc(p.assigned_engineer)}</span>`:''}</button>`;
+      return `<button class="project-summary" data-go="sites"><span class="project-heading">${glyph('map')}<strong>${esc(p.name)}</strong><span class="project-state">Active</span></span>${p.location?`<span class="project-location">${esc(p.location)}</span>`:''}<span class="project-count"><strong>${tally.deployed}</strong> in use <span>· ${tally.total} assigned ${assetsOnly?'assets':'units'}</span></span><span class="project-tally">${esc((assetsOnly ? assets.map(t=>`${t.name} · ${t.id}`) : [...counts].map(([name,count])=>`${name}: ${count}`)).join(' · ')||'No equipment assigned')}</span>${p.assigned_engineer?`<span class="project-tally">Engineer: ${esc(p.assigned_engineer)}</span>`:''}</button>`;
     }).join('')}</div>`:empty('No active projects.');
 
     const held=units(tools.filter(t=>!!t.holder&&t.holder!=='—'),assetsOnly);

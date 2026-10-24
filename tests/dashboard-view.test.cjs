@@ -5,7 +5,7 @@ const vm=require('node:vm');
 const path=require('node:path');
 function setup(){
   const context=vm.createContext({window:{},icon:()=>'<svg></svg>'});
-  for(const file of ['equipment-tracking.js','project-scope.js','dashboard-view.js']){
+  for(const file of ['display.js','equipment-tracking.js','project-scope.js','dashboard-view.js']){
     vm.runInContext(fs.readFileSync(path.join(__dirname,'../js',file),'utf8'),context);
     context.EquipmentTracking=context.window.EquipmentTracking;
   }
@@ -92,8 +92,8 @@ test('Engineer dashboard preserves each request phase and opens released turnove
   assert.match(html,/Pending Equipment Turnover/);
   assert.match(html,/View Turnover/);
   assert.match(html,/data-go="transfer\?record=TRF-TURNOVER"/);
-  assert.match(html,/Released \/ awaiting receipt/);
-  assert.match(html,/Received \/ completed/);
+  assert.match(html,/Released \/ Awaiting Receipt/);
+  assert.match(html,/Received \/ Completed/);
   assert.doesNotMatch(html,/REQ-OTHER-PERSON/);
   assert.equal(JSON.stringify(data),before,'Dashboard does not alter backend state');
 });
@@ -152,5 +152,14 @@ test('field dashboards count assets consistently in KPIs, charts, filters and pr
     assert.doesNotMatch(html,/Quantities|assigned units|Equipment quantities/);
   }
   assert.match(render({role:'tool_handler'}),/<span class="lbl">Total Equipment<\/span><span class="num">6<\/span>/);
+  assert.equal(JSON.stringify(data),before);
+});
+
+test('dashboard tolerates unknown or absent activity identifiers and timestamps without printing technical values',()=>{
+  const {data,render}=setup();
+  data.activity=[null,undefined,'__proto__','newEventType'].map((action,i)=>({id:String(i),action,summary:action,createdAt:i?'2026-10-24T00:01:02Z':null,actor:'c41e1c31-9892-4e4d-991e-17d5d48c4f0c'}));
+  const before=JSON.stringify(data),html=render();
+  assert.equal((html.match(/Activity Recorded/g)||[]).length,4);
+  assert.doesNotMatch(html,/__proto__|newEventType|c41e1c31/);
   assert.equal(JSON.stringify(data),before);
 });

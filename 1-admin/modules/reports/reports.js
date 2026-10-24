@@ -8,7 +8,7 @@
  $('#report-export').innerHTML=SiteTracePDF.icon+' Export PDF';
  const loadedPeriod=()=>data && data.start===$('#report-start').value && data.end===$('#report-end').value;
  function exportState(){$('#report-export').disabled=loading||exporting||!loadedPeriod();}
- const date=value=>new Date(value).toLocaleString('en-PH',{timeZone:'Asia/Manila'});
+ const date=window.MCPADisplay.dateTime;
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  $('#report-start').value=today.slice(0,8)+'01';$('#report-end').value=today;
  function feedback(message,error=false){$('#report-feedback').textContent=message;$('#report-feedback').setAttribute('role',error?'alert':'status');}
@@ -21,14 +21,14 @@
   $('#report-snapshot-field').hidden=kind!=='history';
   if(kind==='activity'){
    const head=['Date · Manila','Action','Reference','Recorded by','Tools','Details'];
-   const rows=data.activity.map(r=>[date(r.createdAt),r.action,r.entityId,r.actor,(r.toolIds||[]).join(', '),r.summary]);
+   const rows=data.activity.map(r=>{const event=window.MCPADisplay.activity(r,data);return [event.when,event.title,event.reference,event.actor,(r.toolIds||[]).map(id=>window.MCPADisplay.reference(id)).join(', '),event.description];});
    exportRows=[head,...rows];$('#report-results').innerHTML=table(head,rows);
    $('#report-scope').textContent='Saved movement events from '+data.start+' through '+data.end+' inclusive, in Manila time.';
   }else{
    const snapshot=data.snapshots.find(s=>s.id===$('#report-snapshot').value);
    const tools=kind==='history'?(snapshot?.tools||[]):data.current;
    const head=['Equipment ID','Name','Project','Holder','Quantity','Status','Availability'];
-   const rows=tools.filter(t=>EquipmentTracking.quantity(t)>0).map(t=>[t.id,t.name,t.site,t.holder||'Unassigned',EquipmentTracking.quantity(t),STATUS_LABEL[t.status]||t.status,EquipmentTracking.availability(t)]);
+   const rows=tools.filter(t=>EquipmentTracking.quantity(t)>0).map(t=>[t.id,t.name,t.site,t.holder||'Unassigned',EquipmentTracking.quantity(t),window.MCPADisplay.status(t.status),window.MCPADisplay.status(EquipmentTracking.availability(t), 'availability')]);
    exportRows=[head,...rows];$('#report-results').innerHTML=table(head,rows);
    if(kind==='current')$('#report-scope').textContent='Current inventory as of '+date(data.generatedAt)+' Manila. The date range applies to saved snapshots and movement history; current inventory is a present-day view.';
    else if(snapshot)$('#report-scope').textContent='Inventory observed on '+date(snapshot.capturedAt)+' Manila. Later movements do not change this saved snapshot.';
@@ -44,7 +44,7 @@
   try{
    if(MCPAAuth.isDemo){
     await MovementStore.refresh();const demo=MovementStore.getState();
-    data={start,end,generatedAt:new Date().toISOString(),current:demo.tools,snapshots:[],historicalAvailableFrom:null,activity:demo.activity.filter(r=>{const key=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(r.createdAt));return key>=start&&key<=end;})};
+    data={start,end,generatedAt:new Date().toISOString(),current:demo.tools,transfers:demo.transfers,snapshots:[],historicalAvailableFrom:null,activity:demo.activity.filter(r=>{const key=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(r.createdAt));return key>=start&&key<=end;})};
     feedback('Offline demonstration records. No historical company snapshots are loaded.');
    }else{
     const response=await EquipmentTracking.client().rpc('mcpa_monitoring_report',{p_start:start,p_end:end});
@@ -71,13 +71,13 @@
   const titles={current:'Current Inventory',history:'Saved Inventory Snapshot',activity:'Movement History'};
   const filters=[$('#report-scope').textContent];
   if(kind!=='current')filters.push('Reporting period: '+data.start+' through '+data.end+' (inclusive, Manila)');
-  if(kind==='history'&&snapshot)filters.push('Snapshot ID: '+snapshot.id+' · Captured: '+snapshot.capturedAt);
+  if(kind==='history'&&snapshot)filters.push('Snapshot captured: '+date(snapshot.capturedAt)+' Manila');
   if(MCPAAuth.isDemo)filters.push('Offline demonstration records');
   exporting=true;
   try{await SiteTracePDF.download({button:$('#report-export'),feedback:$('#report-feedback'),route:'reports',report:{
    title:titles[kind],filename:titles[kind].replaceAll(' ','_'),filters,
    columns:kind==='activity'?SiteTracePDF.activityColumns:exportRows[0],
-   rows:kind==='activity'?SiteTracePDF.activityRows(data.activity):exportRows.slice(1),
+   rows:kind==='activity'?SiteTracePDF.activityRows(data.activity,data):exportRows.slice(1),
    widths:kind==='activity'?[39,36,34,39,36,85]:[34,54,43,42,22,33,41]
   }});}finally{exporting=false;if(root.isConnected)exportState();}
  },{signal:controller.signal});

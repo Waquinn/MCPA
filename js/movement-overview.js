@@ -8,8 +8,8 @@
   const store = () => window.MovementStore;
   const personal = () => screen === 'masterlist' && window.MCPAPermissions.operational(store().getContext().role);
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
-  const when = value => value ? new Date(value).toLocaleString('en-PH', {dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila'}) : '—';
-  const badge = value => `<span class="badge badge-${['available', 'inuse', 'repair', 'underrepair', 'missing'].includes(value) ? value : 'pending'}">${escape(typeof STATUS_LABEL !== 'undefined' ? STATUS_LABEL[value] || value : value)}</span>`;
+  const display = window.MCPADisplay;
+  const when = display.dateTime;
   const button = (label, target) => `<button class="btn btn-secondary btn-sm" data-go="${target}">${label}</button>`;
   function contextBar() {
     const target=document.getElementById('movement-context'), user=window.MCPAAuth?.profile;
@@ -28,12 +28,13 @@
     if (!rows.length) return '<div class="empty-state"><h3>No recorded movement yet</h3><p>Saved requests, handovers, returns, and issues will appear here.</p></div>';
     return `<div class="table-wrap"><table><thead><tr><th>When · Manila</th><th>Action / reference</th><th>Recorded by</th><th>Details</th></tr></thead><tbody>${rows.map(r => {
       const href = window.MCPAMovementLinks.href(r, store().getState());
-      const label = `<span class="cell-name">${escape(r.action)}</span><span class="mono">${escape(r.entityId)}</span>`;
-      return `<tr${href ? ' class="activity-linked-row"' : ''}><td>${escape(when(r.createdAt))}</td><td>${href ? `<a class="activity-record-link" data-movement-link href="${escape(href)}" aria-label="Open ${escape(r.entityId)}: ${escape(r.action)}">${label}</a>` : label}</td><td>${escape(r.actor)}</td><td>${escape(r.summary)}<div class="cell-sub">${escape((r.toolIds || []).join(', '))}</div></td></tr>`;
+      const event = display.activity(r, store().getState());
+      const label = `<span class="cell-name">${escape(event.title)}</span><span class="mono">${escape(event.reference)}</span>`;
+      return `<tr${href ? ' class="activity-linked-row"' : ''}><td><time datetime="${escape(r.createdAt || '')}">${escape(event.when)}</time></td><td>${href ? `<a class="activity-record-link" data-movement-link href="${escape(href)}" aria-label="Open ${escape(event.reference)}: ${escape(event.title)}">${label}</a>` : label}</td><td>${escape(event.actor)}</td><td>${escape(event.description)}<div class="cell-sub">${escape((r.toolIds || []).map(id => display.reference(id, 'Equipment reference unavailable')).join(', '))}</div></td></tr>`;
     }).join('')}</tbody></table></div>`;
   }
   function visibleActivity(data) {
-    return [...data.activity].sort((a,b) => b.createdAt.localeCompare(a.createdAt)).filter(r => [r.action, r.entityId, r.actor, r.summary, ...(r.toolIds || [])].join(' ').toLowerCase().includes(query.toLowerCase()));
+    return [...data.activity].sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).filter(r => [...Object.values(display.activity(r, data)), ...(r.toolIds || [])].join(' ').toLowerCase().includes(query.toLowerCase()));
   }
   let dashboardCondition = '';
   const dashboardState = () => ({query, status, site, condition: dashboardCondition});
@@ -139,7 +140,7 @@
         owner.querySelector('#overview-feedback').textContent = 'Updates interrupted. Showing the last loaded records; retrying automatically.';
         return;
       }
-      owner.innerHTML = `${header('Movement workspace', 'Connect your project records or try the workflow with demo data.')}<div class="card card-pad" role="alert"><h2>Records could not load</h2><p class="overview-error">${escape(error.message)}</p><div class="overview-actions"><button class="btn btn-primary" data-refresh>Retry</button></div></div>`;
+      owner.innerHTML = `${header('Movement workspace', 'Connect your project records or try the workflow with demo data.')}<div class="card card-pad" role="alert"><h2>Records could not load</h2><p class="overview-error">${escape(display.errorText(error))}</p><div class="overview-actions"><button class="btn btn-primary" data-refresh>Retry</button></div></div>`;
     }
     finally {
       if (root === owner) {
@@ -171,7 +172,7 @@
         const rows = visibleActivity(store().getState());
         await SiteTracePDF.download({button:el,feedback:root.querySelector('#overview-feedback'),route:'activity',report:{
           title:'Activity Logs',filename:'Activity_Logs',columns:SiteTracePDF.activityColumns,
-          rows:SiteTracePDF.activityRows(rows),widths:[39,36,34,39,36,85],
+          rows:SiteTracePDF.activityRows(rows, store().getState()),widths:[39,36,34,39,36,85],
           filters:['Search: '+(query || 'All activity'),'Scope: All loaded activity authorized for '+store().getContext().name+(store().mode==='demo'?' · Offline demonstration records':'')]
         }});
         return;

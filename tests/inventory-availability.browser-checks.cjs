@@ -73,7 +73,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,go,login,logout
   await click('[data-tool="T-ASSIGNED"]');await wait("document.querySelector('#equipment-detail')?.open && !MCPANavigation.restoring");
   assert.equal(await evaluate("document.querySelector('#equipment-detail [data-requestability]').dataset.requestability"),'assigned');
   assert.equal(await evaluate('document.documentElement.scrollWidth>innerWidth+1'),false);
-  await go('request');await wait("document.querySelector('[data-list]')?.textContent.includes('Released / awaiting receipt')");
+  await go('request');await wait("document.querySelector('[data-list]')?.textContent.includes('Released / Awaiting Receipt')");
   await click(`[data-action="view"][data-id="${weldingRequest.id}"]`);
   await wait("document.querySelector('[data-detail][open]')");
   await shot('welding-released-awaiting-receipt',true);

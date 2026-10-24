@@ -59,7 +59,7 @@
     identity(true);
     const {error} = await window.EquipmentTracking.client().from('equipment').select('image_url').limit(0);
     if (error) {
-      if (['42703','PGRST204'].includes(error.code)) throw new Error('Equipment photo setup is missing. Ask Admin to complete the manual equipment-photo migration, then retry. Your form and selected photo have been kept.');
+      if (['42703','PGRST204'].includes(error.code)) throw new Error('Equipment photo setup is missing. Ask your administrator to complete equipment photo setup, then retry. Your form and selected photo have been kept.');
       throw new Error('Equipment photo access could not be verified. Check your connection and retry. ' + error.message);
     }
   }

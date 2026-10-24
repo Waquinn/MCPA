@@ -220,7 +220,7 @@ exports.sync=async({fixture,evaluate,command,wait,fill,go,login,logout,calls})=>
  const trf=await action('admin','releaseRequest',{id:req.id});await evaluate('showScreen('+JSON.stringify('transfer?record='+trf.id)+')');
  await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes("+JSON.stringify(trf.id)+")");
  await action('sky','receiveTransfer',{id:trf.id,inspections:[{toolId:'SYNC-TOOL',condition:'good',tested:true,notes:''}]});
- await evaluate('__tickSync()');await wait("document.querySelector('[data-detail]')?.textContent.includes('Inspected / completed')");
+ await evaluate('__tickSync()');await wait("document.querySelector('[data-detail]')?.textContent.includes('Received / Completed')");
  assert.equal(await evaluate("MovementStore.getState().tools.find(t=>t.id==='SYNC-TOOL').holderId"),fixture.actors.sky.id);
  await go('activity');await wait("document.querySelector('#overview-results')");
  const rep=await action('sky','reportRepair',{toolId:'SYNC-TOOL',notes:'Isolated sync fixture damage'});

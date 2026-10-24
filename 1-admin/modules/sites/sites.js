@@ -10,23 +10,14 @@
   const isEngineer = () => window.MCPAPermissions.operational(context().role);
   const readOnly = demo || context().role !== 'admin';
   if(isEngineer())root.querySelector('#screen-sites .sub').textContent='Your assigned projects and their recorded accountability.';
-  const siteStatuses = {
-    active: ['Active', 'inuse'], discrepancy: ['Discrepancy', 'discrepancy'],
-    verified: ['Verified', 'verified'], turnover: ['Turnover', 'pending'],
-    idle: ['Idle Stock', 'available'], planning: ['Planning', 'pending'],
-    completed: ['Completed', 'verified']
-  };
+  const display = window.MCPADisplay;
   const workAreas = ['Structural', 'Mechanical', 'Electrical', 'Plumbing', 'Fire Safety', 'Architectural / Finishing Stage'];
   const projectStages = ['Planning/Designing', 'Permitting', 'Groundbreaking', 'Construction Phase', 'Turnover'];
   const updateTypes = ['Site inspection', 'Milestone', 'Delay', 'Work started', 'Work completed', 'Safety inspection', 'Work suspended', 'Work resumed', 'Correction', 'Other'];
   const defaultWeights = [30, 15, 15, 10, 10, 20];
   const percent = value => Number(value).toLocaleString('en-PH', {maximumFractionDigits: 2}) + '%';
   const options = (items, selected, empty = 'Not recorded') => `<option value="">${empty}</option>` + items.map(label => `<option${selected === label ? ' selected' : ''}>${escape(label)}</option>`).join('');
-  const toolStatuses = {
-    available: ['Available', 'available'], inuse: ['In Use', 'inuse'],
-    repair: ['For Repair', 'repair'], underrepair: ['Under Repair', 'underrepair'],
-    missing: ['Missing', 'missing'], disposed: ['Disposed', 'disposed']
-  };
+  const toolStatuses = Object.fromEntries(Object.entries(display.statuses.equipment).map(([key,label]) => [key,[label,['available','inuse','repair','underrepair','missing'].includes(key)?key:'disposed']]));
   const state = { sites: [], equipment: [], profiles: [], selectedId: null, loading: false, saving: false, ready: false, dirty: false, disposed: false, scope: isEngineer() ? 'mine' : 'all', search: '', includeArchived: false, review: { search: '', status: '' } };
   let dialogReturnFocus = null;
 
@@ -42,17 +33,10 @@
     const part = type => parts.find(value => value.type === type).value;
     return `${part('year')}-${part('month')}-${part('day')}`;
   }
-  function formatDate(value) {
-    if (!value) return 'Not recorded';
-    const date = new Date(`${value.slice(0, 10)}T12:00:00`);
-    return Number.isNaN(date.getTime()) ? 'Not recorded' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
-  function formatTimestamp(value) {
-    const date = new Date(value);
-    return !value || Number.isNaN(date.getTime()) ? 'Not recorded' : date.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Asia/Manila' });
-  }
+  const formatDate = display.date;
+  const formatTimestamp = display.dateTime;
   function badge(value, statuses) {
-    const [label, style] = statuses[value] || [value || 'Unknown', 'disposed'];
+    const [label, style] = Object.hasOwn(statuses,value) ? statuses[value] : [display.status(value), 'disposed'];
     return `<span class="badge badge-${style}">${escape(label)}</span>`;
   }
   function currentSite() { return state.sites.find(site => site.id === state.selectedId); }
@@ -269,9 +253,9 @@
       const items = visibleEquipment(site);
       const count = (...statuses) => totalQuantity(items.filter(item => statuses.includes(item.status)));
       const totals = window.EquipmentTracking.tally(items, undefined, {assetsOnly:isEngineer()});
-      const stats = [['Total', totals.total], ['Available', totals.available], ['Deployed', totals.deployed], ['Repair', count('repair', 'underrepair')]];
+      const stats = [['Total', totals.total], ['Available', totals.available], [display.status('inuse'), totals.deployed], ['Repair', count('repair', 'underrepair')]];
       if (count('missing')) stats.push(['Missing', count('missing')]);
-      if (count('disposed')) stats.push(['Disposed', count('disposed')]);
+      if (count('disposed')) stats.push([display.status('disposed'), count('disposed')]);
       return `<button type="button" class="card site-card" data-action="open-site" data-id="${escape(site.id)}" aria-label="View ${escape(site.name)}">
         <span class="site-card-top"><span><span class="site-card-title">${escape(site.name)}</span><span class="eng">${escape(site.assigned_engineer)} · ${escape(site.current_work_area || site.phase || 'Work area not recorded')}</span><span class="sites-muted">${escape(site.location)}${site.project_stage ? ' · ' + escape(site.project_stage) : ''}</span></span>${site.is_active === false ? '<span class="badge badge-disposed">Archived</span>' : ''}</span>
         <span class="site-stat-row">${stats.filter(([, number]) => number > 0).map(([label, number]) => `<span class="site-stat"><span class="n">${number}</span><span class="l">${label}</span></span>`).join('')}</span>
@@ -285,7 +269,7 @@
     return `<div class="table-wrap"><table><thead><tr><th>Tool</th>${isEngineer() ? '' : '<th>Quantity</th>'}<th>Status</th><th>Current Holder</th><th><span class="sites-muted">Details</span></th></tr></thead><tbody>${items.length ? items.map(item => `<tr>
       <td class="cell-name"><div class="equipment-identity">${window.EquipmentVisual.thumbnail(item)}<div>${escape(item.name)}<div class="cell-sub mono">${escape(item.asset_id)}</div></div></div></td>
       ${isEngineer() ? '' : `<td class="mono">${item.quantity}${item.unit ? ` <span class="sites-muted">${escape(item.unit)}</span>` : ''}</td>`}
-      <td>${badge(item.status, toolStatuses)}<div class="cell-sub">${escape(window.EquipmentTracking.availability(item))}</div></td><td>${escape(item.holder)}</td>
+      <td>${badge(item.status, toolStatuses)}<div class="cell-sub">${escape(display.status(window.EquipmentTracking.availability(item), 'availability'))}</div></td><td>${escape(item.holder)}</td>
       <td class="sites-row-action"><button type="button" class="sites-text-button" data-action="view-tool" data-id="${escape(item.id)}" aria-label="View ${escape(item.name)} ${escape(item.asset_id)}">View →</button></td>
     </tr>`).join('') : `<tr><td colspan="${isEngineer()?4:5}" class="empty-state">${escape(emptyText)}</td></tr>`}</tbody></table></div>`;
   }
@@ -542,20 +526,15 @@
     finally { setSaving(false); }
   }
 
-  const historyLabels = {
-    created: 'Project created', baseline: 'Legacy snapshot recorded', engineer: 'Assignment updated', phase: 'Legacy phase updated',
-    name: 'Project name updated', location: 'Location updated', current_work_area: 'Current work area updated',
-    project_stage: 'Project stage updated', status: 'Operational status updated', last_inventory_check: 'Inventory check updated',
-    progress: 'Legacy completion updated', construction_progress: 'Construction progress updated', weights: 'Work-area weights updated',
-    archived: 'Project archived', restored: 'Project restored', details: 'Project details updated', site_update: 'Site update'
-  };
-  const fieldLabels = {name: 'Project name', location: 'Location', assigned_engineer: 'Engineer / Architect', assigned_engineer_id: 'Assigned profile reference', phase: 'Legacy phase', status: 'Operational status', is_active: 'Active', archived_at: 'Archived at', progress: 'Legacy completion', last_inventory_check: 'Last Inventory Check', project_stage: 'Project Stage', current_work_area: 'Current Work Area', construction_completion: 'Construction Completion'};
+  const fieldLabels = {name: 'Project name', location: 'Location', assigned_engineer: 'Engineer / Architect', phase: 'Earlier project phase', status: 'Operational status', is_active: 'Active', archived_at: 'Archived at', progress: 'Earlier completion', last_inventory_check: 'Last Inventory Check', project_stage: 'Project Stage', current_work_area: 'Current Work Area', construction_completion: 'Construction Completion'};
   function historyValue(key, value) {
     if (value == null || value === '') return 'Not recorded';
     if (['progress', 'construction_completion', 'completion', 'weight'].includes(key)) return percent(value);
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-    if (key === 'status') return siteStatuses[value]?.[0] || String(value);
-    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+    if (key === 'status') return display.status(value, 'project');
+    if (key === 'archived_at') return display.dateTime(value);
+    if (key === 'last_inventory_check') return display.date(value);
+    return typeof value === 'object' ? 'Details updated' : display.safeText(String(value), 'Details not available');
   }
   function historyChanges(record) {
     const before = record.before_values || {}, after = record.after_values || {};
@@ -565,15 +544,16 @@
       if (JSON.stringify(oldValue) === JSON.stringify(newValue)) return;
       changes.push(`<li><span>${escape(label)}</span><div>${initial ? '' : `<del>${escape(historyValue(key, oldValue))}</del><span aria-hidden="true"> → </span><span class="sr-only"> changed to </span>`}<ins>${escape(historyValue(key, newValue))}</ins></div></li>`);
     };
+    if (before.assigned_engineer_id !== after.assigned_engineer_id && before.assigned_engineer === after.assigned_engineer) changes.push('<li>Project assignment changed.</li>');
     Object.entries(fieldLabels).forEach(([key, label]) => add(label, key, before[key], after[key]));
     workAreas.forEach(area => {
       const oldArea = before.construction_work_areas?.[area] || {}, newArea = after.construction_work_areas?.[area] || {};
       [['completion', 'completion'], ['weight', 'scope weight'], ['applicable', 'applicable'], ['note', 'note']].forEach(([key, label]) => add(`${area} · ${label}`, key, oldArea[key], newArea[key]));
     });
-    // Legacy/custom fields remain visible when the deployed schema contains more
-    // detail than this interface knows. No missing values or actors are invented.
-    const excluded = new Set([...Object.keys(fieldLabels), 'id', 'created_at', 'updated_at', 'project_version', 'construction_work_areas']);
-    [...new Set([...Object.keys(before), ...Object.keys(after)])].filter(key => !excluded.has(key)).forEach(key => add(key.replaceAll('_', ' '), key, before[key], after[key]));
+    // Unknown fields stay in the audit store; describe the change without
+    // exposing database keys, nested metadata or profile identifiers.
+    const excluded = new Set([...Object.keys(fieldLabels), 'id', 'created_at', 'updated_at', 'project_version', 'construction_work_areas', 'assigned_engineer_id']);
+    if ([...new Set([...Object.keys(before), ...Object.keys(after)])].some(key => !excluded.has(key) && JSON.stringify(before[key]) !== JSON.stringify(after[key]))) changes.push('<li>Additional project details changed.</li>');
     return changes.length ? `<ul class="project-change-list">${changes.join('')}</ul>` : '<p class="sites-muted">No field differences recorded in this entry.</p>';
   }
   async function viewProjectHistory() {
@@ -585,7 +565,7 @@
       state.projectHistory = records.sort((a, b) => (b.changed_at || '').localeCompare(a.changed_at || '') || b.id.localeCompare(a.id));
       openDialog(`Project History — ${site.name}`, `<p class="sites-dialog-description">Permanent, read-only activity. Newest first. Times shown in Asia/Manila. Older records retain only the information originally recorded.</p>
         <div class="project-history-filters"><div class="field"><label for="project-history-search">Search history</label><input id="project-history-search" type="search" placeholder="Person, change, value or note"></div>
-        <div class="field"><label for="project-history-type">Event type</label><select id="project-history-type"><option value="">All events</option>${[...new Set(records.flatMap(row => row.change_types || []))].map(type => `<option value="${escape(type)}">${escape(historyLabels[type] || type)}</option>`).join('')}</select></div></div>
+        <div class="field"><label for="project-history-type">Event type</label><select id="project-history-type"><option value="">All events</option>${[...new Set(records.flatMap(row => row.change_types || []))].map(type => `<option value="${escape(type)}">${escape(display.projectEvent(type))}</option>`).join('')}</select></div></div>
         <p id="project-history-count" class="sites-muted" aria-live="polite"></p><ol id="project-history-events" class="project-timeline"></ol>
         <div class="sites-dialog-actions"><button type="button" class="btn btn-secondary" data-action="close-dialog">Close</button></div>`, true, 'history');
       filterHistory();
@@ -593,14 +573,13 @@
   }
   function filterHistory() {
     const search = root.querySelector('#project-history-search').value.trim().toLowerCase(), type = root.querySelector('#project-history-type').value;
-    const records = state.projectHistory.filter(record => (!type || record.change_types.includes(type)) && (!search || JSON.stringify(record).toLowerCase().includes(search) || record.change_types.some(kind => (historyLabels[kind] || kind).toLowerCase().includes(search))));
+    const records = state.projectHistory.filter(record => (!type || (record.change_types || []).includes(type)) && (!search || JSON.stringify(record).toLowerCase().includes(search) || (record.change_types || []).some(kind => (display.projectEvent(kind)).toLowerCase().includes(search))));
     root.querySelector('#project-history-count').textContent = `${records.length} of ${state.projectHistory.length} recorded events`;
     root.querySelector('#project-history-events').innerHTML = records.length ? records.map(record => `<li class="project-history-event"><article>
-      <div class="project-event-head"><h3>${escape(record.site_update_type || record.change_types.map(kind => historyLabels[kind] || kind).join(' · '))}</h3><time datetime="${escape(record.changed_at || '')}">${escape(formatTimestamp(record.changed_at))}</time></div>
-      <p class="sites-muted">Recorded by: ${escape(record.actor_name || 'Actor not recorded')}${record.work_area ? ' · ' + escape(record.work_area) : ''}</p>
-      ${record.change_types.includes('site_update') ? '' : historyChanges(record)}
+      <div class="project-event-head"><h3>${escape(display.safeText(record.site_update_type) || (record.change_types || []).map(kind => display.projectEvent(kind)).join(' · ') || 'Project Activity Recorded')}</h3><time datetime="${escape(record.changed_at || '')}">${escape(formatTimestamp(record.changed_at))}</time></div>
+      <p class="sites-muted">Recorded by: ${escape(display.person(record.actor_name))}${record.work_area ? ' · ' + escape(record.work_area) : ''}</p>
+      ${(record.change_types || []).includes('site_update') ? '' : historyChanges(record)}
       ${record.reason ? `<p class="project-history-note">${escape(record.reason)}</p>` : ''}
-      <details class="project-event-reference"><summary>Record references</summary><p>Event: ${escape(record.id)}</p>${record.actor_id ? `<p>Actor: ${escape(record.actor_id)}</p>` : ''}${record.correction_of ? `<p>Corrects event: ${escape(record.correction_of)}</p>` : ''}</details>
       ${!readOnly && !isEngineer() ? `<button type="button" class="sites-text-button" data-action="correct-site-update" data-id="${escape(record.id)}">Add a correction</button>` : ''}
     </article></li>`).join('') : '<li class="empty-state">No project history matches. Older activity may not have been recorded.</li>';
   }
@@ -610,7 +589,7 @@
     openDialog(`Add Site Update — ${site.name}`, `<form id="site-update-form" data-project="${escape(site.id)}" data-correction="${escape(correctionOf)}">
       <p class="sites-dialog-description">This update becomes a permanent part of Project History. Your signed-in identity and submission time are recorded by the server.</p>
       <div id="sites-form-error" class="sites-form-error hidden" role="alert" tabindex="-1"></div>
-      ${correctionOf ? `<p class="project-history-note">Correction to event: ${escape(correctionOf)}. The original entry is retained.</p>` : ''}
+      ${correctionOf ? `<p class="project-history-note">This correction will be linked to the original entry. The original entry is retained.</p>` : ''}
       <div class="form-grid"><div class="field"><label for="site-update-type">Update type *</label><select id="site-update-type" name="type" required>${options(updateTypes, correctionOf ? 'Correction' : '', 'Choose an update type')}</select></div>
       <div class="field"><label for="site-update-area">Relevant work area (optional)</label><select id="site-update-area" name="area">${options(workAreas, '', 'Project-wide')}</select></div>
       <div class="field full"><label for="site-update-description">Description *</label><textarea id="site-update-description" name="description" rows="6" maxlength="4000" required autofocus></textarea></div></div>
@@ -660,7 +639,7 @@
   function movementTable(records) {
     if (records.error) return `<div class="empty-state"><p class="t">Movement history unavailable</p><p class="d">${escape(records.error)}</p></div>`;
     if (!records.length) return '<div class="empty-state sites-movement-empty"><p class="t">No movement records available</p><p class="d">Movement history will appear here when records are available. This view is read-only.</p></div>';
-    return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Tool</th><th>From</th><th>To</th>${isEngineer() ? '' : '<th>Quantity</th>'}</tr></thead><tbody>${records.map(record => `<tr><td>${escape(formatDate(record.date))}</td><td>${escape(record.asset_id)}</td><td>${escape(record.from)}</td><td>${escape(record.to)}</td>${isEngineer() ? '' : `<td>${escape(record.quantity)}</td>`}</tr>`).join('')}</tbody></table></div>`;
+    return `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Tool</th><th>From</th><th>To</th>${isEngineer() ? '' : '<th>Quantity</th>'}</tr></thead><tbody>${records.map(record => `<tr><td>${escape(formatTimestamp(record.date))}</td><td>${escape(record.asset_id)}</td><td>${escape(record.from)}</td><td>${escape(record.to)}</td>${isEngineer() ? '' : `<td>${escape(record.quantity)}</td>`}</tr>`).join('')}</tbody></table></div>`;
   }
 
   async function viewMovements() {
@@ -678,7 +657,7 @@
     const navigation = state.navigation;
     const records = await repository.movements(site.id, item.id).catch(error => ({error: databaseError(error, 'tool-movements')}));
     if (!root.isConnected || state.disposed || state.navigation !== navigation || state.selectedId !== site.id) return;
-    const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', item.condition], ['Tracking Type', item.tracking_type], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Project', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
+    const fields = [['Asset ID', item.asset_id], ['Category', item.category], ['Brand', item.brand], ['Model', item.model], ['Serial Number', item.serial_number], ['Condition', display.condition(item.condition)], ['Tracking Type', display.tracking(item.tracking_type)], ['Quantity', `${item.quantity}${item.unit ? ` ${item.unit}` : ''}`], ['Current Project', site.name], ['Current Holder', item.holder], ['Identifying Details', item.details]];
     openDialog(item.name, `
       <p class="sites-dialog-description">Equipment details for ${escape(site.name)}.</p>
       <div class="sites-tool-details">${fields.filter(([label]) => !isEngineer() || !['Quantity','Tracking Type'].includes(label)).map(([label, value]) => `<div class="kv"><span class="k">${label}</span><span class="v">${escape(value ?? '—') || '—'}</span></div>`).join('')}<div class="kv"><span class="k">Status</span><span class="v">${badge(item.status, toolStatuses)}</span></div></div>

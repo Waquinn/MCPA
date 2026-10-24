@@ -123,11 +123,11 @@ async function initMasterlist() {
     brand: item.brand || 'Unknown',
     model: item.model || '—',
     serialNumber: item.serial_number || '—',
-    site: siteNames.get(item.site_id) || item.site_id || 'Unassigned',
-    holder: holderNames.get(item.current_holder_id) || item.current_holder_id || '—',
+    site: siteNames.get(item.site_id) || (item.site_id ? 'Project unavailable' : 'Unassigned'),
+    holder: holderNames.get(item.current_holder_id) || (item.current_holder_id ? 'Holder unavailable' : '—'),
     status: formatDbStatus(item.status),
     dbStatus: item.status,
-    condition: ['repair','underrepair'].includes(formatDbStatus(item.status)) ? 'Damaged' : formatDbStatus(item.status) === 'missing' ? 'Unconfirmed' : item.condition || 'Good',
+    condition: item.condition || 'Not Assessed',
     trackingType: item.tracking_type || 'Individual',
     quantity: item.quantity ?? 1,
     unit: item.unit || '',
@@ -315,7 +315,7 @@ function renderTable() {
       
       <td style="padding:12px; border-bottom:1px solid var(--line);">
         <span style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; ${getConditionColor(item.condition)}">
-          ${escapeHTML(item.condition)}
+          ${escapeHTML(window.MCPADisplay.condition(item.condition))}
         </span>
       </td>
       
@@ -418,8 +418,8 @@ function showToolProfile(assetId, restoring = false) {
             <div class="tl-item">
               <div class="tl-date" style="font-size:11px; color:var(--gray);">${formatDate(item.createdAt)}</div>
               <div class="tl-title" style="font-weight:600; font-size:13px;">Registered into Masterlist</div>
-              <div class="tl-detail" style="font-size:12px; color:var(--gray); margin-top:2px;">Item added to inventory database with initial condition: ${escapeHTML(item.condition)}.</div>
-              <div class="tl-meta" style="font-size:11px; margin-top:4px;"><span>Status <b>${item.status.toUpperCase()}</b></span></div>
+              <div class="tl-detail" style="font-size:12px; color:var(--gray); margin-top:2px;">Equipment added to inventory. Current recorded condition: ${escapeHTML(window.MCPADisplay.condition(item.condition))}.</div>
+              <div class="tl-meta" style="font-size:11px; margin-top:4px;"><span>Status <b>${escapeHTML(window.MCPADisplay.status(item.status))}</b></span></div>
             </div>
           </div>
         </div>
@@ -433,8 +433,8 @@ function showToolProfile(assetId, restoring = false) {
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Brand</span><span class="v" style="font-weight:600;">${escapeHTML(item.brand)}</span></div>
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Model</span><span class="v" style="font-weight:600;">${escapeHTML(item.model)}</span></div>
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Serial Number</span><span class="v mono" style="font-weight:600;">${escapeHTML(item.serialNumber)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Condition</span><span class="v" style="font-weight:600;">${escapeHTML(item.condition)}</span></div>
-          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Tracking Type</span><span class="v" style="font-weight:600;">${escapeHTML(item.trackingType)}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Condition</span><span class="v" style="font-weight:600;">${escapeHTML(window.MCPADisplay.condition(item.condition))}</span></div>
+          <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Tracking Type</span><span class="v" style="font-weight:600;">${escapeHTML(window.MCPADisplay.tracking(item.trackingType))}</span></div>
           ${item.trackingType === 'Bulk' ? `<div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Quantity & Unit</span><span class="v" style="font-weight:600;">${escapeHTML(item.quantity)}${escapeHTML(item.unit)}</span></div>` : ''}
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Identifying Details</span><span class="v" style="font-weight:600;">${escapeHTML(item.details)}</span></div>
           <div class="kv" style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line);"><span class="k" style="color:var(--gray); font-size:13px;">Current Location</span><span class="v" style="font-weight:600;">${escapeHTML(item.site)}</span></div>
@@ -463,8 +463,8 @@ function showToolProfile(assetId, restoring = false) {
   window.MovementStore.refresh().then(state => {
     if (!timeline.isConnected) return;
     const events = state.activity.filter(event => event.toolIds?.includes(assetId));
-    timeline.innerHTML = events.length ? events.map(event => `<div class="tl-item"><div class="tl-date">${escapeHTML(formatDate(event.createdAt))}</div><div class="tl-title">${escapeHTML(event.action)}</div><div class="tl-detail">${escapeHTML(event.summary)}</div><div class="tl-meta">${escapeHTML(event.actor)} · ${escapeHTML(event.entityId)}</div></div>`).join('') : '<p>No movement has been recorded for this tool.</p>';
-  }).catch(error => { if (timeline.isConnected) timeline.textContent = error.message; });
+    timeline.innerHTML = events.length ? events.map(event => `<div class="tl-item"><div class="tl-date">${escapeHTML(window.MCPADisplay.dateTime(event.createdAt))}</div><div class="tl-title">${escapeHTML(window.MCPADisplay.activity(event,state).title)}</div><div class="tl-detail">${escapeHTML(window.MCPADisplay.activity(event,state).description)}</div><div class="tl-meta">${escapeHTML(window.MCPADisplay.activity(event).actor)} · ${escapeHTML(window.MCPADisplay.activity(event).reference)}</div></div>`).join('') : '<p>No movement has been recorded for this tool.</p>';
+  }).catch(error => { if (timeline.isConnected) timeline.textContent = window.MCPADisplay.errorText(error); });
 
   setTimeout(() => {
     const qrEl = document.getElementById("qrContainerProfile");
@@ -777,10 +777,7 @@ function printQRTag(assetId) {
 function exportMasterlist() {
   const filtered = filteredEquipment();
 
-  const currentDate = new Date().toLocaleString('en-US', { 
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', 
-    hour: '2-digit', minute: '2-digit'
-  });
+  const currentDate = window.MCPADisplay.dateTime(new Date()) + ' Manila';
 
   const tableRows = filtered.map(item => `
     <tr>
@@ -789,7 +786,7 @@ function exportMasterlist() {
       <td>${escapeHTML(item.category)}</td>
       <td>${escapeHTML(item.site)}</td>
       <td>${escapeHTML(item.holder)}</td>
-      <td>${item.status.toUpperCase()}</td>
+      <td>${escapeHTML(window.MCPADisplay.status(item.status))}</td>
     </tr>
   `).join('');
 
@@ -856,7 +853,7 @@ function escapeHTML(str) {
 
 function formatDate(dateString) {
   if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return window.MCPADisplay.date(dateString);
 }
 
 (function () {

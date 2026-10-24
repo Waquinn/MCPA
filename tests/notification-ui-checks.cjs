@@ -179,7 +179,7 @@ exports.targeting = async ({fixture,request,evaluate,command,wait,click,go,enter
   assert.ok(await evaluate("!document.querySelector('[data-detail]').open"),'Inaccessible targets expose no unrelated record details');
   await logout(); await login('admin'); await wait("MCPAAuth.profile?.role==='admin'");
   await open('request',request.id);
-  assert.ok(await evaluate("document.querySelector('[data-detail]').textContent.includes('Pending review')"));
+  assert.ok(await evaluate("document.querySelector('[data-detail]').textContent.includes('Pending Review')"));
   assert.deepEqual(await snapshot(),baseline,'All target navigation, role checks and injected failures preserve existing records and activity');
   assert.equal(writeCount(),baselineWrites,'Targeting and equivalent-select checks perform no browser business writes');
   if(shot) await shot('notification-targeting-recovery');

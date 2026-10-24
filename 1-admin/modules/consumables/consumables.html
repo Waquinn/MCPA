@@ -17,7 +17,7 @@
   <div class="table-toolbar cons-toolbar">
     <div class="field cons-search"><label for="consumables-search">Search consumables</label><input id="consumables-search" type="search" placeholder="Name, code, specification or unit"></div>
     <div class="field cons-category"><label for="consumables-category">Category</label><select id="consumables-category"><option value="">All Categories</option></select></div>
-    <div class="field"><label for="consumables-filter">Stock status</label><select id="consumables-filter"><option value="">All stock</option><option value="attention">Needs restocking</option><option value="out">Out of stock</option><option value="low">Low stock</option><option value="ok">OK</option><option value="archived">Archived history</option></select></div>
+    <div class="field"><label for="consumables-filter">Stock status</label><select id="consumables-filter"><option value="">All stock</option><option value="attention">Needs restocking</option><option value="out">Out of stock</option><option value="low">Low stock</option><option value="ok">Stock Sufficient</option><option value="archived">Archived history</option></select></div>
     <span id="consumables-count" class="cons-muted" aria-live="polite"></span>
   </div>
   <div class="card" id="consumables-inventory" aria-busy="true">
@@ -32,7 +32,7 @@
   <p class="cons-muted cons-note" id="consumables-updated">Stock alerts update after each change and every 30 seconds while this module is open.</p>
   <div class="section-title"><h2>Purchase Requests</h2><span id="consumables-request-count" class="cons-muted"></span></div>
   <div class="table-toolbar cons-toolbar">
-    <div class="field"><label for="consumables-request-filter">Request status</label><select id="consumables-request-filter"><option value="open">Open requests</option><option value="">All requests</option><option value="pending">Pending</option><option value="partial">Partially received</option><option value="received">Received</option><option value="cancelled">Cancelled</option></select></div>
+    <div class="field"><label for="consumables-request-filter">Request status</label><select id="consumables-request-filter"><option value="open">Open requests</option><option value="">All requests</option><option value="pending">Awaiting Delivery</option><option value="partial">Partially Received</option><option value="received">Received</option><option value="cancelled">Canceled</option></select></div>
   </div>
   <div class="card table-wrap"><table>
     <caption class="cons-sr-only">Consumable purchase requests</caption>

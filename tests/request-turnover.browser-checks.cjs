@@ -21,7 +21,7 @@ exports.verify=async ({fixture,evaluate,command,wait,click,fill,submit,go,login,
   const requestId=await evaluate('document.querySelector("[data-detail][open] h2").textContent');
   assert.equal((await data()).requests.find(r=>r.id===requestId).status,'pending');
   await go('dashboard');await wait('document.querySelector("[data-request-id='+requestId+']")');
-  assert.ok(await evaluate('document.querySelector("[data-request-id='+requestId+']").textContent.includes("Pending review")'));
+  assert.ok(await evaluate('document.querySelector("[data-request-id='+requestId+']").textContent.includes("Pending Review")'));
   assert.ok(await evaluate('document.querySelector(".dashboard-turnovers").textContent.includes("No equipment is currently awaiting your confirmation")'));
   admin=await create({port,base,errors});await admin.login('admin');await admin.wait('document.querySelector(".admin-review")');
   assert.equal(await evaluate('MCPAAuth.profile.role'),'engineer','Independent Admin login does not change Engineer session');
@@ -36,7 +36,7 @@ exports.verify=async ({fixture,evaluate,command,wait,click,fill,submit,go,login,
   await admin.click('[data-action=release]');await admin.wait('document.querySelector("[data-detail][open] [data-action=open-transfer]")');
   const transferId=await admin.evaluate('document.querySelector("[data-detail][open] [data-action=open-transfer]").dataset.id');
   await wait('document.querySelector("[data-turnover-id='+transferId+']")');
-  assert.ok(await evaluate('document.querySelector("[data-request-id='+requestId+']").textContent.includes("Released / awaiting receipt")'));
+  assert.ok(await evaluate('document.querySelector("[data-request-id='+requestId+']").textContent.includes("Released / Awaiting Receipt")'));
   const turnoverNotice=(await notices()).find(n=>n.entity_id===transferId&&n.title==='Equipment Pending Turnover');assert.ok(turnoverNotice);assert.equal(turnoverNotice.recipient_id,a.sky.id);
   await wait('MCPAMonitoring.getState().notifications.some(n=>n.id==='+quote(turnoverNotice.id)+')');
   assert.ok(!(await fixture.rpc(a.sky,'mcpa_personal_equipment_snapshot')).tools.some(t=>ids.includes(t.id)),'Released stock is not confirmed personal custody');
@@ -85,12 +85,12 @@ exports.verify=async ({fixture,evaluate,command,wait,click,fill,submit,go,login,
   for(const id of ids)await click('[data-inspection="'+id+'"] [data-tested]');await submit('[data-form=receive]');
   await wait('document.querySelector("[data-detail][open]")?.textContent.includes("Receipt confirmed")');
   await go('dashboard');await wait('document.querySelector(".dashboard-turnovers")');assert.ok(await evaluate('!document.querySelector("[data-turnover-id='+transferId+']")'));
-  assert.ok(await evaluate('document.querySelector("[data-request-id='+requestId+']")?.textContent.includes("Received / completed")'));
-  await go('request');await wait('document.querySelector("[data-list]")');assert.ok(await evaluate('document.querySelector("[data-list]").textContent.includes("Received / completed")'));
+  assert.ok(await evaluate('document.querySelector("[data-request-id='+requestId+']")?.textContent.includes("Received / Completed")'));
+  await go('request');await wait('document.querySelector("[data-list]")');assert.ok(await evaluate('document.querySelector("[data-list]").textContent.includes("Received / Completed")'));
   await go('masterlist');await wait('document.querySelector("#movement-inventory-search")');
   const personal=await fixture.rpc(a.sky,'mcpa_personal_equipment_snapshot');assert.ok(ids.every(id=>personal.tools.some(t=>t.id===id&&t.holderId===a.sky.id)));
   assert.ok(await evaluate(ids.map(id=>'document.body.innerText.includes('+quote(id)+')').join('&&')));
-  await go('activity');await wait('document.querySelector("#movement-activity-search")');assert.ok(await evaluate('document.body.innerText.includes("receiveTransfer")&&document.body.innerText.includes('+quote(transferId)+')'));
+  await go('activity');await wait('document.querySelector("#movement-activity-search")');assert.ok(await evaluate('document.body.innerText.includes("Transfer Received")&&document.body.innerText.includes('+quote(transferId)+')'));
   await evaluate('MCPAMonitoring.open()');await wait('document.querySelector("#monitoring-dialog[open]")');await click('[data-monitoring-notice="'+turnoverNotice.id+'"]');
   await wait('document.querySelector("[data-detail][open] h2")?.textContent==='+quote(transferId));assert.ok(await evaluate('!document.querySelector("[data-form=receive]")'),'Old notice opens completed detail without receipt action');assert.equal(await evaluate('document.querySelector("[data-transfer-tab=history]").getAttribute("aria-selected")'),'true');
   await admin.logout();await admin.login('admin');await go('request');await wait('document.querySelector("[data-list]")');
@@ -99,7 +99,7 @@ exports.verify=async ({fixture,evaluate,command,wait,click,fill,submit,go,login,
   await admin.go('request?record='+encodeURIComponent(existingRequest.id));await admin.wait('document.querySelector("[data-action=approve]")');await admin.click('[data-action=approve]');
   await wait('MovementStore.getState().requests.find(r=>r.id==='+quote(existingRequest.id)+')?.status==="approved" && document.querySelector("[data-list]").textContent.includes("Approved")');
   await admin.wait('document.querySelector("[data-action=release]")');await admin.click('[data-action=release]');
-  await wait('MovementStore.getState().requests.find(r=>r.id==='+quote(existingRequest.id)+')?.status==="released" && document.querySelector("[data-list]").textContent.includes("Released / awaiting receipt")');
+  await wait('MovementStore.getState().requests.find(r=>r.id==='+quote(existingRequest.id)+')?.status==="released" && document.querySelector("[data-list]").textContent.includes("Released / Awaiting Receipt")');
   console.log('PASS My Requests updates rejection/approval/release while it remains open, through modeled own-notification Realtime');
   await go('dashboard');await wait('document.querySelector(".dashboard-turnovers")');await click('[data-turnover-inbox]');await wait('document.querySelector("[data-transfer-tab=receive]")?.getAttribute("aria-selected")==="true"');
   for(const route of ['dashboard','request','transfer','masterlist','dashboard']){await go(route);await wait('document.querySelector("#screen-'+route+'.active")');await pause(100);assert.ok(await evaluate('__channels.size<=2&&__syncTimers.size<=2'),'Navigation does not accumulate subscriptions/timers');}

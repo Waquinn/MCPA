@@ -9,7 +9,8 @@
   const identity = item => [item.item_code, item.name || item.item_name, item.specification].filter(Boolean).join(' · ');
   const categoryOptions = value => catalog.categories.map(category => `<option value="${escape(category.name)}"${category.name === value ? ' selected' : ''}>${escape(category.name)}</option>`).join('');
   const state = { items: [], requests: [], ready: false, loading: false, saving: false, loadError: false };
-  const statuses = { out: ['Out of Stock', 'low'], low: ['Low Stock', 'low'], ok: ['OK', 'ok'], pending: ['Pending', 'pending'], partial: ['Partially Received', 'inuse'], received: ['Received', 'verified'], cancelled: ['Cancelled', 'disposed'] };
+  const display = window.MCPADisplay;
+  const tones = {out:'low',low:'low',ok:'ok',pending:'pending',partial:'inuse',received:'verified',cancelled:'disposed'};
   let returnFocus = null;
   let formContext = null;
   let dialogRevision = 0;
@@ -22,7 +23,7 @@
   const openRequest = id => state.requests.find(request => request.consumable_id === id && isOpen(request));
   const itemById = id => state.items.find(item => item.id === id);
   const requestById = id => state.requests.find(request => request.id === id);
-  const reference = request => `CR-${String(request.request_number).padStart(5, '0')}`;
+  const reference = request => display.numberedReference('CR',request.request_number);
   function uuid() {
     if (crypto.randomUUID) return crypto.randomUUID();
     const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -34,14 +35,10 @@
     const value = type => parts.find(part => part.type === type).value;
     return `${value('year')}-${value('month')}-${value('day')}`;
   }
-  function date(value, withTime = false) {
-    if (!value) return 'Not specified';
-    return new Date(value.length === 10 ? `${value}T12:00:00+08:00` : value).toLocaleString('en-US', {
-      timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric', ...(withTime ? { hour: 'numeric', minute: '2-digit' } : {})
-    });
-  }
+  const date = (value, withTime = false) => withTime ? display.dateTime(value) : display.date(value);
   function badge(status) {
-    const [label, style] = statuses[status] || ['Unknown', 'disposed'];
+    const label = display.status(status, Object.hasOwn(display.statuses.stock,status) ? 'stock' : 'materialRequest');
+    const style = Object.hasOwn(tones,status) ? tones[status] : 'disposed';
     return `<span class="badge badge-${style}">${label}</span>`;
   }
   function button(action, label, id = '', style = 'secondary') {
@@ -56,13 +53,13 @@
     return window.supabaseClient;
   }
   function errorMessage(error) {
-    if (['PGRST205', 'PGRST202', '42P01', '42703', '42883'].includes(error.code)) return 'Consumables database setup is incomplete. Ask your administrator to complete setup, then refresh.';
-    if (error.code === '42501') return 'Consumables access is blocked by database permissions. Ask your administrator to apply the Consumables setup, then retry.';
+    if (['PGRST205', 'PGRST202', '42P01', '42703', '42883'].includes(error.code)) return 'Consumables setup is incomplete. Ask your administrator to complete setup, then refresh.';
+    if (error.code === '42501') return 'Your account cannot access consumables. Ask your administrator to review access, then retry.';
     if (error.code === '23505') return error.message?.includes('open purchase') ? error.message : 'This item code or name/specification/unit already exists, or the item has an open request. Check the existing records.';
     if (['23514', '23502', '22003'].includes(error.code)) return 'Check all required fields and quantities. Values must fit the allowed limits.';
-    if (['PGRST301', 'PGRST303'].includes(error.code)) return 'Your database session is invalid or expired. Sign in again and retry.';
+    if (['PGRST301', 'PGRST303'].includes(error.code)) return 'Your session is invalid or expired. Sign in again and retry.';
     if (error.message?.includes('Usage cannot exceed')) return 'Insufficient stock. Refresh to check the available quantity.';
-    return error.message || 'The database could not be reached. Please try again.';
+    return display.errorText(error, 'Stock records could not be loaded or saved. Check your connection and retry.');
   }
   async function readAll(table, itemId) {
     const rows = [];
@@ -247,8 +244,8 @@
     try {
       const movements = await readAll('consumable_stock_movements', item.id);
       if (!root.isConnected || !dialog.open || revision !== dialogRevision) return;
-      movements.sort((a, b) => b.created_at.localeCompare(a.created_at));
-      $('#consumables-dialog-content').innerHTML = `<p class="cons-description">${item.archived_at ? `Archived ${escape(date(item.archived_at, true))}: ${escape(item.archive_reason)}. History is read-only. ` : ''}Quantities in ${escape(item.unit)}. Dates use Manila time.</p><div class="table-wrap"><table><thead><tr><th>Date</th><th>Change</th><th>Quantity</th><th>Previous</th><th>Balance</th><th>Actor</th><th>Reason / Reference</th></tr></thead><tbody>${movements.length ? movements.map(movement => `<tr><td>${date(movement.created_at, true)}</td><td>${escape(({ opening: 'Opening stock', usage: 'Usage', restock: 'Restock', correction: 'Correction', receipt: 'Request receipt' })[movement.kind])}</td><td class="mono">${movement.quantity_change > 0 ? '+' : ''}${number(movement.quantity_change)}</td><td class="mono">${number(movement.balance_before ?? Number(movement.balance_after) - Number(movement.quantity_change))}</td><td class="mono">${number(movement.balance_after)}</td><td>${escape(movement.actor_name || 'Legacy actor not recorded')}</td><td class="cons-item">${escape(movement.note)}${movement.request_id && requestById(movement.request_id) ? `<div class="cell-sub">${reference(requestById(movement.request_id))}</div>` : ''}</td></tr>`).join('') : '<tr><td colspan="7" class="empty-state">No stock movements recorded.</td></tr>'}</tbody></table></div><div class="cons-dialog-actions">${button('close', 'Close')}</div>`;
+      movements.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+      $('#consumables-dialog-content').innerHTML = `<p class="cons-description">${item.archived_at ? `Archived ${escape(date(item.archived_at, true))}: ${escape(item.archive_reason)}. History is read-only. ` : ''}Quantities in ${escape(item.unit)}. Dates use Manila time.</p><div class="table-wrap"><table><thead><tr><th>Date</th><th>Change</th><th>Quantity</th><th>Previous</th><th>Balance</th><th>Actor</th><th>Reason / Reference</th></tr></thead><tbody>${movements.length ? movements.map(movement => `<tr><td>${date(movement.created_at, true)}</td><td>${escape(display.event(movement.kind, 'stock').title)}<div class="cell-sub">${escape(display.event(movement.kind, 'stock').description)}</div></td><td class="mono">${movement.quantity_change > 0 ? '+' : ''}${number(movement.quantity_change)}</td><td class="mono">${number(movement.balance_before ?? Number(movement.balance_after) - Number(movement.quantity_change))}</td><td class="mono">${number(movement.balance_after)}</td><td>${escape(display.person(movement.actor_name))}</td><td class="cons-item">${escape(display.safeText(movement.note))}${movement.request_id && requestById(movement.request_id) ? `<div class="cell-sub">${reference(requestById(movement.request_id))}</div>` : ''}</td></tr>`).join('') : '<tr><td colspan="7" class="empty-state">No stock movements recorded.</td></tr>'}</tbody></table></div><div class="cons-dialog-actions">${button('close', 'Close')}</div>`;
     } catch (error) {
       if (root.isConnected && dialog.open && revision === dialogRevision) $('#consumables-dialog-content').innerHTML = `<p role="alert" class="cons-form-error">${escape(errorMessage(error))}</p><div class="cons-dialog-actions">${button('history', 'Try Again', item.id)}${button('close', 'Close')}</div>`;
     }

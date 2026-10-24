@@ -5,22 +5,15 @@
   const zone = 'Asia/Manila';
   let libraries, active = false;
   const dateKey = value => new Intl.DateTimeFormat('en-CA', {timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date(value));
-  const dateTime = value => {
-    if (!value) return '';
-    const date = new Date(value);
-    return Number.isNaN(date.valueOf()) ? String(value) : new Intl.DateTimeFormat('en-PH', {
-      timeZone: zone, year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-    }).format(date) + ' PHT (UTC+08:00)';
-  };
+  const dateTime = value => window.MCPADisplay.dateTime(value) + ' PHT (UTC+08:00)';
   const icon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5"/></svg>';
-  const actions = {createRequest:'Request created',approveRequest:'Request approved',rejectRequest:'Request rejected',releaseRequest:'Equipment released',createTransfer:'Transfer created',receiveTransfer:'Transfer received',createReturn:'Return recorded',reportRepair:'Repair reported',startRepair:'Repair started',completeRepair:'Repair completed',reportMissing:'Missing equipment reported',recoverMissing:'Equipment recovered',withdrawRequest:'Request withdrawn',cancelReservation:'Reservation cancelled',cancelTransfer:'Transfer cancelled',refuseTransfer:'Transfer refused',reopenTransfer:'Transfer reopened'};
   const activityColumns = ['Date / time · Manila','Action','Reference ID','Recorded by','Equipment IDs','Details'];
-  function activityRows(records) {
-    return records.map(record => [
-      dateTime(record.createdAt) + '\nOriginal: ' + (record.createdAt ?? ''),
-      actions[record.action] ? actions[record.action] + '\n(' + record.action + ')' : record.action,
-      record.entityId, record.actor, (record.toolIds || []).join(', '), record.summary
-    ]);
+  function activityRows(records, data) {
+    return records.map(record => {
+      const event = window.MCPADisplay.activity(record, data);
+      return [dateTime(record.createdAt), event.title, event.reference, event.actor,
+        (record.toolIds || []).map(id => window.MCPADisplay.reference(id, 'Equipment reference unavailable')).join(', '), event.description];
+    });
   }
   function script(name) {
     return new Promise((resolve, reject) => {

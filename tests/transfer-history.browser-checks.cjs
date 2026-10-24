@@ -76,7 +76,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,go,login,logout
   assert.ok(longText.includes(records[6].sender)&&longText.includes(records[6].receiver)&&longText.includes(records[6].destination));
   await fill('[data-record-search]','TRF-00003');
   const contents=await evaluate(`document.querySelector(${JSON.stringify(card('TRF-00003'))}).textContent`);
-  for(const value of ['Palakol','T-1204',sender,receiver,'Recorded source project',destination,'Inspected / completed'])assert.ok(contents.includes(value),value);
+  for(const value of ['Palakol','T-1204',sender,receiver,'Recorded source project',destination,'Received / Completed'])assert.ok(contents.includes(value),value);
   assert.ok(!contents.includes('Casa Buena'),'Saved source is not replaced by current equipment project');
   // The card badge uses exactly the same text and tone as the desktop badge.
   await fill('[data-record-search]','');

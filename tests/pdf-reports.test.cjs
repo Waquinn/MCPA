@@ -6,7 +6,7 @@ function exporter(){
  const sandbox={URL,Blob,atob,btoa,console,TextEncoder,TextDecoder,setTimeout,clearTimeout,navigator:{userAgent:'Node'},document:{currentScript:{src:'https://example.test/project/js/pdf-reports.js'}}};
  sandbox.window=sandbox;sandbox.self=sandbox;
  const context=vm.createContext(sandbox);
- for(const file of ['vendor/pdf/jspdf.umd.min.js','vendor/pdf/jspdf.plugin.autotable.min.js','vendor/pdf/noto-sans.js','js/pdf-reports.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context,{filename:file});
+ for(const file of ['vendor/pdf/jspdf.umd.min.js','vendor/pdf/jspdf.plugin.autotable.min.js','vendor/pdf/noto-sans.js','js/display.js','js/pdf-reports.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context,{filename:file});
  return context.SiteTracePDF;
 }
 test('Pinned local assets are intact; all live export controls use PDF in both portal entry points',()=>{
@@ -21,13 +21,14 @@ test('Pinned local assets are intact; all live export controls use PDF in both p
 test('Hundreds of full activity rows survive pagination, long cells and Unicode; A4 layout renders',async()=>{
  const api=exporter();
  assert.equal(api.dateKey('2026-10-14T16:01:00Z'),'2026-10-15');
- assert.match(api.dateTime('2026-10-14T16:01:02Z'),/00:01:02 PHT/);
+ assert.match(api.dateTime('2026-10-14T16:01:02Z'),/12:01:02 AM PHT/);
  const records=Array.from({length:320},(_,i)=>({createdAt:'2026-10-14T16:01:02.123456Z',action:'createRequest',entityId:'REF-'+String(i).padStart(4,'0'),actor:'Engr. José Peña – Ma. Niño O’Connor',toolIds:['TOOL-'+i,'VeryLongEquipmentReference'.repeat(5)],summary:'DETAIL-'+i+' · ₱1,500.00 / 25°C / façade / Ω / café\n'+(i===157?'LongParagraph '.repeat(900)+'END-OF-EXTREME-CELL':'Construction equipment & project records; preserve every field.')}));
  const doc=api.create({title:'Activity Logs',columns:api.activityColumns,rows:api.activityRows(records),widths:[39,36,34,39,36,85],filters:['Search: All activity','Scope: Isolated regression records']},new Date('2026-10-15T01:02:03Z'));
  const bytes=Buffer.from(doc.output('arraybuffer')),parsed=await parse(bytes);
  assert.ok(parsed.pages.length>10);assert.equal((await parsed.pdf.getMetadata()).info.Title,'Activity Logs');
  const joined=compact(parsed.text);
- for(const [index,record]of records.entries())for(const value of [record.entityId,record.actor,record.createdAt,record.action,...record.toolIds,...(index===157?['DETAIL-157','END-OF-EXTREME-CELL']:[record.summary])])assert.ok(joined.includes(compact(value)),'Missing field: '+value.slice(0,80));
+ for(const [index,record]of records.entries())for(const value of [record.entityId,record.actor,api.dateTime(record.createdAt),'Equipment Request Submitted',...record.toolIds,...(index===157?['DETAIL-157','END-OF-EXTREME-CELL']:[record.summary])])assert.ok(joined.includes(compact(value)),'Missing field: '+value.slice(0,80));
+ assert.ok(!joined.includes('createRequest'),'Raw action keys are not printed');
  assert.equal((joined.match(/LongParagraph/g)||[]).length,900,'All text of a cell split over pages is preserved');
  for(const {text,page}of parsed.pages){assert.ok(text.includes('Reference ID'));assert.ok(page.view[2]>page.view[3]);}
  assertLayout(parsed);fs.mkdirSync(artifacts,{recursive:true});fs.writeFileSync(path.join(artifacts,'activity-320.pdf'),bytes);

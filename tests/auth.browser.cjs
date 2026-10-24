@@ -102,7 +102,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(turnoverRun||process.argv.includes('--request-projects')){
   for(const file of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610120001_request_turnover_notifications.sql'])fixtureMigrations.add(file);
  }
- if(process.argv.includes('--header-notifications')||process.argv.includes('--pdf-reports')||process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
+ if(process.argv.includes('--terminology')||process.argv.includes('--header-notifications')||process.argv.includes('--pdf-reports')||process.argv.includes('--engineer-ux')||process.argv.includes('--navigation')||process.argv.includes('--inventory-availability')||process.argv.length===2)fixtureMigrations.add('202610100006_monitoring.sql');
  fixtureMigrations.add('202610120003_optional_request_purpose.sql');
  fixtureMigrations.add('202610150001_inventory_availability.sql');
  if(process.argv.includes('--feature-completion')||process.argv.includes('--global-search')||process.argv.includes('--equipment-fixes')||process.argv.includes('--consumables-upgrade')){
@@ -146,6 +146,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  console.log('Local Chrome ready; external HTTPS blocked');
  const base=`http://127.0.0.1:${server.address().port}`;
+ if(process.argv.includes('--terminology')){
+  await require('./terminology.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,base,calls});
+  assert.deepEqual(errors,[],'No uncaught browser errors');return;
+ }
  if(process.argv.includes('--header-notifications')){
   await require('./header-notifications.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,login,logout,base,calls});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;
@@ -395,7 +399,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await command('Emulation.setTouchEmulationEnabled',{enabled:false});
  console.log('PASS Native project select: touch hit targets, keyboard selection, all options and viewport fit at 375/390/430/768/1440');
  await click('[name="toolIds"][value="TOOL-001"]');await fill('[name=destination]','Casa Buena');await fill('[name=purpose]','Structural works');await submit('[data-form=create]');
- await wait("document.querySelector('[data-list]').textContent.includes('Pending review')");
+ await wait("document.querySelector('[data-list]').textContent.includes('Pending Review')");
  const request=await evaluate('MovementStore.getState().requests[0]');
  await logout();await login('admin');await wait("document.querySelector('.admin-review')");
  const beforeNavigation=await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot');
@@ -413,24 +417,24 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
    await command('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:point.x,y:point.y}]});
    await command('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   }
-  await wait("document.querySelector('#screen-request.active [data-detail]:not([hidden])')?.textContent.includes('Pending review') && document.activeElement.matches('[data-detail]')");
+  await wait("document.querySelector('#screen-request.active [data-detail]:not([hidden])')?.textContent.includes('Pending Review') && document.activeElement.matches('[data-detail]')");
   assert.equal(await evaluate('location.hash'),'#request?record='+request.id);
   assert.ok(await evaluate("document.querySelector('.mv-selected-row').textContent.includes("+JSON.stringify(request.id)+") && document.querySelector('dialog[data-detail][open]') && !document.querySelector('#sidebar.open')"));
   if([375,1440].includes(width)){
    await shot('targeted-request-'+width);
    await command('Page.reload');
-   await wait("document.querySelector('#screen-request.active [data-detail]:not([hidden])')?.textContent.includes('Pending review') && document.activeElement.matches('[data-detail]')");
+   await wait("document.querySelector('#screen-request.active [data-detail]:not([hidden])')?.textContent.includes('Pending Review') && document.activeElement.matches('[data-detail]')");
   }
  }
  await command('Emulation.setTouchEmulationEnabled',{enabled:false});
  await go('dashboard');await wait("document.querySelector('.asset-timeline a[data-movement-link]')");
  await enter('.asset-timeline a[data-movement-link]');
- await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes('Pending review')");
+ await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes('Pending Review')");
  await evaluate("location.hash='#request?record=does-not-exist'");
  await wait("document.querySelector('[data-notice]')?.textContent.includes('unavailable')");
  assert.ok(await evaluate("!document.querySelector('[data-detail]').open"));
  await evaluate("location.hash="+JSON.stringify('#request?record='+request.id));
- await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes('Pending review')");
+ await wait("document.querySelector('[data-detail]:not([hidden])')?.textContent.includes('Pending Review')");
  assert.deepEqual(await fixture.rpc(fixture.actors.admin,'mcpa_movement_snapshot'),beforeNavigation,'Opening notification targets preserves requests, custody and activity');
  assert.equal(calls.filter(c=>c.rpc==='mcpa_movement_action').length,writeCount,'Navigation only reads data');
  console.log('PASS Activity/dashboard links, full-row touch, keyboard, deep-link refresh, missing record and unchanged pending request at all five widths');

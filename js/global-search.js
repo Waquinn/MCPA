@@ -3,6 +3,7 @@
 (function () {
   'use strict';
   const groups = {masterlist:['Equipment Tracking','list'],sites:['Projects','map'],request:['Requests','inbox'],transfer:['Transfers','swap'],return:['Returns','undo'],repair:['Repairs','wrench'],missing:['Missing Equipment','alert'],activity:['Activity Logs','clock'],purchase:['Purchases','cart'],consumables:['Materials','box'],reports:['Reports','chart']};
+  const display = window.MCPADisplay;
   const collections = {request:'requests',transfer:'transfers',return:'returns',repair:'repairs',missing:'missing'};
   const text = value => String(value ?? '');
   const join = values => values.filter(value => value != null && value !== '').join(' · ');
@@ -11,12 +12,12 @@
     const allowed = route => MCPAPermissions.route(user?.role, route);
     const add = (module, id, title, context, route, reference = id) => {
       if (!allowed(module) || !id) return;
-      rows.push({key:module+':'+id,module,id:text(id),title:text(title),reference:text(reference),context:text(context),route});
+      rows.push({key:module+':'+id,module,id:text(id),title:text(title),reference:display.reference(reference),context:text(context),route});
     };
     const tools = data.inventory || data.tools || [];
     tools.forEach(t => {
       if (demo && personal && t.holder !== user.name) return;
-      add('masterlist',t.id,t.name,join([t.serial || t.serial_number,t.cat || t.category,t.brand,t.site,t.holder]),'masterlist?record='+encodeURIComponent(t.id));
+      add('masterlist',t.id,t.name,join([t.serial || t.serial_number,t.cat || t.category,t.brand,t.site,t.holder,t.status ? display.status(t.status) : '',t.condition ? display.condition(t.condition) : '']),'masterlist?record='+encodeURIComponent(t.id));
     });
     (data.projects || data.sites || []).forEach(s => {
       if (personal && !MCPAProjectScope.assigned(s,user,demo)) return;
@@ -29,15 +30,16 @@
       if (!allowed(module)) return;
       visibleIds.add(r.id);
       const equipment = (r.toolIds || [r.toolId]).filter(Boolean).map(id => join([id,names.get(id)]));
-      add(module,r.id,join(equipment) || r.id,join([r.status,r.destination,r.requester,r.sender,r.receiver,r.returnedBy,r.reportedBy]),module+'?record='+encodeURIComponent(r.id));
+      add(module,r.id,join(equipment) || r.id,join([display.status(r.status || (module === 'return' ? 'returned' : ''), module),r.destination,r.requester,r.sender,r.receiver,r.returnedBy,r.reportedBy]),module+'?record='+encodeURIComponent(r.id));
     }));
     (data.activity || []).forEach(r => {
       if (demo && personal && r.actor !== user.name && !visibleIds.has(r.entityId)) return;
-      add('activity',r.id,r.action,join([r.summary,...(r.toolIds || [])]),'activity?record='+encodeURIComponent(r.id),r.entityId || r.id);
+      const event = display.activity(r, data);
+      add('activity',r.id,event.title,join([event.description,event.actor,...(r.toolIds || [])]),'activity?record='+encodeURIComponent(r.id),event.reference);
     });
-    (data.purchases || []).forEach(r => add('purchase',r.id,r.supplier,join([r.reference,r.delivery_status,...(r.items || []).map(i=>i.description)]),'purchase?record='+encodeURIComponent(r.id),'PUR-'+r.purchase_number));
-    (data.materials || []).filter(r => !r.archived_at).forEach(r => add('consumables',r.id,r.name,join([r.unit,r.stock_status]),'consumables?record='+encodeURIComponent(r.id)));
-    (data.materialRequests || []).forEach(r => add('consumables',r.id,r.item_name,join([r.status,r.requester]),'consumables?record='+encodeURIComponent(r.id),'CR-'+String(r.request_number).padStart(5,'0')));
+    (data.purchases || []).forEach(r => add('purchase',r.id,r.supplier,join([r.reference,display.status(r.delivery_status, 'delivery'),...(r.items || []).map(i=>i.description)]),'purchase?record='+encodeURIComponent(r.id),display.numberedReference('PUR',r.purchase_number)));
+    (data.materials || []).filter(r => !r.archived_at).forEach(r => add('consumables',r.id,r.name,join([r.unit,display.status(r.stock_status, 'stock')]),'consumables?record='+encodeURIComponent(r.id)));
+    (data.materialRequests || []).forEach(r => add('consumables',r.id,r.item_name,join([display.status(r.status, 'materialRequest'),r.requester]),'consumables?record='+encodeURIComponent(r.id),display.numberedReference('CR',r.request_number)));
     // These are real report views, not invented saved reports or historical snapshots.
     [['current','Current inventory report'],['history','Historical inventory report'],['activity','Movement activity report']].forEach(([id,title]) => add('reports',id,title,'Choose a date range in Reports','reports?record='+id,'Report'));
     return rows;

@@ -17,7 +17,7 @@
     secretary: [], tool_handler: ['createTransfer']
   };
   window.MCPAPermissions = Object.freeze({
-    labels: {admin:'Admin',engineer:'Engineer',architect:'Architect',secretary:'Secretary',tool_handler:'Tool Handler'},
+    labels: window.MCPADisplay.roles,
     route: (role, route) => !!routes[role]?.includes(route),
     action: (role, action) => !!actions[role]?.includes(action),
     movementAction(role, action, record, actor, mode, snapshot) {

@@ -51,7 +51,7 @@
     const holderId = tool.current_holder_id ?? tool.holderId;
     const holder = String(tool.holder || '').trim();
     const held = holderId || (!Object.hasOwn(tool,'current_holder_id') && !Object.hasOwn(tool,'holderId') && holder && !['—','–','-','?'].includes(holder));
-    if (status === 'inuse') return result('deployed', 'In use', 'Already in use. The current holder must transfer or return it.');
+    if (status === 'inuse') return result('deployed', 'In Use', 'Already in use. The current holder must transfer or return it.');
     if (held) return result('assigned', 'In custody', 'Assigned to a holder; unavailable for a new stock request.');
     // IN_OFFICE is normalized to available by old snapshots, but the action RPC
     // accepts only recorded AVAILABLE stock. Do not promise an invalid request.
@@ -59,7 +59,7 @@
     const verified = lock === null || typeof lock === 'string' || data?.inventoryAvailabilityVersion === 1
       || !window.MCPAAuth || window.MCPAAuth.isDemo === true;
     if (data?.availabilityError) return result('unknown', 'Availability unverified', 'The latest inventory verification failed. Refresh to verify reservations before requesting.');
-    if (!verified) return result('unknown', 'Availability unverified', 'The server did not provide reservation verification. Ask Admin to review the availability preflight and migration, then refresh.');
+    if (!verified) return result('unknown', 'Availability unverified', 'The server did not provide reservation verification. Ask your administrator to update inventory availability verification, then refresh.');
     return result('available', 'Available to request', 'No holder or reservation. Admin approval is required.');
   }
   function availability(tool, data) {
@@ -71,9 +71,8 @@
   function statusMarkup(tool, data) {
     const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const status = normalized(tool.recordedStatus ?? tool.dbStatus ?? tool.status), result = requestability(tool, data);
-    const labels = {available:'Available',inuse:'In use',inoffice:'In Office',repair:'For repair',underrepair:'Under repair',missing:'Missing',disposed:'Disposed',retired:'Retired'};
     const tone = ['available','inuse','repair','underrepair','missing'].includes(status) ? status : 'pending';
-    return `<div class="equipment-status"><span class="equipment-status-caption">Recorded status</span><span class="badge badge-${tone}">${escape(labels[status] || tool.status || 'Unknown')}</span><span class="equipment-request-state" data-requestability="${result.code}"><span class="equipment-status-caption">New requests</span><strong>${escape(result.label)}</strong></span><span class="equipment-status-reason">${escape(result.reason)}</span></div>`;
+    return `<div class="equipment-status"><span class="equipment-status-caption">Recorded status</span><span class="badge badge-${tone}">${escape(window.MCPADisplay.status(status))}</span><span class="equipment-request-state" data-requestability="${result.code}"><span class="equipment-status-caption">New requests</span><strong>${escape(result.label)}</strong></span><span class="equipment-status-reason">${escape(result.reason)}</span></div>`;
   }
   function tally(tools, data, {assetsOnly = false} = {}) {
     return tools.reduce((totals, tool) => {
@@ -111,7 +110,7 @@
       tools: equipment.map(item => ({...item, dbId: item.id, id: item.asset_id || item.id,
         qty: quantity(item), cat: item.category, siteId: item.site_id,
         site: names.get(item.site_id) || (item.site_id ? 'Unknown project' : 'Unassigned'),
-        holder: holders.get(item.current_holder_id) || item.current_holder_id || '',
+        holder: holders.get(item.current_holder_id) || (item.current_holder_id ? 'Holder unavailable' : ''),
         status: String(item.status || '').toLowerCase().replace(/[\s_-]/g, '').replace(/^forrepair$/, 'repair')
       }))
     };
