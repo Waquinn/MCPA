@@ -9,11 +9,14 @@ function exporter(){
  for(const file of ['vendor/pdf/jspdf.umd.min.js','vendor/pdf/jspdf.plugin.autotable.min.js','vendor/pdf/noto-sans.js','js/display.js','js/pdf-reports.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context,{filename:file});
  return context.SiteTracePDF;
 }
-test('Pinned local assets are intact; all live export controls use PDF in both portal entry points',()=>{
+test('Pinned local assets are intact; report exports use PDF in both portal entry points',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'vendor/pdf/manifest.json')));
  for(const [file,hash]of Object.entries(manifest.sha256).filter(([file])=>!file.endsWith('.ttf')))assert.equal(createHash('sha256').update(fs.readFileSync(path.join(root,'vendor/pdf',file))).digest('hex'),hash);
  for(const dir of ['js','1-admin/modules','2-engr/modules'])for(const entry of fs.readdirSync(path.join(root,dir),{recursive:true})){
   if(!/\.(js|html)$/.test(entry)||entry.includes('node_modules'))continue;
+  // Import receipts are a machine-readable row/Asset-ID reconciliation file,
+  // explicitly separate from existing PDF report controls.
+  if(dir==='js'&&entry==='equipment-import.js')continue;
   assert.doesNotMatch(fs.readFileSync(path.join(root,dir,entry),'utf8'),/Export CSV|Download CSV|text\/csv|\.csv['"`]|Export Excel/i,entry);
  }
  for(const file of ['index.html','2-engr/index.html'])assert.match(fs.readFileSync(path.join(root,file),'utf8'),/src="(?:\.\.\/)?js\/pdf-reports.js"/);

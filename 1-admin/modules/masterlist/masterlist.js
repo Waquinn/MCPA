@@ -871,6 +871,9 @@ function formatDate(dateString) {
   const owner = {disposed: false, dispose() { this.disposed = true; setEquipmentModalOpen(false); viewport?.removeEventListener('resize',resize); viewport?.removeEventListener('scroll',resize); window.removeEventListener('resize',resize); if (equipmentPhotoState.previewUrl) URL.revokeObjectURL(equipmentPhotoState.previewUrl); ++equipmentPhotoState.revision; stop(); }};
   let stop = () => {};
   window.AdminEquipment = owner;
+  const disposeImport = window.EquipmentImport?.attach(owner);
+  const disposeEquipment = owner.dispose.bind(owner);
+  owner.dispose = () => { disposeImport?.(); disposeEquipment(); };
   document.querySelectorAll('[data-equipment-icon]').forEach(el => { el.innerHTML = icon(el.dataset.equipmentIcon); });
   document.querySelectorAll('[data-equipment-status]').forEach(el => {
     el.addEventListener('click', () => navigateEquipmentStatus(el.dataset.equipmentStatus));

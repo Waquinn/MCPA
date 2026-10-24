@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "test:terminology": "node --test --test-concurrency=1 display.test.cjs dashboard-view.test.cjs global-search.test.cjs inventory.test.cjs movement-store.test.cjs pdf-reports.test.cjs && node auth.browser.cjs --terminology",
+    "test:equipment-import": "node --test --test-concurrency=1 equipment-import.test.cjs equipment-import.database.test.cjs && node auth.browser.cjs --equipment-import",
     "test:admin-equipment-summary": "node --test --test-concurrency=1 admin-equipment-summary.test.cjs dashboard-view.test.cjs inventory.test.cjs module-navigation.test.cjs movement-navigation.test.cjs && node auth.browser.cjs --admin-equipment-summary",
     "test:project-construction": "node --test --test-concurrency=1 project-construction.test.cjs project-history-dependency.test.cjs project-history-repair.test.cjs && node auth.browser.cjs --project-construction",
     "test:purchase-receipts": "node --test --test-concurrency=1 purchase-receipts-compatibility.test.cjs purchase-ledger.test.cjs consumables-archive.test.cjs && node auth.browser.cjs --feature-completion && node auth.browser.cjs --consumables-upgrade",
