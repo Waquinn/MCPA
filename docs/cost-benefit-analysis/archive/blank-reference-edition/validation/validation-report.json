@@ -1,0 +1,81 @@
+{
+  "checks": {
+    "all_26_green_inventory_rows_match": true,
+    "recorded_total_758": true,
+    "reported_gap_total_463": true,
+    "three_reported_gaps_match_requirement_minus_recorded": true,
+    "23_unprovided_requirements_remain_blank": true,
+    "23_unprovided_gap_cells_remain_blank": true,
+    "financial_inputs_all_blank": true,
+    "financial_display_cells_all_blank": true,
+    "five_worksheets": true,
+    "no_external_workbook_links": true,
+    "A4_portrait_fit_each_sheet": true,
+    "no_geometry_overflow": true,
+    "all_63_formulas_evaluate_to_blank": true,
+    "four_editable_powerpoint_slides": true,
+    "powerpoint_contains_no_flattened_screenshots": true,
+    "word_four_fixed_layout_pages": true,
+    "word_contains_editable_text_and_vector_shapes": true,
+    "PDF_four_A4_pages": true,
+    "same_green_figures_in_all_document_editions": true,
+    "no_academic_example_amounts_or_application_demo_facts": true,
+    "PDF_text_within_page_bounds": true
+  },
+  "inventory_categories": 26,
+  "recorded_units": 758,
+  "reported_gap_units": 463,
+  "financial_policy": "Leave missing amounts blank; no estimated rates, salaries, prices or savings.",
+  "financial_formula_count": 63,
+  "isolated_formula_scenarios": [
+    {
+      "name": "partial development inputs",
+      "status": "passed",
+      "meaning": "Entered rate \u00d7 duration calculates, but incomplete total remains blank."
+    },
+    {
+      "name": "explicit zero inputs",
+      "status": "passed",
+      "meaning": "Documented zero is supported and distinct from an unknown blank."
+    }
+  ],
+  "native_Office_rendering": "Unavailable: COM returned 80070520. XML packages, editable shapes, vector scene geometry and every PDF page are checked. Excel and Office native pagination may differ slightly.",
+  "rendered_pages": 4,
+  "PowerPoint_slides": 4,
+  "Word_pages_by_explicit_page_breaks": 4,
+  "previews": [
+    "C:\\Practice Files\\SAD\\MCPA\\docs\\cost-benefit-analysis\\recreated-views\\01-one-time-cost.png",
+    "C:\\Practice Files\\SAD\\MCPA\\docs\\cost-benefit-analysis\\recreated-views\\02-cost-explanation.png",
+    "C:\\Practice Files\\SAD\\MCPA\\docs\\cost-benefit-analysis\\recreated-views\\03-tangible-benefits.png",
+    "C:\\Practice Files\\SAD\\MCPA\\docs\\cost-benefit-analysis\\recreated-views\\04-green-company-inventory.png"
+  ],
+  "artifacts": [
+    {
+      "file": "SiteTrace_Cost_Benefit_Analysis.xlsx",
+      "bytes": 27822,
+      "sha256": "7f8411a38a0db23a848f8b00742efbb34c9b92cac4fcca6f64138975a71fd0a8"
+    },
+    {
+      "file": "SiteTrace_Cost_Benefit_Report.docx",
+      "bytes": 47544,
+      "sha256": "38f2c73468d248037571800bf16d4ce32fe5b04af820712cc2fdbf0ac08a0d12"
+    },
+    {
+      "file": "SiteTrace_Cost_Benefit_Report.pdf",
+      "bytes": 63178,
+      "sha256": "2d5570691045100ed2a3f85954a1231013fef75c30cafadc4965e858e080a273"
+    },
+    {
+      "file": "SiteTrace_Cost_Benefit_Worksheets.pptx",
+      "bytes": 55501,
+      "sha256": "4b10d46b84491ab2cabbc08d311f6ee2e168405f72c68f6e2f1fd4273231d808"
+    }
+  ],
+  "user_decision": "Leave missing amounts blank.",
+  "source_scope": "Only the supplied green inventory table supplies company quantities. No system demo data, salaries, prices, dates, schedules, project names or procurement figures were imported.",
+  "visual_review": {
+    "status": "passed",
+    "reviewed": "All four recreated pages; first and third reference layouts inspected at full size. Black borders, side-by-side tables, grey headings, maroon bands, blue reductions and blank financial fields confirmed.",
+    "source_data": "All 26 inventory rows agree with the green image. No system demonstration records used."
+  }
+}

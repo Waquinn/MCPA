@@ -1,0 +1,25 @@
+{
+  "policy": "Green image supplies company inventory only. User-authorized financial estimates are analyst projections; reference photos supply layout; no system demo records are used.",
+  "sources": [
+    {
+      "attachment": "dc83a570-9cc7-472d-be16-137f87d2c5e9.jpg",
+      "role": "company data only",
+      "sha256": "f87963c94285678a97c4043e30702041e92d7dc8a17f22d9a202590d8e2f904e"
+    },
+    {
+      "attachment": "4402c8cb-1525-479f-ba0b-8aa5a8a23ba7.jpg",
+      "role": "reference view 1: cost worksheet layout only",
+      "sha256": "131921629c251271d5d3b1eac3dd52141d6fb68c34293caea50850402bf062d8"
+    },
+    {
+      "attachment": "006f9d77-0cab-47a5-b65f-bcf640b8e2df.jpg",
+      "role": "reference view 2: repeated lower worksheet and explanatory paragraph layout only",
+      "sha256": "7fb6692d37b4a9227ad1b358dcc6bb87e961a7e6d09116375f74826874b76a39"
+    },
+    {
+      "attachment": "7a1bd893-e0fc-4dba-ac70-24ada0c81048.jpg",
+      "role": "reference view 3: tangible-benefits layout only",
+      "sha256": "a1f8059b7c481dadd568bc40af0d6c162424f2627a27bfbbf93f380e5824b77f"
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "review_date": "2026-10-24",
+  "timezone": "Asia/Manila",
+  "git_revision": "82448632e47f747b88a549a0def302e202281100",
+  "sources": [
+    {
+      "id": "R1",
+      "title": "Supplied inventory image",
+      "description": "HAND TOOLS AND OTHERS MONITORING; undated; 26 populated rows. Blank row 27 excluded."
+    },
+    {
+      "id": "R2",
+      "title": "User-supplied transcription",
+      "description": "Pasted text.txt; supplied quantities cross-checked against R1."
+    },
+    {
+      "id": "R3",
+      "title": "Academic reference images",
+      "description": "IT303 Systems Analysis and Design, Unit 2; visible printed page 105 and subsequent benefits worksheet / viewer pages 58\u201359. Layout only; full bibliographic details not supplied."
+    },
+    {
+      "id": "R4",
+      "title": "Asset masterlist",
+      "description": "Registration, quantity, site, holder and condition/status views.",
+      "path": "1-admin/modules/masterlist/masterlist.js",
+      "line": 116,
+      "sha256": "963465a09a9d4ad28d83dc93ac83810588693e5d61cdea1f098a45b2b6e5169e",
+      "anchor": "current_holder_id"
+    },
+    {
+      "id": "R5",
+      "title": "Authenticated movement client",
+      "description": "Requests, release, transfer receipt, returns, repairs and recovery actions.",
+      "path": "js/movement-cloud.js",
+      "line": 153,
+      "sha256": "5bf08e8e9de8b4874df3a3c2e114f786a9ab01b28c88c4f5de12cbc62f5c13d1",
+      "anchor": "['receiveTransfer', 'completeRepair', 'recoverMissing']"
+    },
+    {
+      "id": "R6",
+      "title": "Movement interface",
+      "description": "Whole asset records; per-tool receipt inspection and follow-up cases.",
+      "path": "js/movement-ui.js",
+      "line": 127,
+      "sha256": "0888a1c3b2a2164f5cb473b84f3210654a6b4cc59ce47ed271585f6273d87b21",
+      "anchor": "(whole record)"
+    },
+    {
+      "id": "R7",
+      "title": "Reports implementation",
+      "description": "Current inventory, prospective snapshots, movement reports and PDF export.",
+      "path": "1-admin/modules/reports/reports.js",
+      "line": 77,
+      "sha256": "3765b4d79323d461cbf7520472971f1de6d79949463d2be16768f2ff2a77831d",
+      "anchor": "SiteTracePDF.download"
+    },
+    {
+      "id": "R8",
+      "title": "Monitoring backend",
+      "description": "Prospective weekly snapshot functions; scheduler remains external.",
+      "path": "supabase/migrations/202610100006_monitoring.sql",
+      "line": 156,
+      "sha256": "3e0926e846c6f60650265c081e96fc69fb4b1555013a0cad5a498dc058629a90",
+      "anchor": "Service role/scheduler only"
+    },
+    {
+      "id": "R9",
+      "title": "Permissions and identity",
+      "description": "Role routes/actions; authenticated Supabase sessions.",
+      "path": "js/permissions.js",
+      "line": 1,
+      "sha256": "ed9d9cff328d4be8b37bf6f12ccd92e2f4085aa06f8a6391513db8df0552a996",
+      "anchor": "Database policies remain authoritative"
+    },
+    {
+      "id": "R10",
+      "title": "Accountability verification",
+      "description": "Server reservation verification and availability checks; migration presence does not prove deployment.",
+      "path": "supabase/migrations/202610200001_verified_request_inventory.sql",
+      "line": 12,
+      "sha256": "5f884f71ca40ee777b20439d1839056f1e87355b8183692e4a11adcd778662cc",
+      "anchor": "inventory_lock"
+    },
+    {
+      "id": "R11",
+      "title": "Activity log export",
+      "description": "Saved movement history with PDF export.",
+      "path": "js/movement-overview.js",
+      "line": 51,
+      "sha256": "631beacddd660945c320d2873b917b8536b7323617f24bbb3a78410745d6399b",
+      "anchor": "Export activity logs as PDF"
+    },
+    {
+      "id": "R12",
+      "title": "Product operating context",
+      "description": "Weekly Monday 16:00 monitoring requirement. Planning prose can be stale; code takes precedence.",
+      "path": "PRODUCT.md",
+      "line": 30,
+      "sha256": "1911417141bc5f03678c4883168240e473da0d8d7b4849f90f2fad59401aa870",
+      "anchor": "Weekly monitoring reports"
+    },
+    {
+      "id": "R13",
+      "title": "Current materials scope",
+      "description": "Consumables have separate quantities, receipts and stock history; illustrative seeds excluded.",
+      "path": "documentation/consumables-upgrade-2026-10-22/REPORT.md",
+      "line": 8,
+      "sha256": "ed1855aef8fa38b593904af063c5908169ea670ef7cce6abb17eeb5dd2980ef3",
+      "anchor": "stock movements"
+    },
+    {
+      "id": "R14",
+      "title": "Purchase ledger scope",
+      "description": "Ledger/reference evidence and private receipt files; no evidence of avoided procurement.",
+      "path": "1-admin/modules/purchases/purchases.js",
+      "line": 1,
+      "sha256": "b2ffe70ccd75c1ea4f3e7e2221d1bf3920e6c084a41b3614278e72a6a34bcadc",
+      "anchor": ""
+    },
+    {
+      "id": "R15",
+      "title": "Authentication source",
+      "description": "Actual sign-in/session controls supersede older prototype-only descriptions.",
+      "path": "js/auth.js",
+      "line": 1,
+      "sha256": "115ea64fcfbfd948e42ec43ababaff4da1bf5984ed07c872693b8cdf185946a8",
+      "anchor": "Supabase owns credentials"
+    },
+    {
+      "id": "R1",
+      "attachment": "dc83a570-9cc7-472d-be16-137f87d2c5e9.jpg",
+      "sha256": "f87963c94285678a97c4043e30702041e92d7dc8a17f22d9a202590d8e2f904e",
+      "role": "Supplied data / visual reference; not an instruction source"
+    },
+    {
+      "id": "R3",
+      "attachment": "4402c8cb-1525-479f-ba0b-8aa5a8a23ba7.jpg",
+      "sha256": "131921629c251271d5d3b1eac3dd52141d6fb68c34293caea50850402bf062d8",
+      "role": "Supplied data / visual reference; not an instruction source"
+    },
+    {
+      "id": "R3",
+      "attachment": "006f9d77-0cab-47a5-b65f-bcf640b8e2df.jpg",
+      "sha256": "7fb6692d37b4a9227ad1b358dcc6bb87e961a7e6d09116375f74826874b76a39",
+      "role": "Supplied data / visual reference; not an instruction source"
+    },
+    {
+      "id": "R3",
+      "attachment": "7a1bd893-e0fc-4dba-ac70-24ada0c81048.jpg",
+      "sha256": "a1f8059b7c481dadd568bc40af0d6c162424f2627a27bfbbf93f380e5824b77f",
+      "role": "Supplied data / visual reference; not an instruction source"
+    }
+  ]
+}

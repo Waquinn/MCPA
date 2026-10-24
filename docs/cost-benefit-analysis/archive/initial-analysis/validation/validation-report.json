@@ -1,0 +1,301 @@
+{
+  "prepared_date": "2026-10-24",
+  "timezone": "Asia/Manila",
+  "inventory": {
+    "categories": 26,
+    "recorded_units": 758,
+    "flagged_categories": 3,
+    "reported_gap_units": 463,
+    "gap_classification": "Unreconciled; not confirmed losses"
+  },
+  "workbook": {
+    "checks": {
+      "exact_26_rows": true,
+      "recorded_total_758": true,
+      "reported_gap_total_463": true,
+      "all_three_gaps_match": true,
+      "unprovided_gaps_preserved_blank": true,
+      "ten_sheets": true,
+      "prices_all_unknown": true,
+      "exposure_unverified": true,
+      "investment_unknown": true,
+      "recurring_unknown": true,
+      "benefits_unknown": true,
+      "financial_outputs_unknown": true,
+      "dashboard_inventory_correct": true,
+      "cached_formula_count_complete": true,
+      "no_external_workbook_links": true,
+      "A4_all_sheets": true
+    },
+    "formula_count": 321,
+    "cross_sheet_references_checked": 65,
+    "editable_inputs": 0,
+    "chart_count": 1
+  },
+  "financial_synthetic_checks": [
+    {
+      "case": "constant positive cash flows",
+      "checks": {
+        "investment_20000": true,
+        "recurring_12000": true,
+        "cash_benefits_22800": true,
+        "noncash_productivity_20800": true,
+        "ROI_62_percent": true,
+        "NPV_independent": true,
+        "payback_1_85185_years": true,
+        "discounted_BCR_independent": true,
+        "cashflow_cumulative_12400": true,
+        "economic_NPV_independent": true
+      },
+      "status": "passed"
+    },
+    {
+      "case": "variable annual realization and cumulative payback",
+      "checks": {
+        "first_year_negative": true,
+        "last_year_positive": true,
+        "payback_interpolated": true,
+        "NPV_independent": true
+      },
+      "status": "passed"
+    },
+    {
+      "case": "negative net benefit / no recovery",
+      "checks": {
+        "no_recovery": true,
+        "negative_ROI": true,
+        "negative_NPV": true
+      },
+      "status": "passed"
+    },
+    {
+      "case": "missing investment input propagates",
+      "checks": {
+        "investment_unknown": true,
+        "ROI_unknown": true,
+        "NPV_unknown": true,
+        "dashboard_unknown": true
+      },
+      "status": "passed"
+    },
+    {
+      "case": "exposure is excluded from annual cash benefits",
+      "checks": {
+        "exposure_46520": true,
+        "cash_benefits_unchanged": true,
+        "equipment_credit_zero": true
+      },
+      "status": "passed"
+    },
+    {
+      "case": "payroll realization does not double-count productivity",
+      "checks": {
+        "cash_payroll_10400": true,
+        "retained_capacity_10400": true,
+        "combined_productivity_20800": true,
+        "cash_benefits_33200": true
+      },
+      "status": "passed"
+    },
+    {
+      "case": "explicit zero investment is supported",
+      "checks": {
+        "investment_zero": true,
+        "ROI_defined": true,
+        "payback_immediate": true
+      },
+      "status": "passed"
+    }
+  ],
+  "worksheet_layout": [
+    {
+      "sheet": "Inventory Baseline",
+      "preview": "worksheet-01.png",
+      "minimum_body_font_after_width_fit_pt": 8.67,
+      "print_area": "'Inventory Baseline'!$A$1:$L$48",
+      "manual_row_breaks": [
+        35
+      ]
+    },
+    {
+      "sheet": "One-Time Development Cost",
+      "preview": "worksheet-02.png",
+      "minimum_body_font_after_width_fit_pt": 9.48,
+      "print_area": "'One-Time Development Cost'!$A$1:$G$39",
+      "manual_row_breaks": [
+        20
+      ]
+    },
+    {
+      "sheet": "Recurring Costs",
+      "preview": "worksheet-03.png",
+      "minimum_body_font_after_width_fit_pt": 9.31,
+      "print_area": "'Recurring Costs'!$A$1:$G$23",
+      "manual_row_breaks": []
+    },
+    {
+      "sheet": "Existing System Operating Costs",
+      "preview": "worksheet-04.png",
+      "minimum_body_font_after_width_fit_pt": 8.61,
+      "print_area": "'Existing System Operating Costs'!$A$1:$I$43",
+      "manual_row_breaks": [
+        14,
+        29
+      ]
+    },
+    {
+      "sheet": "Proposed System Operating Costs",
+      "preview": "worksheet-05.png",
+      "minimum_body_font_after_width_fit_pt": 8.61,
+      "print_area": "'Proposed System Operating Costs'!$A$1:$I$43",
+      "manual_row_breaks": [
+        14,
+        29
+      ]
+    },
+    {
+      "sheet": "Tangible Benefits Worksheet",
+      "preview": "worksheet-06.png",
+      "minimum_body_font_after_width_fit_pt": 8.12,
+      "print_area": "'Tangible Benefits Worksheet'!$A$1:$J$51",
+      "manual_row_breaks": [
+        13,
+        25,
+        35
+      ]
+    },
+    {
+      "sheet": "Intangible Benefits",
+      "preview": "worksheet-07.png",
+      "minimum_body_font_after_width_fit_pt": 9.0,
+      "print_area": "'Intangible Benefits'!$A$1:$E$22",
+      "manual_row_breaks": []
+    },
+    {
+      "sheet": "Financial Analysis",
+      "preview": "worksheet-08.png",
+      "minimum_body_font_after_width_fit_pt": 8.76,
+      "print_area": "'Financial Analysis'!$A$1:$F$53",
+      "manual_row_breaks": [
+        29,
+        45
+      ]
+    },
+    {
+      "sheet": "Assumptions and References",
+      "preview": "worksheet-09.png",
+      "minimum_body_font_after_width_fit_pt": 9.55,
+      "print_area": "'Assumptions and References'!$A$1:$D$49",
+      "manual_row_breaks": [
+        19,
+        31,
+        42
+      ]
+    },
+    {
+      "sheet": "Executive Dashboard",
+      "preview": "worksheet-10.png",
+      "minimum_body_font_after_width_fit_pt": 9.6,
+      "print_area": "'Executive Dashboard'!$A$1:$G$40",
+      "manual_row_breaks": []
+    }
+  ],
+  "documents": {
+    "checks": {
+      "docx_A4": true,
+      "fourteen_numbered_sections": true,
+      "eleven_numbered_tables": true,
+      "all_inventory_descriptions": true,
+      "baseline_figures_in_both": true,
+      "financial_missing_in_both": true,
+      "no_blank_PDF_pages": true,
+      "PDF_A4": true,
+      "PDF_text_within_pages": true
+    },
+    "PDF_pages": 11,
+    "page_geometry": [
+      {
+        "page": 1,
+        "characters": 1143,
+        "text_outside_page": []
+      },
+      {
+        "page": 2,
+        "characters": 3538,
+        "text_outside_page": []
+      },
+      {
+        "page": 3,
+        "characters": 1180,
+        "text_outside_page": []
+      },
+      {
+        "page": 4,
+        "characters": 3583,
+        "text_outside_page": []
+      },
+      {
+        "page": 5,
+        "characters": 3715,
+        "text_outside_page": []
+      },
+      {
+        "page": 6,
+        "characters": 2115,
+        "text_outside_page": []
+      },
+      {
+        "page": 7,
+        "characters": 3407,
+        "text_outside_page": []
+      },
+      {
+        "page": 8,
+        "characters": 3189,
+        "text_outside_page": []
+      },
+      {
+        "page": 9,
+        "characters": 3405,
+        "text_outside_page": []
+      },
+      {
+        "page": 10,
+        "characters": 3429,
+        "text_outside_page": []
+      },
+      {
+        "page": 11,
+        "characters": 1797,
+        "text_outside_page": []
+      }
+    ],
+    "Word_native_render": "Unavailable: Office COM returned 80070520 in this Windows session. Word package structurally checked; PDF uses the same shared content through ReportLab. Pagination may differ."
+  },
+  "scope": "Read-only application review. No app/schema/configuration changes or live database access.",
+  "financial_baseline": "Insufficient Data; all financial inputs unverified except explicit modelling conventions/exclusions.",
+  "artifacts": [
+    {
+      "file": "SiteTrace_Cost_Benefit_Analysis.xlsx",
+      "bytes": 61505,
+      "sha256": "8a390ce36e024ecdb33fd29caeba6c11247867aa071b74cb40f2c070d25333f9"
+    },
+    {
+      "file": "SiteTrace_Cost_Benefit_Report.docx",
+      "bytes": 53191,
+      "sha256": "719061cf9a84e0c67e869be4fd97f52ef11e8134e3a71b16816b34c49b828929"
+    },
+    {
+      "file": "SiteTrace_Cost_Benefit_Report.pdf",
+      "bytes": 108463,
+      "sha256": "1e413ef2cdc7f615b27cd48b77e8dd64c49377a50e5fd3fb1516dcfa49950566"
+    }
+  ],
+  "visual_review": {
+    "status": "passed",
+    "reviewed": "All ten worksheet previews and every PDF page via contact sheets, with individual worksheet checks. Row height and PDF pagination revised after review.",
+    "native_Office_rendering": "Unavailable; package, formula, PDF and geometry checks used.",
+    "source_hashes_unchanged": true,
+    "artifact_hashes_match": true
+  }
+}

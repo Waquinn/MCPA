@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    "Manual Asset ID fallback and QR duplicate suppression",
+    "Unknown or unauthorized asset errors preserve selected batch",
+    "Return submission fits mobile",
+    "Browser return upload submits pending inspection with original custody",
+    "Browser photo linked to correct return asset",
+    "Receipt label has a 44px tap target",
+    "Failed save focuses and reveals recovery feedback",
+    "Admin per-asset inspection fits mobile",
+    "Browser partial inspection releases only physically received asset",
+    "Browser named recipient acceptance moves exact custody",
+    "Retirement approval fits mobile",
+    "Browser second Admin approval retires asset",
+    "Retirement history uses product language",
+    "Transfer manual selectors render",
+    "Camera failure retains manual fallback",
+    "No uncaught browser exceptions"
+  ],
+  "exceptions": [],
+  "screenshotDirectory": "test-results/screenshots",
+  "scope": "Mounted modules, local PostgreSQL, synthetic Storage transport; not deployed MCPA integration"
+}

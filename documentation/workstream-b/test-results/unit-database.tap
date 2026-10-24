@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: migration preserves existing custody, histories, RPC definitions and grants
+ok 1 - migration preserves existing custody, histories, RPC definitions and grants
+  ---
+  duration_ms: 3003.0286
+  type: 'test'
+  ...
+# Subtest: Engineer batch retains custody and stock exclusion; Admin receives notification
+ok 2 - Engineer batch retains custody and stock exclusion; Admin receives notification
+  ---
+  duration_ms: 4988.8333
+  type: 'test'
+  ...
+# Subtest: Good, Damaged, Missing and Disputed decisions support partial acceptance and later recovery
+ok 3 - Good, Damaged, Missing and Disputed decisions support partial acceptance and later recovery
+  ---
+  duration_ms: 5049.2752
+  type: 'test'
+  ...
+# Subtest: malformed inspection rolls back every decision
+ok 4 - malformed inspection rolls back every decision
+  ---
+  duration_ms: 4758.0539
+  type: 'test'
+  ...
+# Subtest: legacy return bypass and direct table writes are denied
+ok 5 - legacy return bypass and direct table writes are denied
+  ---
+  duration_ms: 4681.8816
+  type: 'test'
+  ...
+# Subtest: conflicting submissions and repeated acceptance admit one winner
+ok 6 - conflicting submissions and repeated acceptance admit one winner
+  ---
+  duration_ms: 4810.691
+  type: 'test'
+  ...
+# Subtest: migration fails closed on unreviewed custody engine and preserves unsafe-state evidence
+ok 7 - migration fails closed on unreviewed custody engine and preserves unsafe-state evidence
+  ---
+  duration_ms: 4352.7671
+  type: 'test'
+  ...
+# Subtest: new function grants exclude anonymous and private execution, with immutable history
+ok 8 - new function grants exclude anonymous and private execution, with immutable history
+  ---
+  duration_ms: 5010.0711
+  type: 'test'
+  ...
+# Subtest: cancelled transfer keeps original movement/audit records and permits later authorized work
+ok 9 - cancelled transfer keeps original movement/audit records and permits later authorized work
+  ---
+  duration_ms: 5228.7657
+  type: 'test'
+  ...
+# Subtest: frontend and SQL source remain inside the reserved paths and share movement locking
+ok 10 - frontend and SQL source remain inside the reserved paths and share movement locking
+  ---
+  duration_ms: 2.2433
+  type: 'test'
+  ...
+# Subtest: retirement requires different Admin approval and preserves permanent IDs
+ok 11 - retirement requires different Admin approval and preserves permanent IDs
+  ---
+  duration_ms: 2817.9119
+  type: 'test'
+  ...
+# Subtest: retirement rejects custody and unresolved movements, rechecking before approval
+ok 12 - retirement rejects custody and unresolved movements, rechecking before approval
+  ---
+  duration_ms: 4992.7904
+  type: 'test'
+  ...
+# Subtest: private Storage policies deny unrelated roles, forged paths, overwrites and linked deletion
+ok 13 - private Storage policies deny unrelated roles, forged paths, overwrites and linked deletion
+  ---
+  duration_ms: 3313.0619
+  type: 'test'
+  ...
+# Subtest: failed/incomplete uploads and wrong-asset attachments roll back custody and operations
+ok 14 - failed/incomplete uploads and wrong-asset attachments roll back custody and operations
+  ---
+  duration_ms: 3932.1772
+  type: 'test'
+  ...
+# Subtest: transfer submission, recipient acceptance, Admin receipt and damage evidence link to exact assets
+ok 15 - transfer submission, recipient acceptance, Admin receipt and damage evidence link to exact assets
+  ---
+  duration_ms: 4717.4441
+  type: 'test'
+  ...
+# Subtest: proposal evidence is private and retained after retirement approval
+ok 16 - proposal evidence is private and retained after retirement approval
+  ---
+  duration_ms: 4177.2186
+  type: 'test'
+  ...
+# Subtest: client validates image signatures and does not mutate custody after an upload failure
+ok 17 - client validates image signatures and does not mutate custody after an upload failure
+  ---
+  duration_ms: 14.013
+  type: 'test'
+  ...
+# Subtest: photo tickets survive a retry after a successful movement response is lost
+ok 18 - photo tickets survive a retry after a successful movement response is lost
+  ---
+  duration_ms: 2.4597
+  type: 'test'
+  ...
+# Subtest: failed evidence linking rolls back Admin receipt and generated repair history
+ok 19 - failed evidence linking rolls back Admin receipt and generated repair history
+  ---
+  duration_ms: 4814.7762
+  type: 'test'
+  ...
+# Subtest: injected camera decoder delivers an Asset ID and stops all tracks
+ok 20 - injected camera decoder delivers an Asset ID and stops all tracks
+  ---
+  duration_ms: 14.6975
+  type: 'test'
+  ...
+# Subtest: camera releases late streams on unmount and unsupported browsers keep manual fallback
+ok 21 - camera releases late streams on unmount and unsupported browsers keep manual fallback
+  ---
+  duration_ms: 7.4575
+  type: 'test'
+  ...
+# Subtest: QR server resolves only actual current individual custody
+ok 22 - QR server resolves only actual current individual custody
+  ---
+  duration_ms: 3019.9227
+  type: 'test'
+  ...
+# Subtest: exact assets transfer only after named recipient physically accepts
+ok 23 - exact assets transfer only after named recipient physically accepts
+  ---
+  duration_ms: 4847.1932
+  type: 'test'
+  ...
+# Subtest: transfer refuses self, unavailable assets and recipients outside project assignment
+ok 24 - transfer refuses self, unavailable assets and recipients outside project assignment
+  ---
+  duration_ms: 2117.6852
+  type: 'test'
+  ...
+# Subtest: batch deduplicates scans, supports manual IDs and cancels pending resolution
+ok 25 - batch deduplicates scans, supports manual IDs and cancels pending resolution
+  ---
+  duration_ms: 3.6741
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 82071.6985

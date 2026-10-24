@@ -1,0 +1,2267 @@
+{
+  "ids": {
+    "dev1_rate": [
+      "One Time Cost",
+      "$D$15"
+    ],
+    "dev1_months": [
+      "One Time Cost",
+      "$F$15"
+    ],
+    "dev1_subtotal": [
+      "One Time Cost",
+      "$G$15"
+    ],
+    "dev2_rate": [
+      "One Time Cost",
+      "$D$17"
+    ],
+    "dev2_months": [
+      "One Time Cost",
+      "$F$17"
+    ],
+    "dev2_subtotal": [
+      "One Time Cost",
+      "$G$17"
+    ],
+    "dev3_rate": [
+      "One Time Cost",
+      "$D$19"
+    ],
+    "dev3_months": [
+      "One Time Cost",
+      "$F$19"
+    ],
+    "dev3_subtotal": [
+      "One Time Cost",
+      "$G$19"
+    ],
+    "dev4_rate": [
+      "One Time Cost",
+      "$D$20"
+    ],
+    "dev4_months": [
+      "One Time Cost",
+      "$F$20"
+    ],
+    "dev4_subtotal": [
+      "One Time Cost",
+      "$G$20"
+    ],
+    "development_total": [
+      "One Time Cost",
+      "$G$22"
+    ],
+    "training_rate": [
+      "One Time Cost",
+      "$E$29"
+    ],
+    "training_subtotal": [
+      "One Time Cost",
+      "$H$29"
+    ],
+    "training_kit": [
+      "One Time Cost",
+      "$E$30"
+    ],
+    "training_kit_subtotal": [
+      "One Time Cost",
+      "$H$30"
+    ],
+    "training_total": [
+      "One Time Cost",
+      "$H$32"
+    ],
+    "server_rate": [
+      "One Time Cost",
+      "$E$43"
+    ],
+    "server_subtotal": [
+      "One Time Cost",
+      "$H$43"
+    ],
+    "drive_rate": [
+      "One Time Cost",
+      "$E$45"
+    ],
+    "drive_subtotal": [
+      "One Time Cost",
+      "$H$45"
+    ],
+    "license_rate": [
+      "One Time Cost",
+      "$E$47"
+    ],
+    "license_subtotal": [
+      "One Time Cost",
+      "$H$47"
+    ],
+    "hardware_total": [
+      "One Time Cost",
+      "$H$49"
+    ],
+    "summary_development_total": [
+      "One Time Cost",
+      "$L$14"
+    ],
+    "summary_training_total": [
+      "One Time Cost",
+      "$L$16"
+    ],
+    "summary_hardware_total": [
+      "One Time Cost",
+      "$L$18"
+    ],
+    "one_time_total": [
+      "One Time Cost",
+      "$L$21"
+    ],
+    "maintenance_rate": [
+      "One Time Cost",
+      "$K$36"
+    ],
+    "maintenance_annual": [
+      "One Time Cost",
+      "$N$36"
+    ],
+    "database_rate": [
+      "One Time Cost",
+      "$K$38"
+    ],
+    "database_annual": [
+      "One Time Cost",
+      "$N$38"
+    ],
+    "frontend_rate": [
+      "One Time Cost",
+      "$K$40"
+    ],
+    "frontend_annual": [
+      "One Time Cost",
+      "$N$40"
+    ],
+    "communication_rate": [
+      "One Time Cost",
+      "$K$42"
+    ],
+    "communication_annual": [
+      "One Time Cost",
+      "$N$42"
+    ],
+    "domain_rate": [
+      "One Time Cost",
+      "$K$44"
+    ],
+    "domain_annual": [
+      "One Time Cost",
+      "$N$44"
+    ],
+    "renewal_rate": [
+      "One Time Cost",
+      "$K$46"
+    ],
+    "renewal_annual": [
+      "One Time Cost",
+      "$N$46"
+    ],
+    "recurring_total": [
+      "One Time Cost",
+      "$N$48"
+    ],
+    "copy_training_kit": [
+      "Cost Explanation",
+      "$D$4"
+    ],
+    "copy_training_kit_subtotal": [
+      "Cost Explanation",
+      "$E$4"
+    ],
+    "copy_training_total": [
+      "Cost Explanation",
+      "$E$5"
+    ],
+    "copy_server_rate": [
+      "Cost Explanation",
+      "$D$15"
+    ],
+    "copy_server_subtotal": [
+      "Cost Explanation",
+      "$E$15"
+    ],
+    "copy_drive_rate": [
+      "Cost Explanation",
+      "$D$17"
+    ],
+    "copy_drive_subtotal": [
+      "Cost Explanation",
+      "$E$17"
+    ],
+    "copy_license_rate": [
+      "Cost Explanation",
+      "$D$19"
+    ],
+    "copy_license_subtotal": [
+      "Cost Explanation",
+      "$E$19"
+    ],
+    "copy_hardware_total": [
+      "Cost Explanation",
+      "$E$20"
+    ],
+    "copy_maintenance_rate": [
+      "Cost Explanation",
+      "$H$5"
+    ],
+    "copy_maintenance_annual": [
+      "Cost Explanation",
+      "$J$5"
+    ],
+    "copy_database_rate": [
+      "Cost Explanation",
+      "$H$6"
+    ],
+    "copy_database_annual": [
+      "Cost Explanation",
+      "$J$6"
+    ],
+    "copy_frontend_rate": [
+      "Cost Explanation",
+      "$H$8"
+    ],
+    "copy_frontend_annual": [
+      "Cost Explanation",
+      "$J$8"
+    ],
+    "copy_communication_rate": [
+      "Cost Explanation",
+      "$H$10"
+    ],
+    "copy_communication_annual": [
+      "Cost Explanation",
+      "$J$10"
+    ],
+    "copy_domain_rate": [
+      "Cost Explanation",
+      "$H$12"
+    ],
+    "copy_domain_annual": [
+      "Cost Explanation",
+      "$J$12"
+    ],
+    "copy_renewal_rate": [
+      "Cost Explanation",
+      "$H$14"
+    ],
+    "copy_renewal_annual": [
+      "Cost Explanation",
+      "$J$14"
+    ],
+    "copy_recurring_total": [
+      "Cost Explanation",
+      "$J$16"
+    ],
+    "existing_supply1_qty": [
+      "Tangible Benefits",
+      "$D$12"
+    ],
+    "existing_supply1_price": [
+      "Tangible Benefits",
+      "$F$12"
+    ],
+    "existing_supply1_subtotal": [
+      "Tangible Benefits",
+      "$H$12"
+    ],
+    "existing_supply2_qty": [
+      "Tangible Benefits",
+      "$D$13"
+    ],
+    "existing_supply2_price": [
+      "Tangible Benefits",
+      "$F$13"
+    ],
+    "existing_supply2_subtotal": [
+      "Tangible Benefits",
+      "$H$13"
+    ],
+    "existing_supply3_qty": [
+      "Tangible Benefits",
+      "$D$14"
+    ],
+    "existing_supply3_price": [
+      "Tangible Benefits",
+      "$F$14"
+    ],
+    "existing_supply3_subtotal": [
+      "Tangible Benefits",
+      "$H$14"
+    ],
+    "existing_supply4_qty": [
+      "Tangible Benefits",
+      "$D$15"
+    ],
+    "existing_supply4_price": [
+      "Tangible Benefits",
+      "$F$15"
+    ],
+    "existing_supply4_subtotal": [
+      "Tangible Benefits",
+      "$H$15"
+    ],
+    "existing_supply5_qty": [
+      "Tangible Benefits",
+      "$D$16"
+    ],
+    "existing_supply5_price": [
+      "Tangible Benefits",
+      "$F$16"
+    ],
+    "existing_supply5_subtotal": [
+      "Tangible Benefits",
+      "$H$16"
+    ],
+    "existing_supply6_qty": [
+      "Tangible Benefits",
+      "$D$17"
+    ],
+    "existing_supply6_price": [
+      "Tangible Benefits",
+      "$F$17"
+    ],
+    "existing_supply6_subtotal": [
+      "Tangible Benefits",
+      "$H$17"
+    ],
+    "existing_supply7_qty": [
+      "Tangible Benefits",
+      "$D$18"
+    ],
+    "existing_supply7_price": [
+      "Tangible Benefits",
+      "$F$18"
+    ],
+    "existing_supply7_subtotal": [
+      "Tangible Benefits",
+      "$H$18"
+    ],
+    "existing_supplies_total": [
+      "Tangible Benefits",
+      "$H$19"
+    ],
+    "proposed_supply1_qty": [
+      "Tangible Benefits",
+      "$L$12"
+    ],
+    "proposed_supply1_price": [
+      "Tangible Benefits",
+      "$N$12"
+    ],
+    "proposed_supply1_subtotal": [
+      "Tangible Benefits",
+      "$Q$12"
+    ],
+    "proposed_supply2_qty": [
+      "Tangible Benefits",
+      "$L$13"
+    ],
+    "proposed_supply2_price": [
+      "Tangible Benefits",
+      "$N$13"
+    ],
+    "proposed_supply2_subtotal": [
+      "Tangible Benefits",
+      "$Q$13"
+    ],
+    "proposed_supply3_qty": [
+      "Tangible Benefits",
+      "$L$14"
+    ],
+    "proposed_supply3_price": [
+      "Tangible Benefits",
+      "$N$14"
+    ],
+    "proposed_supply3_subtotal": [
+      "Tangible Benefits",
+      "$Q$14"
+    ],
+    "proposed_supply4_qty": [
+      "Tangible Benefits",
+      "$L$15"
+    ],
+    "proposed_supply4_price": [
+      "Tangible Benefits",
+      "$N$15"
+    ],
+    "proposed_supply4_subtotal": [
+      "Tangible Benefits",
+      "$Q$15"
+    ],
+    "proposed_supply5_qty": [
+      "Tangible Benefits",
+      "$L$16"
+    ],
+    "proposed_supply5_price": [
+      "Tangible Benefits",
+      "$N$16"
+    ],
+    "proposed_supply5_subtotal": [
+      "Tangible Benefits",
+      "$Q$16"
+    ],
+    "proposed_supply6_qty": [
+      "Tangible Benefits",
+      "$L$17"
+    ],
+    "proposed_supply6_price": [
+      "Tangible Benefits",
+      "$N$17"
+    ],
+    "proposed_supply6_subtotal": [
+      "Tangible Benefits",
+      "$Q$17"
+    ],
+    "proposed_supplies_total": [
+      "Tangible Benefits",
+      "$Q$19"
+    ],
+    "supplies_reduction": [
+      "Tangible Benefits",
+      "$P$22"
+    ],
+    "existing_labor1_monthly": [
+      "Tangible Benefits",
+      "$E$28"
+    ],
+    "existing_labor1_annual": [
+      "Tangible Benefits",
+      "$G$28"
+    ],
+    "existing_labor2_monthly": [
+      "Tangible Benefits",
+      "$E$29"
+    ],
+    "existing_labor2_annual": [
+      "Tangible Benefits",
+      "$G$29"
+    ],
+    "existing_labor3_monthly": [
+      "Tangible Benefits",
+      "$E$30"
+    ],
+    "existing_labor3_annual": [
+      "Tangible Benefits",
+      "$G$30"
+    ],
+    "existing_labor_total": [
+      "Tangible Benefits",
+      "$G$31"
+    ],
+    "proposed_labor1_monthly": [
+      "Tangible Benefits",
+      "$M$28"
+    ],
+    "proposed_labor1_annual": [
+      "Tangible Benefits",
+      "$O$28"
+    ],
+    "proposed_labor2_monthly": [
+      "Tangible Benefits",
+      "$M$29"
+    ],
+    "proposed_labor2_annual": [
+      "Tangible Benefits",
+      "$O$29"
+    ],
+    "proposed_labor3_monthly": [
+      "Tangible Benefits",
+      "$M$30"
+    ],
+    "proposed_labor3_annual": [
+      "Tangible Benefits",
+      "$O$30"
+    ],
+    "proposed_labor_total": [
+      "Tangible Benefits",
+      "$O$31"
+    ],
+    "labor_reduction": [
+      "Tangible Benefits",
+      "$P$34"
+    ],
+    "total_reduction": [
+      "Tangible Benefits",
+      "$P$37"
+    ],
+    "inventory_qty1": [
+      "Company Inventory",
+      "$D$5"
+    ],
+    "inventory_need1": [
+      "Company Inventory",
+      "$E$5"
+    ],
+    "inventory_gap1": [
+      "Company Inventory",
+      "$F$5"
+    ],
+    "inventory_qty2": [
+      "Company Inventory",
+      "$D$6"
+    ],
+    "inventory_need2": [
+      "Company Inventory",
+      "$E$6"
+    ],
+    "inventory_gap2": [
+      "Company Inventory",
+      "$F$6"
+    ],
+    "inventory_qty3": [
+      "Company Inventory",
+      "$D$7"
+    ],
+    "inventory_need3": [
+      "Company Inventory",
+      "$E$7"
+    ],
+    "inventory_gap3": [
+      "Company Inventory",
+      "$F$7"
+    ],
+    "inventory_qty4": [
+      "Company Inventory",
+      "$D$8"
+    ],
+    "inventory_need4": [
+      "Company Inventory",
+      "$E$8"
+    ],
+    "inventory_gap4": [
+      "Company Inventory",
+      "$F$8"
+    ],
+    "inventory_qty5": [
+      "Company Inventory",
+      "$D$9"
+    ],
+    "inventory_need5": [
+      "Company Inventory",
+      "$E$9"
+    ],
+    "inventory_gap5": [
+      "Company Inventory",
+      "$F$9"
+    ],
+    "inventory_qty6": [
+      "Company Inventory",
+      "$D$10"
+    ],
+    "inventory_need6": [
+      "Company Inventory",
+      "$E$10"
+    ],
+    "inventory_gap6": [
+      "Company Inventory",
+      "$F$10"
+    ],
+    "inventory_qty7": [
+      "Company Inventory",
+      "$D$11"
+    ],
+    "inventory_need7": [
+      "Company Inventory",
+      "$E$11"
+    ],
+    "inventory_gap7": [
+      "Company Inventory",
+      "$F$11"
+    ],
+    "inventory_qty8": [
+      "Company Inventory",
+      "$D$12"
+    ],
+    "inventory_need8": [
+      "Company Inventory",
+      "$E$12"
+    ],
+    "inventory_gap8": [
+      "Company Inventory",
+      "$F$12"
+    ],
+    "inventory_qty9": [
+      "Company Inventory",
+      "$D$13"
+    ],
+    "inventory_need9": [
+      "Company Inventory",
+      "$E$13"
+    ],
+    "inventory_gap9": [
+      "Company Inventory",
+      "$F$13"
+    ],
+    "inventory_qty10": [
+      "Company Inventory",
+      "$D$14"
+    ],
+    "inventory_need10": [
+      "Company Inventory",
+      "$E$14"
+    ],
+    "inventory_gap10": [
+      "Company Inventory",
+      "$F$14"
+    ],
+    "inventory_qty11": [
+      "Company Inventory",
+      "$D$15"
+    ],
+    "inventory_need11": [
+      "Company Inventory",
+      "$E$15"
+    ],
+    "inventory_gap11": [
+      "Company Inventory",
+      "$F$15"
+    ],
+    "inventory_qty12": [
+      "Company Inventory",
+      "$D$16"
+    ],
+    "inventory_need12": [
+      "Company Inventory",
+      "$E$16"
+    ],
+    "inventory_gap12": [
+      "Company Inventory",
+      "$F$16"
+    ],
+    "inventory_qty13": [
+      "Company Inventory",
+      "$D$17"
+    ],
+    "inventory_need13": [
+      "Company Inventory",
+      "$E$17"
+    ],
+    "inventory_gap13": [
+      "Company Inventory",
+      "$F$17"
+    ],
+    "inventory_qty14": [
+      "Company Inventory",
+      "$D$18"
+    ],
+    "inventory_need14": [
+      "Company Inventory",
+      "$E$18"
+    ],
+    "inventory_gap14": [
+      "Company Inventory",
+      "$F$18"
+    ],
+    "inventory_qty15": [
+      "Company Inventory",
+      "$D$19"
+    ],
+    "inventory_need15": [
+      "Company Inventory",
+      "$E$19"
+    ],
+    "inventory_gap15": [
+      "Company Inventory",
+      "$F$19"
+    ],
+    "inventory_qty16": [
+      "Company Inventory",
+      "$D$20"
+    ],
+    "inventory_need16": [
+      "Company Inventory",
+      "$E$20"
+    ],
+    "inventory_gap16": [
+      "Company Inventory",
+      "$F$20"
+    ],
+    "inventory_qty17": [
+      "Company Inventory",
+      "$D$21"
+    ],
+    "inventory_need17": [
+      "Company Inventory",
+      "$E$21"
+    ],
+    "inventory_gap17": [
+      "Company Inventory",
+      "$F$21"
+    ],
+    "inventory_qty18": [
+      "Company Inventory",
+      "$D$22"
+    ],
+    "inventory_need18": [
+      "Company Inventory",
+      "$E$22"
+    ],
+    "inventory_gap18": [
+      "Company Inventory",
+      "$F$22"
+    ],
+    "inventory_qty19": [
+      "Company Inventory",
+      "$D$23"
+    ],
+    "inventory_need19": [
+      "Company Inventory",
+      "$E$23"
+    ],
+    "inventory_gap19": [
+      "Company Inventory",
+      "$F$23"
+    ],
+    "inventory_qty20": [
+      "Company Inventory",
+      "$D$24"
+    ],
+    "inventory_need20": [
+      "Company Inventory",
+      "$E$24"
+    ],
+    "inventory_gap20": [
+      "Company Inventory",
+      "$F$24"
+    ],
+    "inventory_qty21": [
+      "Company Inventory",
+      "$D$25"
+    ],
+    "inventory_need21": [
+      "Company Inventory",
+      "$E$25"
+    ],
+    "inventory_gap21": [
+      "Company Inventory",
+      "$F$25"
+    ],
+    "inventory_qty22": [
+      "Company Inventory",
+      "$D$26"
+    ],
+    "inventory_need22": [
+      "Company Inventory",
+      "$E$26"
+    ],
+    "inventory_gap22": [
+      "Company Inventory",
+      "$F$26"
+    ],
+    "inventory_qty23": [
+      "Company Inventory",
+      "$D$27"
+    ],
+    "inventory_need23": [
+      "Company Inventory",
+      "$E$27"
+    ],
+    "inventory_gap23": [
+      "Company Inventory",
+      "$F$27"
+    ],
+    "inventory_qty24": [
+      "Company Inventory",
+      "$D$28"
+    ],
+    "inventory_need24": [
+      "Company Inventory",
+      "$E$28"
+    ],
+    "inventory_gap24": [
+      "Company Inventory",
+      "$F$28"
+    ],
+    "inventory_qty25": [
+      "Company Inventory",
+      "$D$29"
+    ],
+    "inventory_need25": [
+      "Company Inventory",
+      "$E$29"
+    ],
+    "inventory_gap25": [
+      "Company Inventory",
+      "$F$29"
+    ],
+    "inventory_qty26": [
+      "Company Inventory",
+      "$D$30"
+    ],
+    "inventory_need26": [
+      "Company Inventory",
+      "$E$30"
+    ],
+    "inventory_gap26": [
+      "Company Inventory",
+      "$F$30"
+    ],
+    "training_days": [
+      "Input Details",
+      "$C$7"
+    ],
+    "server_qty": [
+      "Input Details",
+      "$C$8"
+    ],
+    "drive_qty": [
+      "Input Details",
+      "$C$9"
+    ],
+    "license_qty": [
+      "Input Details",
+      "$C$10"
+    ],
+    "fx_php_usd": [
+      "Input Details",
+      "$C$11"
+    ],
+    "database_usd_month": [
+      "Input Details",
+      "$C$12"
+    ],
+    "hourly_labor_rate": [
+      "Input Details",
+      "$C$13"
+    ],
+    "existing_labor1_hours": [
+      "Input Details",
+      "$C$14"
+    ],
+    "existing_labor2_hours": [
+      "Input Details",
+      "$C$15"
+    ],
+    "existing_labor3_hours": [
+      "Input Details",
+      "$C$16"
+    ],
+    "proposed_labor1_hours": [
+      "Input Details",
+      "$C$17"
+    ],
+    "proposed_labor2_hours": [
+      "Input Details",
+      "$C$18"
+    ],
+    "proposed_labor3_hours": [
+      "Input Details",
+      "$C$19"
+    ]
+  },
+  "formulas": [
+    {
+      "sheet": "One Time Cost",
+      "cell": "G15",
+      "id": "dev1_subtotal",
+      "formula": "=IF(COUNT('One Time Cost'!$D$15,'One Time Cost'!$F$15)=2,'One Time Cost'!$D$15*'One Time Cost'!$F$15,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G17",
+      "id": "dev2_subtotal",
+      "formula": "=IF(COUNT('One Time Cost'!$D$17,'One Time Cost'!$F$17)=2,'One Time Cost'!$D$17*'One Time Cost'!$F$17,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G19",
+      "id": "dev3_subtotal",
+      "formula": "=IF(COUNT('One Time Cost'!$D$19,'One Time Cost'!$F$19)=2,'One Time Cost'!$D$19*'One Time Cost'!$F$19,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G20",
+      "id": "dev4_subtotal",
+      "formula": "=IF(COUNT('One Time Cost'!$D$20,'One Time Cost'!$F$20)=2,'One Time Cost'!$D$20*'One Time Cost'!$F$20,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G22",
+      "id": "development_total",
+      "formula": "=IF(COUNT('One Time Cost'!$G$15,'One Time Cost'!$G$17,'One Time Cost'!$G$19,'One Time Cost'!$G$20)=4,SUM('One Time Cost'!$G$15,'One Time Cost'!$G$17,'One Time Cost'!$G$19,'One Time Cost'!$G$20),\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H29",
+      "id": "training_subtotal",
+      "formula": "=IF(COUNT('One Time Cost'!$E$29,'Input Details'!$C$7)=2,'One Time Cost'!$E$29*'Input Details'!$C$7,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H30",
+      "id": "training_kit_subtotal",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$E$30),'One Time Cost'!$E$30,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H32",
+      "id": "training_total",
+      "formula": "=IF(COUNT('One Time Cost'!$H$29,'One Time Cost'!$H$30)=2,SUM('One Time Cost'!$H$29,'One Time Cost'!$H$30),\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H43",
+      "id": "server_subtotal",
+      "formula": "=IF(COUNT('One Time Cost'!$E$43,'Input Details'!$C$8)=2,'One Time Cost'!$E$43*'Input Details'!$C$8,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H45",
+      "id": "drive_subtotal",
+      "formula": "=IF(COUNT('One Time Cost'!$E$45,'Input Details'!$C$9)=2,'One Time Cost'!$E$45*'Input Details'!$C$9,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H47",
+      "id": "license_subtotal",
+      "formula": "=IF(COUNT('One Time Cost'!$E$47,'Input Details'!$C$10)=2,'One Time Cost'!$E$47*'Input Details'!$C$10,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H49",
+      "id": "hardware_total",
+      "formula": "=IF(COUNT('One Time Cost'!$H$43,'One Time Cost'!$H$45,'One Time Cost'!$H$47)=3,SUM('One Time Cost'!$H$43,'One Time Cost'!$H$45,'One Time Cost'!$H$47),\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "L14",
+      "id": "summary_development_total",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$G$22),'One Time Cost'!$G$22,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "L16",
+      "id": "summary_training_total",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$H$32),'One Time Cost'!$H$32,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "L18",
+      "id": "summary_hardware_total",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$H$49),'One Time Cost'!$H$49,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "L21",
+      "id": "one_time_total",
+      "formula": "=IF(COUNT('One Time Cost'!$G$22,'One Time Cost'!$H$32,'One Time Cost'!$H$49)=3,SUM('One Time Cost'!$G$22,'One Time Cost'!$H$32,'One Time Cost'!$H$49),\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N36",
+      "id": "maintenance_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$36),'One Time Cost'!$K$36*12,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K38",
+      "id": "database_rate",
+      "formula": "=IF(COUNT('Input Details'!$C$12,'Input Details'!$C$11)=2,'Input Details'!$C$12*'Input Details'!$C$11,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N38",
+      "id": "database_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$38),'One Time Cost'!$K$38*12,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N40",
+      "id": "frontend_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$40),'One Time Cost'!$K$40*12,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N42",
+      "id": "communication_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$42),'One Time Cost'!$K$42*12,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N44",
+      "id": "domain_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$44),'One Time Cost'!$K$44*1,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N46",
+      "id": "renewal_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$46),'One Time Cost'!$K$46*1,\"\")"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N48",
+      "id": "recurring_total",
+      "formula": "=IF(COUNT('One Time Cost'!$N$36,'One Time Cost'!$N$38,'One Time Cost'!$N$40,'One Time Cost'!$N$42,'One Time Cost'!$N$44,'One Time Cost'!$N$46)=6,SUM('One Time Cost'!$N$36,'One Time Cost'!$N$38,'One Time Cost'!$N$40,'One Time Cost'!$N$42,'One Time Cost'!$N$44,'One Time Cost'!$N$46),\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "D4",
+      "id": "copy_training_kit",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$E$30),'One Time Cost'!$E$30,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E4",
+      "id": "copy_training_kit_subtotal",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$H$30),'One Time Cost'!$H$30,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E5",
+      "id": "copy_training_total",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$H$32),'One Time Cost'!$H$32,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "D15",
+      "id": "copy_server_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$E$43),'One Time Cost'!$E$43,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E15",
+      "id": "copy_server_subtotal",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$H$43),'One Time Cost'!$H$43,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "D17",
+      "id": "copy_drive_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$E$45),'One Time Cost'!$E$45,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E17",
+      "id": "copy_drive_subtotal",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$H$45),'One Time Cost'!$H$45,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "D19",
+      "id": "copy_license_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$E$47),'One Time Cost'!$E$47,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E19",
+      "id": "copy_license_subtotal",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$H$47),'One Time Cost'!$H$47,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E20",
+      "id": "copy_hardware_total",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$H$49),'One Time Cost'!$H$49,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H5",
+      "id": "copy_maintenance_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$36),'One Time Cost'!$K$36,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J5",
+      "id": "copy_maintenance_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$N$36),'One Time Cost'!$N$36,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H6",
+      "id": "copy_database_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$38),'One Time Cost'!$K$38,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J6",
+      "id": "copy_database_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$N$38),'One Time Cost'!$N$38,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H8",
+      "id": "copy_frontend_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$40),'One Time Cost'!$K$40,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J8",
+      "id": "copy_frontend_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$N$40),'One Time Cost'!$N$40,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H10",
+      "id": "copy_communication_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$42),'One Time Cost'!$K$42,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J10",
+      "id": "copy_communication_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$N$42),'One Time Cost'!$N$42,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H12",
+      "id": "copy_domain_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$44),'One Time Cost'!$K$44,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J12",
+      "id": "copy_domain_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$N$44),'One Time Cost'!$N$44,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H14",
+      "id": "copy_renewal_rate",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$K$46),'One Time Cost'!$K$46,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J14",
+      "id": "copy_renewal_annual",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$N$46),'One Time Cost'!$N$46,\"\")"
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J16",
+      "id": "copy_recurring_total",
+      "formula": "=IF(ISNUMBER('One Time Cost'!$N$48),'One Time Cost'!$N$48,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H12",
+      "id": "existing_supply1_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$D$12,'Tangible Benefits'!$F$12)=2,'Tangible Benefits'!$D$12*'Tangible Benefits'!$F$12,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H13",
+      "id": "existing_supply2_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$D$13,'Tangible Benefits'!$F$13)=2,'Tangible Benefits'!$D$13*'Tangible Benefits'!$F$13,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H14",
+      "id": "existing_supply3_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$D$14,'Tangible Benefits'!$F$14)=2,'Tangible Benefits'!$D$14*'Tangible Benefits'!$F$14,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H15",
+      "id": "existing_supply4_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$D$15,'Tangible Benefits'!$F$15)=2,'Tangible Benefits'!$D$15*'Tangible Benefits'!$F$15,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H16",
+      "id": "existing_supply5_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$D$16,'Tangible Benefits'!$F$16)=2,'Tangible Benefits'!$D$16*'Tangible Benefits'!$F$16,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H17",
+      "id": "existing_supply6_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$D$17,'Tangible Benefits'!$F$17)=2,'Tangible Benefits'!$D$17*'Tangible Benefits'!$F$17,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H18",
+      "id": "existing_supply7_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$D$18,'Tangible Benefits'!$F$18)=2,'Tangible Benefits'!$D$18*'Tangible Benefits'!$F$18,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H19",
+      "id": "existing_supplies_total",
+      "formula": "=IF(COUNT('Tangible Benefits'!$H$12,'Tangible Benefits'!$H$13,'Tangible Benefits'!$H$14,'Tangible Benefits'!$H$15,'Tangible Benefits'!$H$16,'Tangible Benefits'!$H$17,'Tangible Benefits'!$H$18)=7,SUM('Tangible Benefits'!$H$12,'Tangible Benefits'!$H$13,'Tangible Benefits'!$H$14,'Tangible Benefits'!$H$15,'Tangible Benefits'!$H$16,'Tangible Benefits'!$H$17,'Tangible Benefits'!$H$18),\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q12",
+      "id": "proposed_supply1_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$L$12,'Tangible Benefits'!$N$12)=2,'Tangible Benefits'!$L$12*'Tangible Benefits'!$N$12,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q13",
+      "id": "proposed_supply2_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$L$13,'Tangible Benefits'!$N$13)=2,'Tangible Benefits'!$L$13*'Tangible Benefits'!$N$13,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q14",
+      "id": "proposed_supply3_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$L$14,'Tangible Benefits'!$N$14)=2,'Tangible Benefits'!$L$14*'Tangible Benefits'!$N$14,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q15",
+      "id": "proposed_supply4_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$L$15,'Tangible Benefits'!$N$15)=2,'Tangible Benefits'!$L$15*'Tangible Benefits'!$N$15,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q16",
+      "id": "proposed_supply5_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$L$16,'Tangible Benefits'!$N$16)=2,'Tangible Benefits'!$L$16*'Tangible Benefits'!$N$16,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q17",
+      "id": "proposed_supply6_subtotal",
+      "formula": "=IF(COUNT('Tangible Benefits'!$L$17,'Tangible Benefits'!$N$17)=2,'Tangible Benefits'!$L$17*'Tangible Benefits'!$N$17,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q19",
+      "id": "proposed_supplies_total",
+      "formula": "=IF(COUNT('Tangible Benefits'!$Q$12,'Tangible Benefits'!$Q$13,'Tangible Benefits'!$Q$14,'Tangible Benefits'!$Q$15,'Tangible Benefits'!$Q$16,'Tangible Benefits'!$Q$17)=6,SUM('Tangible Benefits'!$Q$12,'Tangible Benefits'!$Q$13,'Tangible Benefits'!$Q$14,'Tangible Benefits'!$Q$15,'Tangible Benefits'!$Q$16,'Tangible Benefits'!$Q$17),\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "P22",
+      "id": "supplies_reduction",
+      "formula": "=IF(COUNT('Tangible Benefits'!$H$19,'Tangible Benefits'!$Q$19)=2,'Tangible Benefits'!$H$19-'Tangible Benefits'!$Q$19,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "E28",
+      "id": "existing_labor1_monthly",
+      "formula": "=IF(COUNT('Input Details'!$C$14,'Input Details'!$C$13)=2,'Input Details'!$C$14*'Input Details'!$C$13,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "G28",
+      "id": "existing_labor1_annual",
+      "formula": "=IF(ISNUMBER('Tangible Benefits'!$E$28),'Tangible Benefits'!$E$28*12,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "E29",
+      "id": "existing_labor2_monthly",
+      "formula": "=IF(COUNT('Input Details'!$C$15,'Input Details'!$C$13)=2,'Input Details'!$C$15*'Input Details'!$C$13,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "G29",
+      "id": "existing_labor2_annual",
+      "formula": "=IF(ISNUMBER('Tangible Benefits'!$E$29),'Tangible Benefits'!$E$29*12,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "E30",
+      "id": "existing_labor3_monthly",
+      "formula": "=IF(COUNT('Input Details'!$C$16,'Input Details'!$C$13)=2,'Input Details'!$C$16*'Input Details'!$C$13,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "G30",
+      "id": "existing_labor3_annual",
+      "formula": "=IF(ISNUMBER('Tangible Benefits'!$E$30),'Tangible Benefits'!$E$30*12,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "G31",
+      "id": "existing_labor_total",
+      "formula": "=IF(COUNT('Tangible Benefits'!$G$28,'Tangible Benefits'!$G$29,'Tangible Benefits'!$G$30)=3,SUM('Tangible Benefits'!$G$28,'Tangible Benefits'!$G$29,'Tangible Benefits'!$G$30),\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "M28",
+      "id": "proposed_labor1_monthly",
+      "formula": "=IF(COUNT('Input Details'!$C$17,'Input Details'!$C$13)=2,'Input Details'!$C$17*'Input Details'!$C$13,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "O28",
+      "id": "proposed_labor1_annual",
+      "formula": "=IF(ISNUMBER('Tangible Benefits'!$M$28),'Tangible Benefits'!$M$28*12,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "M29",
+      "id": "proposed_labor2_monthly",
+      "formula": "=IF(COUNT('Input Details'!$C$18,'Input Details'!$C$13)=2,'Input Details'!$C$18*'Input Details'!$C$13,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "O29",
+      "id": "proposed_labor2_annual",
+      "formula": "=IF(ISNUMBER('Tangible Benefits'!$M$29),'Tangible Benefits'!$M$29*12,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "M30",
+      "id": "proposed_labor3_monthly",
+      "formula": "=IF(COUNT('Input Details'!$C$19,'Input Details'!$C$13)=2,'Input Details'!$C$19*'Input Details'!$C$13,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "O30",
+      "id": "proposed_labor3_annual",
+      "formula": "=IF(ISNUMBER('Tangible Benefits'!$M$30),'Tangible Benefits'!$M$30*12,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "O31",
+      "id": "proposed_labor_total",
+      "formula": "=IF(COUNT('Tangible Benefits'!$O$28,'Tangible Benefits'!$O$29,'Tangible Benefits'!$O$30)=3,SUM('Tangible Benefits'!$O$28,'Tangible Benefits'!$O$29,'Tangible Benefits'!$O$30),\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "P34",
+      "id": "labor_reduction",
+      "formula": "=IF(COUNT('Tangible Benefits'!$G$31,'Tangible Benefits'!$O$31)=2,'Tangible Benefits'!$G$31-'Tangible Benefits'!$O$31,\"\")"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "P37",
+      "id": "total_reduction",
+      "formula": "=IF(COUNT('Tangible Benefits'!$P$34,'Tangible Benefits'!$P$22)=2,SUM('Tangible Benefits'!$P$34,'Tangible Benefits'!$P$22),\"\")"
+    }
+  ],
+  "inputs": [
+    {
+      "sheet": "One Time Cost",
+      "cell": "D15",
+      "id": "dev1_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "F15",
+      "id": "dev1_months"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "D17",
+      "id": "dev2_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "F17",
+      "id": "dev2_months"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "D19",
+      "id": "dev3_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "F19",
+      "id": "dev3_months"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "D20",
+      "id": "dev4_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "F20",
+      "id": "dev4_months"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E29",
+      "id": "training_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E30",
+      "id": "training_kit"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E43",
+      "id": "server_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E45",
+      "id": "drive_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E47",
+      "id": "license_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K36",
+      "id": "maintenance_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K40",
+      "id": "frontend_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K42",
+      "id": "communication_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K44",
+      "id": "domain_rate"
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K46",
+      "id": "renewal_rate"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "D12",
+      "id": "existing_supply1_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F12",
+      "id": "existing_supply1_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "D13",
+      "id": "existing_supply2_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F13",
+      "id": "existing_supply2_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "D14",
+      "id": "existing_supply3_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F14",
+      "id": "existing_supply3_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "D15",
+      "id": "existing_supply4_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F15",
+      "id": "existing_supply4_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "D16",
+      "id": "existing_supply5_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F16",
+      "id": "existing_supply5_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "D17",
+      "id": "existing_supply6_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F17",
+      "id": "existing_supply6_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "D18",
+      "id": "existing_supply7_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F18",
+      "id": "existing_supply7_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "L12",
+      "id": "proposed_supply1_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N12",
+      "id": "proposed_supply1_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "L13",
+      "id": "proposed_supply2_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N13",
+      "id": "proposed_supply2_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "L14",
+      "id": "proposed_supply3_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N14",
+      "id": "proposed_supply3_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "L15",
+      "id": "proposed_supply4_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N15",
+      "id": "proposed_supply4_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "L16",
+      "id": "proposed_supply5_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N16",
+      "id": "proposed_supply5_price"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "L17",
+      "id": "proposed_supply6_qty"
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N17",
+      "id": "proposed_supply6_price"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C7",
+      "id": "training_days"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C8",
+      "id": "server_qty"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C9",
+      "id": "drive_qty"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C10",
+      "id": "license_qty"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C11",
+      "id": "fx_php_usd"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C12",
+      "id": "database_usd_month"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C13",
+      "id": "hourly_labor_rate"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C14",
+      "id": "existing_labor1_hours"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C15",
+      "id": "existing_labor2_hours"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C16",
+      "id": "existing_labor3_hours"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C17",
+      "id": "proposed_labor1_hours"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C18",
+      "id": "proposed_labor2_hours"
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C19",
+      "id": "proposed_labor3_hours"
+    }
+  ],
+  "financial_cells": [
+    {
+      "sheet": "One Time Cost",
+      "cell": "D15",
+      "id": "dev1_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G15",
+      "id": "dev1_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "D17",
+      "id": "dev2_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G17",
+      "id": "dev2_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "D19",
+      "id": "dev3_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G19",
+      "id": "dev3_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "D20",
+      "id": "dev4_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G20",
+      "id": "dev4_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "G22",
+      "id": "development_total",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E29",
+      "id": "training_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H29",
+      "id": "training_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E30",
+      "id": "training_kit",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H30",
+      "id": "training_kit_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H32",
+      "id": "training_total",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E43",
+      "id": "server_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H43",
+      "id": "server_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E45",
+      "id": "drive_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H45",
+      "id": "drive_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "E47",
+      "id": "license_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H47",
+      "id": "license_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "H49",
+      "id": "hardware_total",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "L14",
+      "id": "summary_development_total",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "L16",
+      "id": "summary_training_total",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "L18",
+      "id": "summary_hardware_total",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "L21",
+      "id": "one_time_total",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K36",
+      "id": "maintenance_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N36",
+      "id": "maintenance_annual",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K38",
+      "id": "database_rate",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N38",
+      "id": "database_annual",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K40",
+      "id": "frontend_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N40",
+      "id": "frontend_annual",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K42",
+      "id": "communication_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N42",
+      "id": "communication_annual",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K44",
+      "id": "domain_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N44",
+      "id": "domain_annual",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "K46",
+      "id": "renewal_rate",
+      "formula": false
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N46",
+      "id": "renewal_annual",
+      "formula": true
+    },
+    {
+      "sheet": "One Time Cost",
+      "cell": "N48",
+      "id": "recurring_total",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "D4",
+      "id": "copy_training_kit",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E4",
+      "id": "copy_training_kit_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E5",
+      "id": "copy_training_total",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "D15",
+      "id": "copy_server_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E15",
+      "id": "copy_server_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "D17",
+      "id": "copy_drive_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E17",
+      "id": "copy_drive_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "D19",
+      "id": "copy_license_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E19",
+      "id": "copy_license_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "E20",
+      "id": "copy_hardware_total",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H5",
+      "id": "copy_maintenance_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J5",
+      "id": "copy_maintenance_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H6",
+      "id": "copy_database_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J6",
+      "id": "copy_database_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H8",
+      "id": "copy_frontend_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J8",
+      "id": "copy_frontend_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H10",
+      "id": "copy_communication_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J10",
+      "id": "copy_communication_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H12",
+      "id": "copy_domain_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J12",
+      "id": "copy_domain_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "H14",
+      "id": "copy_renewal_rate",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J14",
+      "id": "copy_renewal_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Cost Explanation",
+      "cell": "J16",
+      "id": "copy_recurring_total",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F12",
+      "id": "existing_supply1_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H12",
+      "id": "existing_supply1_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F13",
+      "id": "existing_supply2_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H13",
+      "id": "existing_supply2_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F14",
+      "id": "existing_supply3_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H14",
+      "id": "existing_supply3_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F15",
+      "id": "existing_supply4_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H15",
+      "id": "existing_supply4_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F16",
+      "id": "existing_supply5_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H16",
+      "id": "existing_supply5_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F17",
+      "id": "existing_supply6_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H17",
+      "id": "existing_supply6_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "F18",
+      "id": "existing_supply7_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H18",
+      "id": "existing_supply7_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "H19",
+      "id": "existing_supplies_total",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N12",
+      "id": "proposed_supply1_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q12",
+      "id": "proposed_supply1_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N13",
+      "id": "proposed_supply2_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q13",
+      "id": "proposed_supply2_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N14",
+      "id": "proposed_supply3_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q14",
+      "id": "proposed_supply3_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N15",
+      "id": "proposed_supply4_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q15",
+      "id": "proposed_supply4_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N16",
+      "id": "proposed_supply5_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q16",
+      "id": "proposed_supply5_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "N17",
+      "id": "proposed_supply6_price",
+      "formula": false
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q17",
+      "id": "proposed_supply6_subtotal",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "Q19",
+      "id": "proposed_supplies_total",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "P22",
+      "id": "supplies_reduction",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "E28",
+      "id": "existing_labor1_monthly",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "G28",
+      "id": "existing_labor1_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "E29",
+      "id": "existing_labor2_monthly",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "G29",
+      "id": "existing_labor2_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "E30",
+      "id": "existing_labor3_monthly",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "G30",
+      "id": "existing_labor3_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "G31",
+      "id": "existing_labor_total",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "M28",
+      "id": "proposed_labor1_monthly",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "O28",
+      "id": "proposed_labor1_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "M29",
+      "id": "proposed_labor2_monthly",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "O29",
+      "id": "proposed_labor2_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "M30",
+      "id": "proposed_labor3_monthly",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "O30",
+      "id": "proposed_labor3_annual",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "O31",
+      "id": "proposed_labor_total",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "P34",
+      "id": "labor_reduction",
+      "formula": true
+    },
+    {
+      "sheet": "Tangible Benefits",
+      "cell": "P37",
+      "id": "total_reduction",
+      "formula": true
+    },
+    {
+      "sheet": "Input Details",
+      "cell": "C13",
+      "id": "hourly_labor_rate",
+      "formula": false
+    }
+  ]
+}

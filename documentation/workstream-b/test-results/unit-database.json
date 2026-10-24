@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "exitCode": 0,
+  "tests": 25,
+  "pass": 25,
+  "fail": 0,
+  "skipped": 0,
+  "files": [
+    "custody-lifecycle-v2/returns.test.cjs",
+    "custody-lifecycle-v2/security.test.cjs",
+    "qr-movement-v2/qr-transfer.test.cjs",
+    "qr-movement-v2/camera.test.cjs",
+    "movement-evidence-v2/evidence.test.cjs",
+    "equipment-retirement-v2/retirement.test.cjs"
+  ],
+  "scope": "Disposable single-connection PostgreSQL (PGlite), module unit tests and RLS fixtures; no live Supabase or multi-session contention test"
+}
