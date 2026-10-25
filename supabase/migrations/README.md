@@ -1,5 +1,15 @@
 # Manual migration gate
 
+For the quantity/custody release, the forward correction
+`202610250004_read_rpc_authorization.sql` follows the reviewed 001 -> 002 -> 003
+sequence. It preserves mutation locking and changes authorization only for seven
+STABLE readers. Existing staging must receive only the missing correction, through
+[the staging-only guarded wrapper](../staging-read-rpc-correction.psql), after
+confirming actual hosted state. Never apply both the old proposed fix and 004.
+See [current release status](../../documentation/integration-quantity-custody-v2/RELEASE-STATUS.md).
+This is not approval to apply any production SQL or replay historical migrations.
+
+
 For the Admin Projects construction/history upgrade, use the separate
 [Projects engineering report and deployment order](../../documentation/project-construction-2026-10-23/REPORT.md).
 Run the read-only `supabase/project-construction-preflight.sql`, review its actual
