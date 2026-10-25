@@ -1,6 +1,10 @@
 // Browser transport models Supabase Auth; RPCs and RLS run against real local PostgreSQL.
 // External resources are blocked. No requests to the live Supabase project.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),http=require('node:http');
+// The default application smoke test follows the integrated production routes.
+// Historical fixture-specific modes remain explicit flags below.
+if(process.argv.length===2)process.argv.push('--combined-integration');
+if(process.argv.includes('--review-fixes')||process.argv.includes('--final-races'))process.argv.push('--combined-integration');
 const {spawn}=require('node:child_process'),{once}=require('node:events'),{authDatabase}=require('./auth-test-db.cjs');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'mcpa-auth-'));
 let fixture,chrome,socket,passwordLogged=false;const errors=[],calls=[];
@@ -44,7 +48,7 @@ const server=http.createServer(async(req,res)=>{
     if(q.storage==='upload'){
      const bucket=(await fixture.db.query('select * from storage.buckets where id=$1',[q.bucket])).rows[0];
      if(!bucket||q.size>Number(bucket.file_size_limit)||!bucket.allowed_mime_types.includes(q.type)||q.options?.upsert)throw new Error('Invalid isolated upload');
-     await fixture.query(actor,'insert into storage.objects(bucket_id,name) values($1,$2)',[q.bucket,q.name]);
+     if(process.argv.includes('--combined-integration'))await fixture.query(actor,'insert into storage.objects(bucket_id,name,metadata) values($1,$2,$3)',[q.bucket,q.name,JSON.stringify({mimetype:q.type,size:q.size})]);else await fixture.query(actor,'insert into storage.objects(bucket_id,name) values($1,$2)',[q.bucket,q.name]);
      storedFiles.set(q.bucket+'/'+q.name,{bytes:Buffer.from(q.body,'base64'),type:q.type});data={path:q.name};
     }else if(q.storage==='remove'){
      for(const name of q.names){const rows=(await fixture.query(actor,'delete from storage.objects where bucket_id=$1 and name=$2 returning name',[q.bucket,name])).rows;if(rows.length)storedFiles.delete(q.bucket+'/'+name);}data=[];
@@ -89,11 +93,12 @@ const server=http.createServer(async(req,res)=>{
  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.writeHead(404);res.end();return;}
  let content=fs.readFileSync(file);if(file.endsWith('index.html'))content=content.toString().replace(/<script src="https:[^"]+"[^>]*><\/script>/g,'').replace('</head>','<script src="/__sdk.js"></script></head>');
  if(process.argv.includes('--equipment-fixes')&&file.endsWith('masterlist.js'))content=content.toString().replaceAll('https://api.qrserver.com/v1/create-qr-code/','/__qr');
- res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.png':'image/png','.webp':'image/webp'})[path.extname(file)]||'text/plain');res.end(content);
+ res.setHeader('Content-Type',({'.mjs':'text/javascript','.js':'text/javascript','.html':'text/html','.css':'text/css','.png':'image/png','.webp':'image/webp'})[path.extname(file)]||'text/plain');res.end(content);
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
- fixture=await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ fixture=process.argv.includes('--combined-integration')?await require('./integration-quantity-custody-v2/fixture.cjs').fixture():await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ if(!process.argv.includes('--combined-integration')){
  if(process.argv.includes('--project-construction') || process.argv.includes('--admin-equipment-summary'))await require('./project-construction-fixture.cjs').upgrade(fixture);
  console.log('Browser fixture ready; isolated local database');
  // Compose each fixture dependency once, then install Office returns after the
@@ -129,6 +134,8 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  }
  await fixture.db.query("insert into sites(id,name,location,assigned_engineer,assigned_engineer_id) values($1,'MCPA Development Transfer Test','Local fixture only','Engr Sky',$2)",[require('node:crypto').randomUUID(),fixture.actors.sky.id]);
  if(process.argv.includes('--equipment-import'))await require('./equipment-import-fixture.cjs').upgrade(fixture);
+ }
+ if(process.argv.includes('--combined-integration')){const original=fixture.rpc;fixture.rpc=(actor,name,args)=>/^(mcpa_(wa_|b_|import_equipment_v2))/.test(name)?fixture.call(actor,name,args):original(actor,name,args);}
  server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new',...(process.env.MCPA_CHROME_NO_SANDBOX==='1'?['--no-sandbox','--disable-gpu','--disable-gpu-sandbox']:[]),'--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
  let port;for(let i=0;i<100;i++){const p=path.join(profile,'DevToolsActivePort');if(fs.existsSync(p)){port=fs.readFileSync(p,'utf8').split('\n')[0];break;}await pause(100);}assert.ok(port);
@@ -147,6 +154,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  console.log('Local Chrome ready; external HTTPS blocked');
  const base=`http://127.0.0.1:${server.address().port}`;
+ if(process.argv.includes('--combined-integration')){
+  await require(process.argv.includes('--final-races')?'./integration-quantity-custody-v2/final-races.browser-checks.cjs':process.argv.includes('--review-fixes')?'./integration-quantity-custody-v2/review-fixes.browser-checks.cjs':'./integration-quantity-custody-v2/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot});
+  assert.deepEqual(errors,[],'No uncaught browser errors');return;
+ }
  if(process.argv.includes('--terminology')){
   await require('./terminology.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,go,login,logout,base,calls});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;

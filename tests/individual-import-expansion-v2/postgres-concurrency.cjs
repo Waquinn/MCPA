@@ -3,7 +3,8 @@
 // Usage: node tests/individual-import-expansion-v2/postgres-concurrency.cjs <portable-pg-bin>
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),net=require('node:net'),cp=require('node:child_process');
 const assert=require('node:assert/strict'),{randomUUID,randomBytes,createHash}=require('node:crypto');
-const root=path.resolve(__dirname,'../..'),output=path.join(root,'documentation/workstream-a/postgres-concurrency');
+const combined=process.argv.includes('--combined');
+const root=path.resolve(__dirname,'../..'),output=path.join(root,combined?'documentation/integration-quantity-custody-v2/native':'documentation/workstream-a/postgres-concurrency');
 const bin=process.argv[2]&&path.resolve(process.argv[2]),exe=name=>path.join(bin,name+(process.platform==='win32'?'.exe':''));
 if(!bin||!['initdb','pg_ctl','psql','postgres'].every(n=>fs.existsSync(exe(n)))){console.error('BLOCKED: native PostgreSQL binaries unavailable; no concurrency pass is claimed.');process.exit(2);}
 fs.mkdirSync(output,{recursive:true});
@@ -84,7 +85,7 @@ async function fixture(){
   await execute(sql('supabase/migrations/202610120004_equipment_office_default.sql'));
   await execute(`create schema storage;grant usage on schema storage to authenticated,anon;
     create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
-    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text,unique(bucket_id,name));
+    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text,metadata jsonb default '{}',unique(bucket_id,name));
     alter table storage.objects enable row level security;grant select,insert,update,delete on storage.objects to authenticated,anon;`);
   await execute(sql('supabase/migrations/202610210001_equipment_photo_compatibility.sql'));
   // Pre-existing custody and photo data must survive migration and concurrent use.
@@ -131,6 +132,7 @@ async function materialRequests(label,opening,quantity,count=1){
       const migration=sql('supabase/migrations/'+name);await execute(migration,'install-'+name);
       if(name==='202610250001_quantity_material_requests.sql')report.migrationSHA256=createHash('sha256').update(migration).digest('hex');
     }
+    if(combined)for(const name of ['202610100004_movement_cancellation.sql','202610100006_monitoring.sql','202610250002_custody_lifecycle.sql','202610250003_quantity_custody_integration.sql'])await execute(sql('supabase/migrations/'+name),'combined-install-'+name);
     const after=await snapshot();assert.deepEqual(after.equipment,baseline.equipment);assert.deepEqual(after.storage,baseline.storage);assert.deepEqual(after.movements,baseline.movements);
   });
   await check('simultaneous Individual expansion retries commit one physical set and one pair of immutable receipts',async()=>{
@@ -181,8 +183,9 @@ async function materialRequests(label,opening,quantity,count=1){
     const statuses=await query(`select jsonb_build_object('statuses',jsonb_agg(status order by status)) from mcpa_wa_material_requests where id in (${requests.map(r=>lit(r.id)).join(',')})`);
     assert.deepEqual(statuses.statuses,['approved','issued']);return {waits,issues:1,stock:1};
   });
+  if(combined)await require('../integration-quantity-custody-v2/native-cases.cjs').run({check,execute,query,wa,as,identity,hold,finish,waitLocks,fails,parse,imported,row,lit,json,uid,actors,sites,equipmentRequests,allocateSQL});
   await check('final integrity preserves baseline data and all receipts reference authoritative equipment and stock movements',async()=>{
-    const end=await snapshot();assert.deepEqual(end.equipment.filter(e=>e.asset_id.startsWith('BASELINE-')),baseline.equipment);assert.deepEqual(end.storage,baseline.storage);
+    const end=await snapshot();assert.deepEqual(end.equipment.filter(e=>e.asset_id.startsWith('BASELINE-')),baseline.equipment);assert.deepEqual(end.storage.filter(s=>baseline.storage.some(b=>b.id===s.id)),baseline.storage);
     const integrity=await query(`select jsonb_build_object('equipment',(select count(*) from equipment),'distinctTags',(select count(distinct asset_id) from equipment),'badImportReferences',(select count(*) from mcpa_wa_import_operations i cross join lateral jsonb_array_elements(i.result->'assets') a left join equipment e on e.id=(a->>'id')::uuid and e.asset_id=a->>'asset_id' where e.id is null),'badIssueReferences',(select count(*) from mcpa_wa_material_issues i left join consumable_stock_movements m on m.id=i.stock_movement_id where m.id is null or m.quantity_change>=0),'negativeStock',(select count(*) from consumables where current_stock<0),'waitingLocks',(select count(*) from pg_stat_activity where datname=current_database() and wait_event_type='Lock'))`);
     assert.equal(integrity.equipment,integrity.distinctTags);assert.equal(integrity.badImportReferences,0);assert.equal(integrity.badIssueReferences,0);assert.equal(integrity.negativeStock,0);assert.equal(integrity.waitingLocks,0);report.observations.integrity=integrity;return integrity;
   });

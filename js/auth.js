@@ -21,6 +21,7 @@
   const client = () => window.EquipmentTracking.client();
   const rootUrl = () => new URL(location.pathname.includes('/2-engr/') ? '../index.html' : 'index.html',location.href).href.split('#')[0];
   function clearApplication() {
+    window.MCPAIntegration?.dispose();
     window.MCPAAccountMenu?.close(false);
     window.MCPANavigation?.suspend();
     window.resetApplication?.();

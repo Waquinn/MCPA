@@ -21,6 +21,8 @@
     button?.setAttribute('aria-expanded',String(!!dialog?.open));button?.setAttribute('aria-haspopup','dialog');button?.setAttribute('aria-controls','monitoring-dialog');
   }
   function route(notice){
+    if(notice.kind==='movement'&&['quantity-request','outward-materials'].includes(notice.data?.route)&&typeof notice.entityId==='string'&&notice.entityId.length<=120)return notice.data.route+'?record='+encodeURIComponent(notice.entityId);
+    if(notice.kind==='movement'&&notice.data?.route==='asset-retirement-v2'&&typeof notice.entityId==='string'&&notice.entityId.length<=120)return 'asset-retirement-v2?record='+encodeURIComponent(notice.entityId);
     if(notice.kind==='overdue'&&typeof notice.entityId==='string'&&notice.entityId.length<=120)return 'request?record='+encodeURIComponent(notice.entityId);
     if(notice.kind==='movement'&&['request','transfer','return','repair','missing'].includes(notice.data?.route)&&typeof notice.entityId==='string'&&notice.entityId.length<=120)return notice.data.route+'?record='+encodeURIComponent(notice.entityId);
     return ['reports','masterlist'].includes(notice.data?.route)?notice.data.route:'activity';

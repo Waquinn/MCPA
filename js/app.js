@@ -29,6 +29,7 @@ let moduleAbort = null;
 let pendingModule = null;
 
 function disposeLoadedModule(){
+  window.MCPAIntegration?.dispose();
   window.MovementUI?.dispose();
   window.MovementOverview?.dispose();
   window.TrackingView?.dispose();
@@ -46,6 +47,18 @@ function disposeLoadedModule(){
    module's CSS is only ever attached once. */
 function loadModule(screenId, callback, route = screenId){
   if (!window.MCPAAuth?.canRoute(screenId)) { if (window.MCPAAuth?.profile) MCPAAuth.deny(); return; }
+  if(window.MCPAIntegration?.handles(screenId)){
+    moduleAbort?.abort();moduleAbort=null;pendingModule=null;
+    disposeLoadedModule();currentModule=null;
+    const content=document.getElementById('content'),root=document.createElement('section');
+    root.id='screen-'+screenId;root.className='screen active';content.replaceChildren(root);content.setAttribute('aria-busy','true');
+    const active=pendingModule={mod:'integration:'+screenId,callback,route};
+    const ready=window.MCPAIntegration.mount(screenId,root,window.MCPAMovementLinks.parse(route));
+    window.MCPANavigation?.track?.(root,ready);
+    ready.then(()=>{if(pendingModule!==active)return;pendingModule=null;content.removeAttribute('aria-busy');active.callback();})
+      .catch(error=>{if(pendingModule!==active)return;pendingModule=null;content.removeAttribute('aria-busy');root.replaceChildren();const message=document.createElement('p');message.setAttribute('role','alert');message.textContent=error.message;root.append(message);window.MCPANavigation?.failed?.();});
+    return;
+  }
   const mod = SCREEN_MODULE[screenId];
   if(!mod){
     console.error('Unknown screen: ' + screenId);

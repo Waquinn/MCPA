@@ -43,7 +43,7 @@
     availability: freeze({available:'Available', deployed:'In Use', unavailable:'Unavailable'}),
     request: freeze({pending:'Pending Review', approved:'Approved', rejected:'Rejected', released:'Released / Awaiting Receipt', received:'Received / Completed', discrepancy:'Receipt Discrepancy', withdrawn:'Withdrawn', canceled:'Canceled', cancelled:'Canceled'}),
     transfer: freeze({pending:'Awaiting Receipt', received:'Received / Completed', refused:'Damage Refused / Awaiting Sender', canceled:'Canceled', cancelled:'Canceled'}),
-    return: freeze({returned:'Returned'}),
+    return: freeze({returned:'Returned',pendinginspection:'Awaiting Admin Inspection',partialinspection:'Inspection Follow-up',completed:'Inspection Complete'}),
     repair: freeze({reported:'Reported', underrepair:'Under Repair', completed:'Completed'}),
     missing: freeze({missing:'Missing', recovered:'Recovered'}),
     stock: freeze({out:'Out of Stock', low:'Low Stock', ok:'Stock Sufficient'}),

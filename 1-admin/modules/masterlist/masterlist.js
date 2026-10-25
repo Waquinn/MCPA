@@ -115,6 +115,7 @@ async function initMasterlist() {
     site_id: item.site_id,
     current_holder_id: item.current_holder_id,
     movementLock: movementTools.get(item.asset_id)?.movementLock,
+    retirementDisposition: movementTools.get(item.asset_id)?.retirementDisposition,
     availabilityData: movement || {availabilityError:true,requests:[],transfers:[]},
     image_url: item.image_url,
     assetId: item.asset_id,

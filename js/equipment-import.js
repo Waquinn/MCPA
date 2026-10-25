@@ -14,7 +14,9 @@
     return library;
   }
   async function template(){
-    const X=await xlsx(),book=X.utils.book_new(),head=Object.values(C.fields);
+    const X=await xlsx();
+    if(window.MCPAIndividualImport){const book=window.MCPAIndividualImport.templateWorkbook(X);download(X.write(book,{bookType:'xlsx',type:'array'}),'MCPA-equipment-template.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');return;}
+    const book=X.utils.book_new(),head=Object.values(C.fields);
     X.utils.book_append_sheet(book,X.utils.aoa_to_sheet([head]),'Equipment');
     X.utils.book_append_sheet(book,X.utils.aoa_to_sheet([head,
       ['Example Drill — replace before importing','Power Tools','Bosch','','','Good','Individual',1,'','Example only'],
@@ -37,6 +39,7 @@
     const bytes=X.write(book,{bookType:'xlsx',type:'array'});download(bytes,'MCPA-equipment-template.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   }
   function attach(owner){
+    let C=window.MCPAIndividualImport||window.EquipmentImportCore,controller=null,legacy=false,recoveryError='';
     const button=document.getElementById('importEquipmentBtn');
     if(!button||window.MCPAAuth?.isDemo||window.MCPAAuth?.profile?.role!=='admin')return;
     button.hidden=false;
@@ -44,13 +47,19 @@
     const pendingKey=()=>recoveryKey+'.'+actor.id;
     function message(text){const el=dialog?.querySelector('[data-import-message]');if(el)el.textContent=text;}
     function restorePending(){
-      try{const saved=JSON.parse(sessionStorage.getItem(pendingKey()));if(saved?.actor===actor.id)pending=saved;else sessionStorage.removeItem(pendingKey());}catch(_){sessionStorage.removeItem(pendingKey());}
+      const raw=sessionStorage.getItem(pendingKey());if(!raw)return;
+      try{const saved=JSON.parse(raw);if(saved?.actor!==actor.id||!/^[-a-f0-9]{36}$/i.test(saved.operation)||!/^[a-f0-9]{64}$/.test(saved.digest))throw Error();pending=saved;}
+      catch{throw Error('Import recovery data could not be read. Preserve this tab and contact Admin before another import.');}
     }
     function clearPending(){pending=null;sessionStorage.removeItem(pendingKey());}
     function active(){return dialog?.isConnected&&!owner.disposed&&window.MCPAAuth.requireLive().id===actor.id;}
+    function operationContext(){
+      const opened=dialog,source=controller,version=revision;
+      return {controller:source,current(){try{return dialog===opened&&controller===source&&revision===version&&active();}catch{return false;}}};
+    }
     function close(){
       if(busy)return;
-      ++revision;worker?.terminate();worker=null;parsing=false;dialog?.close();dialog?.remove();dialog=null;document.documentElement.classList.remove('equipment-modal-open');button.focus();
+      ++revision;controller?.dispose();controller=null;worker?.terminate();worker=null;parsing=false;dialog?.close();dialog?.remove();dialog=null;document.documentElement.classList.remove('equipment-modal-open');button.focus();
     }
     function render(){
       if(!dialog)return;
@@ -72,8 +81,9 @@
       dialog.querySelector('[data-import-template]')?.addEventListener('click',()=>template().catch(e=>message(e.message)));
       dialog.querySelector('[data-import-sheet]')?.addEventListener('change',e=>{sheet=sheets[Number(e.target.value)];mapping=C.autoMap(sheet.headers);render();});
       dialog.querySelector('[data-import-confirm]')?.addEventListener('click',confirm);
-      dialog.querySelector('[data-import-recover]')?.addEventListener('click',()=>recover().catch(e=>message(e.message)));
-      dialog.querySelector('[data-import-results]')?.addEventListener('click',()=>download(C.csvExport([
+      dialog.querySelector('[data-import-recover]')?.addEventListener('click',()=>{const opened=dialog,version=revision;void recover().catch(e=>{if(dialog===opened&&revision===version)message(e.message);});});
+      dialog.querySelector('[data-import-abandon]')?.addEventListener('click',abandon);
+      dialog.querySelector('[data-import-results]')?.addEventListener('click',()=>download(!legacy?C.resultCsv(result):C.csvExport([
         ['Import Operation','Spreadsheet Row','Database UUID','Generated Asset ID','Item Name','Quantity','Outcome'],
         ...result.assets.map(a=>[result.operation_id,a.source_row,a.id,a.asset_id,a.name,a.quantity,'Created'])
       ]),'MCPA-import-results.csv'));
@@ -91,9 +101,9 @@
       if(step===2)return `<p>Choose the worksheet and match its headings. Unmapped columns are ignored. Custody and deployment fields cannot be mapped.</p>
         <label class="import-sheet">Worksheet<select data-import-sheet>${sheets.map((s,i)=>`<option value="${i}" ${s===sheet?'selected':''}>${esc(s.name)} (${s.rows.length} rows)</option>`).join('')}</select></label>
         <div class="import-mapping">${sheet.headers.map((h,i)=>`<label>${esc(h)}<select data-map="${i}" aria-label="Map ${esc(h)}"><option value="">Ignore column</option>${Object.entries(C.fields).map(([k,label])=>`<option value="${k}" ${mapping[i]===k?'selected':''}>${label}</option>`).join('')}</select></label>`).join('')}</div>
-        <p>Required: Item Name, Category, Tracking Type. Condition defaults to Good; quantity defaults to 1. Unit is optional and applies only to Bulk rows.</p>`;
+        <p>Required: Item Name, Category, Tracking Type and observed Condition. Quantity defaults to 1. Unit is optional and applies only to Bulk rows.</p>`;
       if(step===3)return `<div class="import-summary" aria-label="Validation summary"><span><b>${preview.valid}</b> valid rows</span><span><b>${preview.invalid}</b> invalid rows</span><span><b>${preview.duplicates}</b> potential duplicates</span><span><b>${preview.records}</b> resulting records${preview.invalid?' (fix errors first)':''}</span></div>
-        <p>${sheet.rows.length} spreadsheet rows → ${preview.records} equipment records. Individual rows require quantity 1; Bulk quantities stay grouped.</p><p>Asset IDs: Generated automatically on import</p>
+        <p>${sheet.rows.length} spreadsheet rows → ${preview.records} equipment records. Individual quantities expand to separate physical Asset IDs; Bulk quantities stay grouped.</p><p>Asset IDs: Generated automatically on import</p>
         ${preview.errors.map(e=>`<p class="import-error">${esc(e)}</p>`).join('')}${previewTable()}<p>All rows must be valid. Review warnings for repeated rows or serial numbers. Identical names are permitted and are never merged.</p>`;
       return `<h3>Create ${preview.records} equipment records?</h3><p>All ${sheet.rows.length} rows from worksheet “${esc(sheet.name)}” will be registered as Available at Office, without holders. No rows will be skipped. If any row fails, the entire batch rolls back.</p>
         <p>${preview.duplicates} rows have potential duplicate warnings. Check that repeated rows represent separate physical assets.</p>
@@ -104,9 +114,10 @@
     function resultsTable(){return `<div class="import-table" tabindex="0" role="region" aria-label="Generated equipment IDs"><table><thead><tr><th>Row</th><th>Generated Asset ID</th><th>Item Name</th></tr></thead><tbody>${result.assets.map(a=>`<tr><td>${a.source_row}</td><td class="mono">${esc(a.asset_id)}</td><td>${esc(a.name)}</td></tr>`).join('')}</tbody></table></div>`;}
     function footer(){
       if(result)return '<button type="button" class="btn btn-secondary" data-import-results>Download Import Results</button><button type="button" class="btn btn-accent" data-import-return>Return to Equipment Tracking</button>';
-      return `${step>1?`<button type="button" class="btn btn-secondary" data-import-back ${busy||pending&&step===4?'disabled':''}>Back</button>`:''}${step>1&&step<4?`<button type="button" class="btn btn-accent" data-import-next ${step===3&&(preview.errors.length||preview.invalid)?'disabled':''}>${step===2?'Validate and Preview':'Continue to Confirmation'}</button>`:''}${step===4?`<button type="button" class="btn btn-accent" data-import-confirm disabled>${busy?'Importing…':pending?'Retry Confirmed Import':'Confirm Import'}</button>`:''}`;
+      return `${!legacy&&pending?.rejected&&!pending.uncertain?`<button type="button" class="btn btn-secondary" data-import-abandon ${busy?'disabled':''}>Start a corrected import</button>`:''}${step>1?`<button type="button" class="btn btn-secondary" data-import-back ${busy||pending&&step===4?'disabled':''}>Back</button>`:''}${step>1&&step<4?`<button type="button" class="btn btn-accent" data-import-next ${step===3&&(preview.errors.length||preview.invalid)?'disabled':''}>${step===2?'Validate and Preview':'Continue to Confirmation'}</button>`:''}${step===4?`<button type="button" class="btn btn-accent" data-import-confirm disabled>${busy?'Importing…':pending?'Retry Confirmed Import':'Confirm Import'}</button>`:''}`;
     }
     async function readFile(file){
+      if(recoveryError){message(recoveryError);return;}
       if(!file||parsing)return;
       const extension=file.name.split('.').pop().toLowerCase();
       if(!['csv','xlsx'].includes(extension)){message('Choose a .csv or .xlsx file. Macro-enabled files are not supported.');return;}
@@ -115,7 +126,7 @@
       try{
         const buffer=await file.arrayBuffer();if(!active()||version!==revision)return;
         const parsed=await new Promise((resolve,reject)=>{
-          const parser=worker=new Worker(workerUrl);const timer=setTimeout(()=>{parser.terminate();reject(Error('Spreadsheet parsing exceeded 10 seconds. Simplify the file and retry.'));},10000);
+          const parser=worker=new Worker(legacy?workerUrl:new URL('upgrades/individual-import-expansion/worker.js',scriptUrl));const timer=setTimeout(()=>{parser.terminate();reject(Error('Spreadsheet parsing exceeded 10 seconds. Simplify the file and retry.'));},10000);
           parser.onmessage=e=>{clearTimeout(timer);parser.terminate();if(worker===parser)worker=null;e.data.error?reject(Error(e.data.error)):resolve(e.data.sheets);};
           parser.onerror=()=>{clearTimeout(timer);parser.terminate();if(worker===parser)worker=null;reject(Error('The parser could not read this file. Check the format and retry.'));};
           parser.postMessage({buffer,extension},[buffer]);
@@ -129,7 +140,14 @@
       catch(_){dialog?.querySelector('[data-import-refresh]')?.replaceChildren(document.createTextNode('Import committed. Inventory refresh failed; reload Equipment Tracking to see the new records.'));}
     }
     async function recover(){
+      if(recoveryError)throw Error(recoveryError);
       if(!pending)return;
+      if(!legacy){
+        const attempt=operationContext(),saved=await attempt.controller.recover();if(!attempt.current())return;
+        if(saved){result=saved;pending=null;render();await refresh();}
+        else message(pending.rejected&&!pending.uncertain?'No committed receipt found. Select “Start a corrected import” to replace the rejected spreadsheet.':'No committed receipt yet. Retry the same confirmed spreadsheet before starting another batch.');
+        return;
+      }
       const {data,error}=await window.EquipmentTracking.client().from('mcpa_equipment_imports').select('operation_id,actor_id,result').eq('operation_id',pending.operation).limit(1);
       if(error)throw Error('Could not check the previous import. Check your connection and retry.');
       if(!active())return;
@@ -138,12 +156,29 @@
         result=data[0].result;clearPending();render();await refresh();
       }else message('No committed receipt found yet. Select the same spreadsheet and mappings to retry the previous operation safely.');
     }
+    async function abandon(){
+      if(busy||legacy||!pending?.rejected||pending.uncertain)return;
+      const attempt=operationContext();
+      try{
+        if(!attempt.current())return;
+        busy=true;render();message('Checking the rejected import receipt…');
+        const saved=await attempt.controller.abandonUncommitted();if(!attempt.current())return;
+        pending=attempt.controller.pending();busy=false;
+        if(saved){result=saved;render();await refresh();return;}
+        ++revision;step=1;sheets=[];sheet=null;mapping={};preview=null;result=null;render();
+        message('Rejected attempt cleared after receipt check. Choose the corrected spreadsheet.');
+      }catch(error){if(attempt.current()){busy=false;render();message(error.message);}}
+      finally{if(attempt.current())busy=false;}
+    }
     async function confirm(){
       if(busy||!dialog.querySelector('[data-import-ack]')?.checked)return;
+      const attempt=!legacy?operationContext():null;
       try{
+        if(recoveryError)throw Error(recoveryError);
         if(!active())throw Error('Your account or screen changed. Reopen Import Tools.');
         const check=C.validate(sheet,mapping,typeof equipmentList==='undefined'?[]:equipmentList);
         if(check.errors.length||check.invalid)throw Error('Fix all validation errors before confirming.');
+        if(!legacy){busy=true;render();try{const saved=await attempt.controller.confirm({sheet,mapping,existing:typeof equipmentList==='undefined'?[]:equipmentList});if(!attempt.current())return;result=saved;pending=null;busy=false;render();await refresh();}finally{if(attempt.current()){busy=false;pending=attempt.controller.pending();}}return;}
         const rows=check.rows.map(r=>r.data),payload=JSON.stringify(rows);
         const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload));
         if(!active()||busy)return;
@@ -164,17 +199,23 @@
         if(!data||data.operation_id!==pending.operation||data.created!==rows.length||data.assets?.length!==rows.length)throw Error('The import result could not be verified. Check the previous receipt before retrying.');
         if(!active())return;
         result=data;clearPending();busy=false;render();await refresh();
-      }catch(e){busy=false;if(dialog){render();message(e.message);}}
-      finally{busy=false;dialog?.removeAttribute('aria-busy');}
+      }catch(e){if(!attempt||attempt.current()){busy=false;if(dialog){render();message(e.message);}}}
+      finally{if(!attempt||attempt.current()){busy=false;dialog?.removeAttribute('aria-busy');}}
     }
     button.onclick=()=>{
       if(dialog)return;
       try{actor=window.MCPAAuth.requireLive();if(actor.role!=='admin')throw Error('Only Admin can import equipment.');}catch(e){return;}
-      step=1;result=null;sheets=[];preview=null;pending=null;restorePending();
+      step=1;result=null;sheets=[];preview=null;pending=null;
+      recoveryError='';
+      try{
+        legacy=!window.MCPAIndividualImport||!!sessionStorage.getItem(pendingKey());C=legacy?window.EquipmentImportCore:window.MCPAIndividualImport;
+        if(legacy)restorePending();else {controller=window.MCPAIndividualImportController.create({client:window.EquipmentTracking.client(),requireActor:()=>window.MCPAAuth.requireLive()});pending=controller.pending();}
+      }catch(error){recoveryError=error.message||'Import recovery is unavailable. Preserve this tab and contact Admin.';}
       dialog=document.createElement('dialog');dialog.id='equipmentImportDialog';dialog.setAttribute('aria-labelledby','equipment-import-title');document.getElementById('content').append(dialog);
       dialog.addEventListener('cancel',e=>{e.preventDefault();close();});render();dialog.showModal();document.documentElement.classList.add('equipment-modal-open');
+      if(recoveryError){message(recoveryError);dialog.querySelector('[data-import-file]').disabled=true;}
     };
-    return ()=>{++revision;worker?.terminate();dialog?.close();dialog?.remove();dialog=null;document.documentElement.classList.remove('equipment-modal-open');button.onclick=null;};
+    return ()=>{++revision;controller?.dispose();controller=null;worker?.terminate();dialog?.close();dialog?.remove();dialog=null;document.documentElement.classList.remove('equipment-modal-open');button.onclick=null;};
   }
   window.EquipmentImport={attach,template};
 })();

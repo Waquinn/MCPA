@@ -40,6 +40,8 @@
     const locked = new Set((data.transfers || []).filter(t => ['pending','refused'].includes(t.status)).flatMap(ids));
     const reserved = new Set((data.requests || []).filter(r => r.status === 'approved').flatMap(ids));
     return (data.tools || []).filter(tool => {
+      if(mode()==='live'&&data.integrationVersion>=3&&['request','transfer','return'].includes(kind)
+        &&(Number(tool.qty)!==1||!['individual','individualasset','serialized'].includes(String(tool.trackingType||'').toLowerCase().replace(/[ _-]/g,''))))return false;
       if (locked.has(tool.id) || reserved.has(tool.id) || !(tool.qty > 0)) return false;
       const owns = mode() === 'live' ? tool.holderId === context().id : tool.holder === context().name;
       if (kind === 'request') return window.EquipmentTracking.requestability(tool, data).eligible;
@@ -182,6 +184,7 @@
   }
 
   function createForm() {
+    if(current.kind==='return'&&mode()==='live')return '<p class="mv-help">New returns require individual Admin inspection. Open Returns from navigation to submit physical Asset IDs. Historical returns remain available below.</p>';
     const kind = current.kind;
     if (!operational() && kind !== 'request' && !(handler() && kind === 'transfer')) return '<aside class="card card-pad mv-guide"><h2>Review saved '+TITLES[kind].toLowerCase()+'</h2><p class="mv-help">Open a record to inspect its history and available follow-up actions. The named receiving Engineer or Architect confirms physical custody.</p></aside>';
     if (!operational() && !(handler() && kind === 'transfer')) return `<aside class="card card-pad mv-guide"><p class="eyebrow">Admin review</p><h2>Keep the handover moving</h2><ol><li>Review the engineer's selected tools and destination.</li><li>Approve to reserve the tools, or reject with a reason.</li><li>Release to generate a transfer code for the receiver.</li></ol><p class="mv-help">Stock and custody change as each movement is confirmed. Select a request to review it.</p></aside>`;
@@ -529,6 +532,7 @@
           payload.conditions = readConditions(form);
         }
         const methods = { request: 'createRequest', transfer: 'createTransfer', return: 'createReturn', repair: 'reportRepair', missing: 'reportMissing' };
+        if(kind==='return'&&mode()==='live')throw new Error('Use the inspected return submission screen from navigation.');
         await perform(() => store()[methods[kind]](payload), result => kind === 'transfer' ? `Transfer ${result?.code || result?.id || ''} created. Share the code with the receiver.` : `${TITLES[kind] === 'Missing tools' ? 'Missing report' : { request: 'Request', return: 'Return', repair: 'Repair report' }[kind]} saved successfully.`, { resetCreate: true, showResult: true });
       } else if (action === 'reject') await perform(() => store().rejectRequest(form.dataset.id, value('reason')), 'Request rejected. The reason is visible to the requester.');
       else if (action === 'adjust-movement') {

@@ -28,7 +28,7 @@
    const snapshot=data.snapshots.find(s=>s.id===$('#report-snapshot').value);
    const tools=kind==='history'?(snapshot?.tools||[]):data.current;
    const head=['Equipment ID','Name','Project','Holder','Quantity','Status','Availability'];
-   const rows=tools.filter(t=>EquipmentTracking.quantity(t)>0).map(t=>[t.id,t.name,t.site,t.holder||'Unassigned',EquipmentTracking.quantity(t),window.MCPADisplay.status(t.status),window.MCPADisplay.status(EquipmentTracking.availability(t), 'availability')]);
+   const rows=tools.filter(t=>EquipmentTracking.quantity(t)>0).map(t=>[t.id,t.name,t.site,t.holder||'Unassigned',EquipmentTracking.quantity(t),t.retirementDisposition==='sold'?'Sold':t.retirementDisposition==='disposed'?'Disposed':window.MCPADisplay.status(t.status),window.MCPADisplay.status(EquipmentTracking.availability(t), 'availability')]);
    exportRows=[head,...rows];$('#report-results').innerHTML=table(head,rows);
    if(kind==='current')$('#report-scope').textContent='Current inventory as of '+date(data.generatedAt)+' Manila. The date range applies to saved snapshots and movement history; current inventory is a present-day view.';
    else if(snapshot)$('#report-scope').textContent='Inventory observed on '+date(snapshot.capturedAt)+' Manila. Later movements do not change this saved snapshot.';

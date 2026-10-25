@@ -1,7 +1,11 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),{randomUUID}=require('node:crypto');
 const {authDatabase}=require('./auth-test-db.cjs');
-const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610200001_verified_request_inventory.sql'),'utf8');
+// Exercise the canonical Git SQL bytes on Windows too. This historical patch
+// compares a literal guard against normalized prosrc during repeated installs.
+// Its CRLF repeat-install limitation is separately covered below; no migration
+// history or expected fingerprint is changed by this fixture normalization.
+const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/202610200001_verified_request_inventory.sql'),'utf8').replace(/\r/g,'');
 const read=name=>fs.readFileSync(path.join(__dirname,'../supabase/migrations',name),'utf8');
 const action=(f,actor,p_action,p_payload,operation=randomUUID())=>f.rpc(actor,'mcpa_movement_action',{p_action,p_payload,p_operation_id:operation});
 async function setup(t,{oldMetadata=false}={}){
@@ -29,6 +33,13 @@ for(const oldMetadata of [false,true])test(`verified catalog installs over ${old
   assert.equal(data.tools.find(t=>t.id==='TOOL-001').movementLock,null);
   for(const actor of [null,f.actors.secretary,f.actors.inactive])await assert.rejects(f.rpc(actor,'mcpa_movement_snapshot'));
   await assert.rejects(f.query(f.actors.sky,"select mcpa_auth_private.inventory_lock($1)",[f.tools['TOOL-001']]));
+});
+
+test('historical CRLF repeat installation fails closed without rewriting inventory',async t=>{
+  const f=await setup(t),before=await records(f),crlf=migration.replace(/\n/g,'\r\n');
+  await f.db.exec(crlf);
+  await assert.rejects(f.db.exec(crlf),/lifecycle differs/);await f.db.exec('rollback');
+  assert.deepEqual(await records(f),before);
 });
 
 test('Office stock is discoverable for Engineers and Architects; restricted project custody and private movement details stay scoped',async t=>{

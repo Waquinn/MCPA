@@ -14,12 +14,15 @@ const ADMIN_NAV = [
   
   {sec:"Movement"},
   {id:"request", label:"Requests", icon:"inbox"},
+  {id:"quantity-request", label:"Quantity allocation", icon:"inbox"},
   {id:"transfer", label:"Transfers", icon:"swap"},
   {id:"return", label:"Returns", icon:"undo"},
+  {id:"asset-retirement-v2", label:"Asset retirement", icon:"list"},
   {id:"repair", label:"Repairs", icon:"wrench"},
   {id:"missing", label:"Missing", icon:"alert"},
   {sec:"Materials"},
   {id:"consumables", label:"Material Requests", icon:"box"},
+  {id:"outward-materials", label:"Material issuance & usage", icon:"box"},
   {sec:"Records"},
   {id:"purchase", label:"Purchases", icon:"cart"},
   {id:"reports", label:"Reports", icon:"chart"},
@@ -39,12 +42,16 @@ const ENGR_NAV = [
   
   {sec:"Movement"},
   {id:"request", label:"Requests", icon:"inbox"},
+  {id:"quantity-request", label:"Request equipment quantities", icon:"inbox"},
+  {id:"asset-transfer", label:"Scan & transfer equipment", icon:"swap"},
+  {id:"transfer-inbox", label:"Accept equipment", icon:"inbox"},
   {id:"transfer", label:"Transfers", icon:"swap"},
   {id:"return", label:"Returns", icon:"undo"},
   {id:"repair", label:"Repairs", icon:"wrench"},
   {id:"missing", label:"Missing", icon:"alert"},
   {sec:"Materials"},
-  {id:"consumables", label:"Material Requests", icon:"box"},
+  {id:"outward-materials", label:"Request consumables", icon:"box"},
+  {id:"retired-equipment-v2", label:"Sold & disposed history", icon:"list"},
   {sec:"Records"},
   {id:"activity", label:"Activity Logs", icon:"clock"},
   {id:"settings", label:"Settings", icon:"cog"},
@@ -56,7 +63,8 @@ function buildNav(){
   
   const role = window.MCPAAuth?.profile?.role;
   const source = MCPAPermissions.operational(role) ? ENGR_NAV : ADMIN_NAV;
-  const currentNav = source.filter(n => !n.id || window.MCPAAuth.canRoute(n.id)).filter((n,index,list) => n.id || list[index+1]?.id);
+  const liveOnly=['quantity-request','outward-materials','asset-transfer','transfer-inbox','asset-retirement-v2','retired-equipment-v2'];
+  const currentNav = source.filter(n => !n.id || window.MCPAAuth.canRoute(n.id)).filter(n=>!window.MCPAAuth.isDemo||!liveOnly.includes(n.id)).filter((n,index,list) => n.id || list[index+1]?.id);
   el.innerHTML = currentNav.map(n=>{
     if(n.sec) return `<div class="nav-section-label">${n.sec}</div>`;
     return `<button type="button" class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.label}</span></button>`;
@@ -97,7 +105,7 @@ window.MCPAMovementLinks = {
   parse(value) {
     const [screen, query = ''] = String(value).replace(/^#/, '').split('?');
     const params = new URLSearchParams(query), record = params.get('record');
-    const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail','activity','purchase','consumables','reports'].includes(screen)) && record && record.length <= 120 ? record : ''};
+    const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail','activity','purchase','consumables','reports','asset-retirement-v2','quantity-request','outward-materials'].includes(screen)) && record && record.length <= 120 ? record : ''};
     if (screen === 'site-detail' && params.get('tool')?.length <= 120) result.tool = params.get('tool');
     if (screen === 'transfer' && ['send','receive','history'].includes(params.get('view'))) result.view = params.get('view');
     if (screen === 'masterlist' && ['all','available','inuse','repair','missing'].includes(params.get('status'))) result.status = params.get('status');
@@ -149,7 +157,7 @@ function showScreen(route, afterActivate, options){
       else if (record && id === 'consumables') await window.MCPAConsumables?.openRecord(record);
       else if (record && id === 'reports') window.MCPAReports?.openRecord(record);
       else if (record && id === 'activity') window.MovementOverview?.openActivity(record);
-      else if(record) await window.MovementUI?.openRecord(id, record);
+      else if(record&&!window.MCPAIntegration?.handles(id)) await window.MovementUI?.openRecord(id, record);
       else {
         window.MovementUI?.clearRecord?.();
         if (id === 'activity') window.MovementOverview?.clearRecord?.();

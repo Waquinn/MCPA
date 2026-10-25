@@ -45,6 +45,8 @@
     if (['repair','underrepair','damaged'].includes(status) || ['damaged','repair','underrepair'].includes(normalized(tool.condition))) return result('damaged', 'Unavailable', 'Equipment needs repair before it can be requested.');
     if (['disposed','retired'].includes(status)) return result('retired', 'Unavailable', 'Equipment has been retired from service.');
     const lock = tool.movementLock;
+    if(lock==='inspection')return result('inspection','Awaiting Admin inspection','Custody stays with the current holder until Admin verifies physical receipt.');
+    if(data?.integrationVersion>=3&&(quantity(tool)!==1||!['individual','individualasset','serialized'].includes(normalized(tool.tracking_type??tool.trackingType))))return result('aggregate','Legacy aggregate — unavailable','This workflow needs separate individual Asset IDs with quantity one. Ask Admin to review this inventory record.');
     if (lock === 'transfer' || (data?.transfers || []).some(record => ['pending','refused'].includes(record.status) && includes(record))
       || (data?.requests || []).some(record => record.status === 'released' && includes(record))) return result('transfer', 'Pending receipt — unavailable for new requests', 'A handover is awaiting receipt or sender follow-up. Recorded status and custody remain unchanged until an authorized workflow resolves it.');
     if (lock === 'request' || lock === 'reserved' || (data?.requests || []).some(record => record.status === 'approved' && includes(record))) return result('reserved', 'Reserved', 'Allocated to an approved request; unavailable for another request.');
@@ -72,7 +74,7 @@
     const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const status = normalized(tool.recordedStatus ?? tool.dbStatus ?? tool.status), result = requestability(tool, data);
     const tone = ['available','inuse','repair','underrepair','missing'].includes(status) ? status : 'pending';
-    return `<div class="equipment-status"><span class="equipment-status-caption">Recorded status</span><span class="badge badge-${tone}">${escape(window.MCPADisplay.status(status))}</span><span class="equipment-request-state" data-requestability="${result.code}"><span class="equipment-status-caption">New requests</span><strong>${escape(result.label)}</strong></span><span class="equipment-status-reason">${escape(result.reason)}</span></div>`;
+    return `<div class="equipment-status"><span class="equipment-status-caption">Recorded status</span><span class="badge badge-${tone}">${escape(tool.retirementDisposition==='sold'?'Sold':tool.retirementDisposition==='disposed'?'Disposed':window.MCPADisplay.status(status))}</span><span class="equipment-request-state" data-requestability="${result.code}"><span class="equipment-status-caption">New requests</span><strong>${escape(result.label)}</strong></span><span class="equipment-status-reason">${escape(result.reason)}</span></div>`;
   }
   function tally(tools, data, {assetsOnly = false} = {}) {
     return tools.reduce((totals, tool) => {

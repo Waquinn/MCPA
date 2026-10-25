@@ -74,3 +74,68 @@ test('account changes during response retain original account recovery data',asy
   const controller=setup(async(name,args)=>{live={...actor,id:randomUUID()};return {data:receipt(args.p_operation_id)};},{storage:saved,requireActor:()=>live});
   await assert.rejects(controller.confirm(input),/account changed/);assert.equal(saved.data.size,1);
 });
+
+function deferred(){let resolve;const promise=new Promise(r=>{resolve=r;});return {promise,resolve};}
+
+test('remount fences old abandonment even without an explicit dispose call',async()=>{
+  const saved=storage(),held=deferred(),started=deferred(),retryHeld=deferred(),retryStarted=deferred();
+  const old=setup(async name=>{if(name===RPC)return {error:{code:'23514',message:'rejected'}};started.resolve();return held.promise;},{storage:saved});
+  await assert.rejects(old.confirm(input),/rejected/);const abandoned=Promise.allSettled([old.abandonUncommitted()]);await started.promise;
+  const current=setup((name,args)=>{retryStarted.resolve();return retryHeld.promise;},{storage:saved});
+  const retry=Promise.allSettled([current.confirm(input)]);await retryStarted.promise;const token=current.pending();
+  held.resolve({data:null});assert.equal((await abandoned)[0].status,'rejected');assert.deepEqual(current.pending(),token);
+  retryHeld.resolve({data:receipt(token.operation)});await retry;assert.equal(current.pending(),null);
+  await assert.rejects(old.confirm(input),/newer screen/);
+});
+
+test('persisted dispatch revision fences an old rejection through independent storage adapters',async()=>{
+  const saved=storage(),adapter=()=>({getItem:saved.getItem,setItem:saved.setItem,removeItem:saved.removeItem});
+  const firstHeld=deferred(),firstStarted=deferred(),secondHeld=deferred(),secondStarted=deferred();
+  const old=setup(()=>{firstStarted.resolve();return firstHeld.promise;},{storage:adapter()});
+  const first=Promise.allSettled([old.confirm(input)]);await firstStarted.promise;const operation=old.pending().operation;
+  const current=setup(()=>{secondStarted.resolve();return secondHeld.promise;},{storage:adapter()});
+  const retry=Promise.allSettled([current.confirm(input)]);await secondStarted.promise;const token=current.pending();assert.equal(token.operation,operation);
+  firstHeld.resolve({error:{code:'23514',message:'old rejection'}});assert.equal((await first)[0].status,'rejected');
+  assert.deepEqual(current.pending(),token,'Old rollback cannot rewrite the newer uncertain dispatch');
+  secondHeld.resolve({data:receipt(operation)});await retry;assert.equal(current.pending(),null);
+});
+
+test('persisted state fences abandonment when a newer attempt reuses the UUID outside the owner registry',async()=>{
+  const saved=storage(),adapter=()=>({getItem:saved.getItem,setItem:saved.setItem,removeItem:saved.removeItem}),held=deferred(),started=deferred();
+  const old=setup(async name=>{if(name===RPC)return {error:{code:'23514',message:'rejected'}};started.resolve();return held.promise;},{storage:adapter()});
+  await assert.rejects(old.confirm(input),/rejected/);const abandoned=Promise.allSettled([old.abandonUncommitted()]);await started.promise;
+  const retryHeld=deferred(),retryStarted=deferred(),current=setup(()=>{retryStarted.resolve();return retryHeld.promise;},{storage:adapter()});
+  const retry=Promise.allSettled([current.confirm(input)]);await retryStarted.promise;const token=current.pending();
+  held.resolve({data:null});assert.equal((await abandoned)[0].status,'rejected');assert.deepEqual(current.pending(),token);
+  retryHeld.resolve({data:receipt(token.operation)});await retry;
+});
+
+test('late receipt success cannot remove a newer deliberate import recovery entry',async()=>{
+  const saved=storage(),held=deferred(),started=deferred();let committed;
+  const old=setup(async(name,args)=>{if(name===RPC){committed=receipt(args.p_operation_id);throw Error('lost');}started.resolve();return held.promise;},{storage:saved});
+  await assert.rejects(old.confirm(input),/lost/);const recovery=Promise.allSettled([old.recover()]);await started.promise;
+  let imports=0;
+  const current=setup(async(name,args)=>{if(name===RECEIPT_RPC)return {data:committed};imports++;throw Error('new response lost');},{storage:saved});
+  await current.recover();await assert.rejects(current.confirm(input),/new response lost/);const token=current.pending();assert.notEqual(token.operation,committed.operation_id);
+  held.resolve({data:committed});assert.equal((await recovery)[0].status,'rejected');assert.deepEqual(current.pending(),token);assert.equal(imports,1);
+});
+
+test('legacy rejected token without a revision can be abandoned safely and corrected input gets a new UUID',async()=>{
+  const saved=storage(),key='mcpa.workstream-a.import.v2.'+actor.id;
+  const old=setup(async()=>({error:{code:'23514',message:'rejected'}}),{storage:saved});await assert.rejects(old.confirm(input),/rejected/);
+  const rejected=old.pending();delete rejected.revision;saved.setItem(key,JSON.stringify(rejected));old.dispose();
+  const current=setup(async(name,args)=>name===RECEIPT_RPC?{data:null}:{data:receipt(args.p_operation_id)},{storage:saved});
+  assert.equal(await current.abandonUncommitted(),null);assert.equal(current.pending(),null);
+  const result=await current.confirm(input);assert.notEqual(result.operation_id,rejected.operation);assert.equal(current.pending(),null);
+});
+
+test('abandonment checks dispatch generation even when a newer rejection restores the same UUID and flags',async()=>{
+  const saved=storage(),adapter=()=>({getItem:saved.getItem,setItem:saved.setItem,removeItem:saved.removeItem}),held=deferred(),started=deferred();
+  const old=setup(async name=>{if(name===RPC)return {error:{code:'23514',message:'rejected'}};started.resolve();return held.promise;},{storage:adapter()});
+  await assert.rejects(old.confirm(input),/rejected/);const original=old.pending(),abandoned=Promise.allSettled([old.abandonUncommitted()]);await started.promise;
+  const current=setup(async name=>name===RPC?{error:{code:'23514',message:'new rejection'}}:{data:null},{storage:adapter()});
+  await assert.rejects(current.confirm(input),/new rejection/);const token=current.pending();
+  assert.equal(token.operation,original.operation);assert.equal(token.uncertain,original.uncertain);assert.equal(token.rejected,original.rejected);
+  held.resolve({data:null});assert.equal((await abandoned)[0].status,'rejected');assert.deepEqual(current.pending(),token);
+  assert.equal(await current.abandonUncommitted(),null);assert.equal(current.pending(),null);
+});
