@@ -47,3 +47,62 @@ body.dark .wa-cons{color-scheme:dark}
 @media(max-width:600px){.wa-cons [data-catalog] :is(th,td):nth-child(n+3){display:none}.wa-cons [data-catalog] td .wa-mobile-stock{display:block}.wa-cons [data-catalog] th{white-space:normal}.wa-cons [data-catalog] td:first-child{overflow-wrap:anywhere}.wa-cons [data-catalog] input{width:100%;min-width:90px}.wa-cons [data-catalog] td:nth-child(2){width:46%}}
 @media(max-width:600px){.wa-cons .wa-review-table :is(table,tbody,tr){display:block;width:100%}.wa-cons .wa-review-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.wa-cons .wa-review-table tr{padding:10px 0;border-bottom:1px solid var(--line,#ddd)}.wa-cons .wa-review-table tr:last-child{border-bottom:0}.wa-cons .wa-review-table td{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,1fr);gap:12px;border:0;padding:6px 12px;overflow-wrap:anywhere}.wa-cons .wa-review-table td::before{content:attr(data-label);font-weight:600}.wa-cons .wa-review-table td:first-child{display:block;margin-bottom:8px}.wa-cons .wa-review-table td:first-child::before{display:none}.wa-cons .wa-review-table input{width:100%;min-width:0}}
 @media(prefers-reduced-motion:reduce){.wa-cons button:active{transform:none}}
+
+/* Engineer inventory only: preserve the Admin review/issuance surface. */
+.wa-engineer{min-width:0;width:100%}
+.wa-engineer header>div{min-width:0}
+.wa-engineer header button{flex-shrink:0}
+.wa-engineer h1{font-family:var(--font-display,system-ui,sans-serif)}
+.wa-engineer .wa-tabs{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line,#ddd);padding-bottom:12px;margin:24px 0}
+.wa-engineer .wa-tabs button{background:transparent;border-color:transparent}
+.wa-engineer .wa-tabs [aria-selected=true]{background:var(--gold,#fabb00);border-color:var(--gold,#fabb00);color:#111}
+.wa-engineer [role=tabpanel]>h2,.wa-engineer fieldset>h2{margin-top:0}
+.wa-engineer .wa-fields>label{min-width:min(180px,100%)}
+.wa-engineer .wa-inventory-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:24px 0 12px}
+.wa-engineer .wa-inventory-summary>div{border:1px solid var(--line,#ddd);border-radius:var(--radius,8px);background:var(--white,#fff);padding:16px;min-width:0}
+.wa-engineer .wa-inventory-summary dt{font-size:13px}
+.wa-engineer .wa-inventory-summary dd{font-size:26px;font-weight:650;line-height:1.3;font-variant-numeric:tabular-nums}
+.wa-engineer .wa-muted{color:var(--gray,#666);font-size:13px}
+.wa-engineer .wa-inventory-note{margin:16px 0 24px;max-width:75ch}
+.wa-engineer .wa-inventory-table table{table-layout:fixed}
+.wa-engineer .wa-inventory-table th{white-space:normal}
+.wa-engineer .wa-inventory-table :is(th,td){padding:12px 10px;overflow-wrap:anywhere}
+.wa-engineer .wa-inventory-table :is(th,td):first-child{width:18%;font-weight:600}
+.wa-engineer .wa-inventory-table :is(th,td):nth-child(2){width:10%}
+.wa-engineer .wa-inventory-table :is(th,td):nth-child(n+3):nth-child(-n+5){width:8%}
+.wa-engineer .wa-inventory-table :is(th,td):nth-child(6){width:6%}
+.wa-engineer .wa-inventory-table :is(th,td):nth-child(7){width:10%}
+.wa-engineer .wa-inventory-table :is(th,td):nth-child(8){width:14%}
+.wa-engineer .wa-inventory-table :is(th,td):nth-child(n+9){width:9%}
+.wa-engineer .wa-inventory-table button{padding:8px;white-space:normal}
+.wa-engineer .wa-inventory-table .wa-status{white-space:normal}
+.wa-engineer .wa-inventory-table td:first-child small{font-weight:400}
+.wa-engineer [data-stock-status=Available]{background:var(--success-bg,#edf3e9);color:var(--success,#286234)}
+.wa-engineer [data-stock-status="Low Stock"]{background:var(--warning-bg,#fff4d3);color:var(--warning,#765600)}
+.wa-engineer [data-stock-status=Depleted],.wa-engineer [data-stock-status="Review required"]{background:var(--danger-bg,#fbeae8);color:var(--danger,#b3453b)}
+.wa-engineer .wa-pagination,.wa-engineer .wa-detail-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:16px 0}
+.wa-engineer .wa-pagination>div{display:flex;gap:8px}
+.wa-engineer .wa-detail-heading h3{margin:0}
+.wa-engineer .wa-details{scroll-margin-top:88px}
+.wa-engineer :is(.wa-table,.wa-details):focus-visible{outline:2px solid var(--gold-dim,#8a7327);outline-offset:3px}
+.wa-engineer .wa-empty h3{margin-top:0;color:var(--black,#111)}
+.wa-engineer .wa-empty button{margin-top:16px}
+.wa-engineer .wa-table{scrollbar-color:var(--gray,#666) var(--off-white,#f7f7f5);scrollbar-width:thin}
+@media(max-width:900px){.wa-engineer .wa-inventory-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){
+  .wa-engineer header{flex-wrap:nowrap}
+  .wa-engineer .wa-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+  .wa-engineer .wa-tabs button{font-size:13px;padding:8px 6px}
+  .wa-engineer .wa-inventory-summary{gap:12px}
+  .wa-engineer .wa-inventory-summary>div{padding:12px}
+  .wa-engineer .wa-inventory-table :is(table,tbody,tr){display:block;width:100%}
+  .wa-engineer .wa-inventory-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .wa-engineer .wa-inventory-table tr{padding:12px 0;border-bottom:1px solid var(--line,#ddd)}
+  .wa-engineer .wa-inventory-table tr:last-child{border-bottom:0}
+  .wa-engineer .wa-inventory-table td:nth-child(n){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;border:0;padding:6px 12px;min-width:0;width:auto;font-weight:400}
+  .wa-engineer .wa-inventory-table td::before{content:attr(data-label);font-weight:600}
+  .wa-engineer .wa-inventory-table td:first-child{display:block;min-width:0;margin-bottom:8px;font-weight:600}
+  .wa-engineer .wa-inventory-table td:first-child::before{display:none}
+  .wa-engineer .wa-inventory-table .wa-status{justify-self:start;white-space:normal}
+  .wa-engineer .wa-pagination{align-items:start}
+}

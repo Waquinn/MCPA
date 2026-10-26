@@ -30,7 +30,12 @@
         throw Error('Your draft changed while records were loading. It has been kept. Refresh when ready.');
       if(!result.error&&/^(mcpa_wa_(submit|allocate|reject|review|issue)_)/.test(name))changed();return result;
     }};
-    for(const event of ['input','change'])root.addEventListener(event,()=>{session.dirty=true;++session.draftVersion;},{signal:session.abort.signal});
+    for(const event of ['input','change'])root.addEventListener(event,event=>{
+      // Browsing Engineer filters is not an unsaved request. Keep background
+      // issuance refreshes running while preserving real request drafts.
+      if(screen==='outward-materials'&&person.role!=='admin'&&!event.target.matches('[data-quantity],[data-field="purpose"],[data-field="site_id"]'))return;
+      session.dirty=true;++session.draftVersion;
+    },{signal:session.abort.signal});
     if(screen==='request'||screen==='quantity-request'){
       const module=await import(new URL('js/upgrades/equipment-requests/unified.mjs',base));
       if(!alive())return;

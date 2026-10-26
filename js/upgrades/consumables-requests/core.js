@@ -65,6 +65,64 @@
     }
     return [...groups.values()].sort((a,b) => b.transactions - a.transactions || b.quantity - a.quantity || a.key.localeCompare(b.key));
   }
+  // Projection of the authenticated request snapshot, never a second stock store.
+  // Central stock kind='usage' is an OUTWARD ISSUE, not engineer consumption.
+  function inventory(snapshot) {
+    if (!snapshot?.profile?.id || !['engineer','architect'].includes(snapshot.profile.role)) throw Error('An active Engineer or Architect account is required.');
+    const groups = new Map(), movements = new Set(), lines = new Set();
+    for (const request of snapshot.requests || []) {
+      if (request.requester_id !== snapshot.profile.id || !['partial','partially_fulfilled','issued'].includes(request.status)) continue;
+      for (const item of request.items || []) {
+        const receipts = [];
+        for (const issue of request.issues || []) {
+          if (issue.item_id !== item.id) continue;
+          const key = issue.stock_movement_id || issue.id;
+          if (!key || movements.has(key)) continue;
+          const amount = Number(issue.quantity);
+          if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(Date.parse(issue.issued_at))) throw Error('An issuance record is invalid. Ask your administrator to review the ledger.');
+          movements.add(key);
+          receipts.push({...issue, quantity:amount, request_id:request.id, request_number:request.request_number});
+        }
+        if (!receipts.length) continue;
+        const key = JSON.stringify([item.consumable_id, item.unit, request.site_id]);
+        const catalog = (snapshot.catalog || []).find(c => c.id === item.consumable_id && c.unit === item.unit);
+        const row = groups.get(key) || {key, consumable_id:item.consumable_id, item_name:catalog?.name || item.item_name,
+          item_code:item.item_code, specification:item.specification, category:catalog?.category || item.category || 'Unclassified',
+          unit:item.unit, site_id:request.site_id, site_name:request.site_name, received:0, used:0, usage_recorded:true,
+          minimum_stock:Math.max(0, Number(catalog?.minimum_stock) || 0), updated_at:null, transactions:[]};
+        for (const issue of receipts) {
+          row.received = add(row.received, issue.quantity);
+          row.transactions.push(issue);
+          if (!row.updated_at || Date.parse(issue.issued_at) > Date.parse(row.updated_at)) row.updated_at = issue.issued_at;
+        }
+        // The installed backend returns null: no engineer usage ledger exists.
+        // Keep that distinction visible instead of claiming actual usage is zero.
+        if (!lines.has(item.id)) {
+          lines.add(item.id);
+          if (item.confirmed_consumed_quantity == null) row.usage_recorded = false;
+          else {
+            const used = Number(item.confirmed_consumed_quantity);
+            if (!Number.isFinite(used) || used < 0) throw Error('A consumption total is invalid. Ask your administrator to review the ledger.');
+            row.used = add(row.used, used);
+            if (used > 0 && Date.parse(request.updated_at) > Date.parse(row.updated_at)) row.updated_at = request.updated_at;
+          }
+        }
+        groups.set(key, row);
+      }
+    }
+    return [...groups.values()].map(row => {
+      const balance = add(row.received, -row.used);
+      // A discrepancy must never masquerade as depleted/available inventory.
+      return {...row, balance:Math.max(0, balance), discrepancy:balance < 0,
+        status:balance < 0 ? 'Review required' : balance === 0 ? 'Depleted' : balance <= row.minimum_stock ? 'Low Stock' : 'Available',
+        transactions:row.transactions.sort((a,b) => Date.parse(b.issued_at) - Date.parse(a.issued_at))};
+    }).sort((a,b) => a.item_name.localeCompare(b.item_name) || a.site_name.localeCompare(b.site_name) || a.unit.localeCompare(b.unit));
+  }
+  function filterInventory(rows, {search='', category='', site='', status=''} = {}) {
+    const term = search.trim().toLowerCase();
+    return rows.filter(row => (!category || row.category === category) && (!site || row.site_id === site) && (!status || row.status === status)
+      && (!term || [row.item_name,row.category,row.item_code,row.specification].join(' ').toLowerCase().includes(term)));
+  }
   function errorText(error) {
     if (['42P01','42883','PGRST202','PGRST205'].includes(error?.code)) return 'Request setup is incomplete. Ask your administrator to install the Workstream A migration, then refresh.';
     if (error?.code === '42501') return 'Your account cannot perform this action. Sign in with the correct active role.';
@@ -102,5 +160,5 @@
       }
     }};
   }
-  return {MAX,escape,quantity,format,add,validateRequest,csv,dateRange,dayInManila,aggregate,errorText,createClient};
+  return {MAX,escape,quantity,format,add,validateRequest,csv,dateRange,dayInManila,aggregate,inventory,filterInventory,errorText,createClient};
 });
