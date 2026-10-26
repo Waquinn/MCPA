@@ -2,10 +2,11 @@
 (function (scope) {
   'use strict';
   let instance = 0;
-  function mount({ root, supabase }) {
+  function mount({ root, supabase, embedded = false }) {
     const Q = scope.MCPAQuantityRequests, V = scope.MCPAQuantityView;
     if (!Q || !V) throw new Error('Load the Workstream A quantity client and view helpers first.');
     root = V.shell(root, 'Allocate equipment quantities', 'Review the requested type and reserve the exact number of eligible individual assets.');
+    if (embedded) root.classList.add('equipment-quantity-review');
     const client = Q.createClient(supabase), prefix = 'wa-q-admin-' + (++instance);
     const state = { catalog: null, records: [], requestId: '', suggestion: null, selected: new Set(), reason: '', filter: 'pending', busy: false, destroyed: false };
     const body = () => root.querySelector('[data-q-body]');
@@ -110,7 +111,21 @@
     }
     root.addEventListener('click', onClick); root.addEventListener('input', onInput); root.addEventListener('change', onInput); root.addEventListener('submit', onSubmit);
     const ready = refresh();
-    return Object.freeze({ ready, refresh, destroy() { state.destroyed = true; root.removeEventListener('click', onClick); root.removeEventListener('input', onInput); root.removeEventListener('change', onInput); root.removeEventListener('submit', onSubmit); root.removeAttribute('aria-busy'); root.classList.remove('wa-quantity'); root.replaceChildren(); } });
+    return Object.freeze({ ready, refresh, async openRecord(id) {
+      if (state.busy || state.destroyed) return;
+      state.requestId = id; state.reason = ''; state.busy = true;
+      root.setAttribute('aria-busy', 'true');
+      root.querySelectorAll('fieldset').forEach(fieldset => { fieldset.disabled = true; });
+      try {
+        state.catalog = await client.catalog();
+        state.records = await client.history();
+        if (state.destroyed) return;
+        await readSuggestion();
+        if (!state.destroyed) { state.busy = false; render(); }
+      }
+      catch (error) { if (!state.destroyed) { state.busy = false; if (state.catalog) renderReview(); V.notice(root, error.message, true); } }
+      finally { state.busy = false; if (!state.destroyed) root.removeAttribute('aria-busy'); }
+    }, destroy() { state.destroyed = true; root.removeEventListener('click', onClick); root.removeEventListener('input', onInput); root.removeEventListener('change', onInput); root.removeEventListener('submit', onSubmit); root.removeAttribute('aria-busy'); root.classList.remove('wa-quantity'); root.replaceChildren(); } });
   }
   scope.MCPAQuantityAdmin = Object.freeze({ mount });
 })(window);
