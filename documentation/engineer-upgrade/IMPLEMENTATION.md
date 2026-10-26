@@ -104,9 +104,10 @@ Rollback is deliberately non-destructive: immediately set both issuance flags fa
 
 ## Remaining release gates
 
+- Publication blocked: automatic approval review rejected the feature-branch push because uploading repository contents to GitHub requires explicit authorization. The reviewed local branch and `PR.md` are ready; no remote branch or PR was created. Obtain authorization before attempting publication again.
 - High: staged Auth/SMTP/redirect and real recipient delivery validation; Production public signup must be reviewed/configured for invitation-only use.
 - High: no approved Production SQL/Edge/merge/deployment; nothing is live from this branch.
 - Medium: real multi-connection contention and deployed Realtime publication need staged verification; polling/focus fallback does not depend on publication changes.
 - Medium for future QA integration: explicitly reconcile the invitation-removal migration and overlapping account/Auth changes.
 
-Safest next step: review the draft PR and validate it against a separate Staging project with controlled recipients before authorizing any Production change.
+Safest next step: review this local implementation and authorize publishing the feature branch and draft PR. Then validate it against a separate Staging project with controlled recipients before authorizing any Production change.
