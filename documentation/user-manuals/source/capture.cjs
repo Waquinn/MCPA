@@ -15,7 +15,7 @@ code=code.replace("fixture=await authDatabase({engineerPortal:true,missingProjec
 code=code.replace("if(process.argv.includes('--feature-completion')){","{");
 code=code.replace(" await fixture.db.query(\"insert into sites", " await prepareDocumentationFixture(fixture);\n await fixture.db.query(\"insert into sites");
 code=code.replace("capabilities:[]", "capabilities:[]");
-code=code.replace("invitations_enabled:true,development_enabled:true", "invitations_enabled:true,development_enabled:false");
+code=code.replace("development_enabled:true", "development_enabled:false");
 code=code.replace("const shot=async (name,viewport=false)=>{", "const unusedShot=async (name,viewport=false)=>{");
 code=code.replace("10000);pending.set", "30000);pending.set");
 code=code.replace("['--headless=new','--no-first-run'", "['--headless=new','--no-sandbox','--disable-gpu','--disable-gpu-sandbox','--disable-extensions','--no-first-run'");
@@ -53,8 +53,7 @@ code+=`
  await click('[data-purchase-new]');await capture('admin-purchase-form','Record purchase dialog; no purchase is saved.','#purchase-dialog');await click('[data-purchase-close]');
  await go('reports');await wait('document.querySelector("#report-results table")');await capture('admin-reports','Reports: Current inventory and Export CSV.');
  await go('activity');await wait('document.querySelector("#movement-activity-search")');await capture('admin-activity','Activity Logs with saved transaction links and Export CSV.');
- await go('users');await wait('document.querySelector("#accounts-list tbody tr")&&!document.querySelector("[data-open-invite]").disabled');await capture('admin-people','People & Accountability, isolated example.test identities.');
- await click('[data-open-invite]');await capture('admin-invite','Invite User panel, email service modeled locally. No invitation sent.','#invite-panel');await click('[data-close-invite]');
+ await go('users');await wait('document.querySelector("#accounts-list tbody tr")');await capture('admin-people','People & Accountability, isolated example.test identities.');
  await go('settings');await capture('shared-account','My account: authorized identity, display mode and logout.','#screen-settings');
  await evaluate('MCPAMonitoring.open()');await wait('document.querySelector("#monitoring-dialog[open]")');await capture('admin-notifications','Notifications interface. No notice is opened or marked read.','#monitoring-dialog');await click('[data-monitoring-close]');
  await logout();await login('sky');await wait('document.querySelector("#dashboard-search")');await capture('engineer-dashboard','Engineer dashboard and authorized navigation.');

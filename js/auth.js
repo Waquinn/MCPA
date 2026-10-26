@@ -3,19 +3,22 @@
   'use strict';
   let profile = null, demo = false, revision = 0, sessionUser = null, recovering = false, busy = false;
   const callbackParams = new URLSearchParams(location.hash.slice(1));
-  let invitationCallback = callbackParams.get('type') === 'invite' || new URLSearchParams(location.search).get('account_setup') === 'invite';
+  // Reject retired setup links, including a setup interrupted on an older page.
+  let legacySetup=false;
+  try{legacySetup=JSON.parse(sessionStorage.getItem('mcpa.password-setup'))?.kind==='invite';}catch(_){}
+  const retiredCallback = callbackParams.get('type') === 'invite' || new URLSearchParams(location.search).get('account_setup') === 'invite' || legacySetup;
   const callbackError = callbackParams.has('error') || new URLSearchParams(location.search).has('error');
-  let rejectCallback = callbackError;
-  function setupPassword(session, kind) {
+  let rejectCallback = callbackError || retiredCallback;
+  async function setupPassword(session) {
     if (!session?.user) return false;
-    ++revision; recovering = true; profile = null; invitationCallback = false; demo = false;
-    try { sessionStorage.removeItem('mcpa.demo.role'); sessionStorage.setItem('mcpa.password-setup', JSON.stringify({userId:session.user.id,kind})); } catch (_) {}
+    ++revision; recovering = true; profile = null; demo = false;
+    try { sessionStorage.removeItem('mcpa.demo.role'); sessionStorage.setItem('mcpa.password-setup', JSON.stringify({userId:session.user.id,kind:'recovery'})); } catch (_) {}
     history.replaceState(null,'',location.pathname);
-    login(kind === 'invite' ? 'Welcome to MCPA. Set a password for your company account.' : '', 'recovery');
+    login('', 'recovery');
     return true;
   }
   function pendingSetup(session) {
-    try { const saved=JSON.parse(sessionStorage.getItem('mcpa.password-setup')); return saved?.userId===session?.user?.id ? saved.kind : null; } catch (_) { return null; }
+    try { const saved=JSON.parse(sessionStorage.getItem('mcpa.password-setup')); return saved?.userId===session?.user?.id && saved.kind==='recovery'; } catch (_) { return false; }
   }
   const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const client = () => window.EquipmentTracking.client();
@@ -81,7 +84,7 @@
     let menu=document.getElementById('account-menu');
     if(!menu){menu=document.createElement('details');menu.id='account-menu';document.querySelector('.topbar-actions').append(menu);}
     document.querySelector('.topbar-actions > .avatar')?.classList.add('hidden');
-    menu.innerHTML=`<summary aria-label="Account menu" aria-expanded="${menu.open}" aria-controls="account-dropdown"><span class="account-name">${esc(name)}</span><span>${esc(label)}${demo?' · Demo':''}</span></summary><div class="account-dropdown" id="account-dropdown"><button data-account-profile>My Account</button><button data-account-theme>Change theme</button><button data-account-logout>${demo?'Exit demo':'Log Out'}</button></div>`;
+    menu.innerHTML=`<summary aria-label="Account menu" aria-expanded="${menu.open}" aria-controls="account-dropdown"><span class="account-name">${esc(name)}</span><span>${esc(label)}${demo?' · Demo':''}</span></summary><div class="account-dropdown" id="account-dropdown">${profile.username?`<p class="account-message">@${esc(profile.username)}</p>`:''}<button data-account-profile>My Account</button><button data-account-theme>Change theme</button><button data-account-logout>${demo?'Exit demo':'Log Out'}</button></div>`;
     menu.querySelector('summary').onclick=()=>{if(!menu.open)window.MCPAMonitoring?.close(false);};
     menu.ontoggle=()=>{menu.querySelector('summary')?.setAttribute('aria-expanded',String(menu.open));if(menu.open)window.MCPAMonitoring?.close(false);};
     menu.querySelector('[data-account-profile]').onclick=()=>{closeAccount();showScreen('settings');};
@@ -125,7 +128,7 @@
       const {data,error}=await client().auth.signInWithPassword({email:document.getElementById('auth-email').value.trim(),password:document.getElementById('auth-password').value});
       if(error)throw error;
       const passwordInput=document.getElementById('auth-password');if(passwordInput)passwordInput.value='';await restore(data.session);
-    } catch(error){feedback(recovering?'Password could not be saved. Use at least 12 characters, check your connection, and try again. If the link expired, request a new invitation or password reset.':error?.code==='invalid_credentials'?'Incorrect email or password.':error?.code==='email_not_confirmed'?'Confirm your company invitation before signing in.':'Sign in could not be completed. Check your connection and try again.');}
+    } catch(error){feedback(recovering?'Password could not be saved. Use at least 12 characters, check your connection, and try again. If the link expired, request a new password reset.':error?.code==='invalid_credentials'?'Incorrect email or password.':error?.code==='email_not_confirmed'?'Your email is not confirmed. Contact your administrator.':'Sign in could not be completed. Check your connection and try again.');}
     finally {busy=false;if(button?.isConnected)button.disabled=false;}
   }
   async function resetPassword() {
@@ -141,7 +144,7 @@
   }
   async function logout() {
     window.MCPANavigation?.endSession();
-    const wasDemo=demo;++revision;profile=null;sessionUser=null;demo=false;recovering=false;invitationCallback=false;
+    const wasDemo=demo;++revision;profile=null;sessionUser=null;demo=false;recovering=false;
     sessionStorage.removeItem('mcpa.password-setup');
     sessionStorage.removeItem('mcpa.demo.role');clearApplication();history.replaceState(null,'',location.pathname);login(wasDemo?'Demo closed. Your sample records remain in this browser.':'Signing out…');
     if(wasDemo)return;
@@ -161,18 +164,23 @@
     try{
       client().auth.onAuthStateChange((event,session)=>{
         if(demo || rejectCallback)return;
-        if(event==='PASSWORD_RECOVERY'){setupPassword(session,'recovery');return;}
+        if(event==='PASSWORD_RECOVERY'){setupPassword(session);return;}
         if(event==='SIGNED_OUT'){window.MCPANavigation?.endSession();++revision;profile=null;sessionUser=null;recovering=false;sessionStorage.removeItem('mcpa.password-setup');login('Your session ended. Sign in again.');return;}
         if(recovering)return;
-        if(session && (invitationCallback || pendingSetup(session))){setupPassword(session,invitationCallback?'invite':pendingSetup(session));return;}
+        if(session && pendingSetup(session)){setupPassword(session);return;}
         if(event==='INITIAL_SESSION'||event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='USER_UPDATED')setTimeout(()=>restore(session),0);
       });
-      if(callbackError){invitationCallback=false;history.replaceState(null,'',location.pathname);login('This email link is invalid or expired. Ask Admin to resend the invitation, or use Forgot password.');return;}
-      if(demoRole && !invitationCallback && !callbackParams.get('type') && ['admin','engineer','architect'].includes(demoRole)){await startDemo(demoRole,true);return;}
+      if(retiredCallback){
+        sessionStorage.removeItem('mcpa.password-setup');sessionStorage.removeItem('mcpa.demo.role');
+        history.replaceState(null,'',location.pathname);
+        try{await client().auth.signOut({scope:'local'});}catch(_){}
+        login('This account setup link is no longer supported. Contact your administrator for access.');return;
+      }
+      if(callbackError){history.replaceState(null,'',location.pathname);login('This password reset link is invalid or expired. Use Forgot password to request a new one.');return;}
+      if(demoRole && !callbackParams.get('type') && ['admin','engineer','architect'].includes(demoRole)){await startDemo(demoRole,true);return;}
       const {data,error}=await client().auth.getSession();if(error)throw error;
       if(recovering)return;
-      if(data.session && (invitationCallback || pendingSetup(data.session))){setupPassword(data.session,invitationCallback?'invite':pendingSetup(data.session));return;}
-      if(invitationCallback){invitationCallback=false;history.replaceState(null,'',location.pathname);login('The invitation session is unavailable. Open a fresh invitation email or use Forgot password.');return;}
+      if(data.session && pendingSetup(data.session)){setupPassword(data.session);return;}
       await restore(data.session);
     }catch(_){login('The sign-in service could not load. Check your connection and refresh. Offline demo remains available.');}
   }

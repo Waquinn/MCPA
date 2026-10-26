@@ -2,6 +2,7 @@
   "name": "mcpa-movement-tests",
   "private": true,
   "scripts": {
+    "test:functionality-audit": "node --test --test-concurrency=1 functionality-audit-v2/client.test.cjs functionality-audit-v2/database.test.cjs consumables-requests-v2/frontend.test.cjs accounts-edge.test.mjs accounts-database.test.cjs development-accounts.test.mjs auth-database.test.cjs inventory.test.cjs admin-equipment-summary.test.cjs && node auth.browser.cjs --functionality-audit && node auth.browser.cjs --combined-integration && node auth.browser.cjs --consumables-upgrade",
     "test:engineer-consumables": "node --test --test-concurrency=1 consumables-requests-v2/frontend.test.cjs consumables-requests-v2/inventory.test.cjs consumables-requests-v2/inventory.database.test.cjs consumables-requests-v2/database.test.cjs integration-quantity-custody-v2/database.test.cjs integration-quantity-custody-v2/read-rpc.test.cjs && node auth.browser.cjs --engineer-consumables && node auth.browser.cjs --combined-integration",
     "test:terminology": "node --test --test-concurrency=1 display.test.cjs dashboard-view.test.cjs global-search.test.cjs inventory.test.cjs movement-store.test.cjs pdf-reports.test.cjs && node auth.browser.cjs --terminology",
     "test:equipment-import": "node --test --test-concurrency=1 equipment-import.test.cjs equipment-import.database.test.cjs && node auth.browser.cjs --combined-integration",

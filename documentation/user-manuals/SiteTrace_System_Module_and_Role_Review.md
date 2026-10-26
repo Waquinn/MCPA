@@ -20,9 +20,9 @@ The protected live **REQ-00001** was not read or changed. The statement concerns
 | --- | --- |
 | Frontend | Plain HTML, CSS and JavaScript; dynamically fetched module HTML/CSS/JS; shared services on `window`. No application build framework/package is required. |
 | Entry pages | `index.html` and `2-engr/index.html`; both load authenticated role gates. Opening the Engineer path does not grant the Engineer role. |
-| Authentication | Supabase Auth email/password sessions, invitation/recovery callbacks, password reset, active profile verification through `mcpa_my_profile`. |
+| Authentication | Supabase Auth email/password sessions, password-recovery callbacks, password reset, active profile verification through `mcpa_my_profile`. |
 | Backend | Supabase PostgreSQL tables, row-level security, authenticated security-definer RPCs, immutable/append-only audit stores, reservation checks and operation UUIDs for retry deduplication. |
-| Account service | Deno Edge Function `manage-accounts`, with active Admin validation, origin validation and explicit invitation/development capabilities. |
+| Account service | Deno Edge Function `manage-accounts`, with active Admin validation, origin validation and explicit development-account capability. |
 | Files | Private equipment-photo and purchase-receipt Storage buckets; authorized signed URLs. Equipment pictures up to 5 MB; receipt PDFs/images up to 10 MB. |
 | QR | QRCode.js handover/receiving display; html5-qrcode 2.3.8 camera integration; external `api.qrserver.com` equipment-tag rendering/printing. |
 | Updates | Supabase Realtime where configured plus visible-page polling/focus/reconnect refresh, generally every 30 seconds. |
@@ -49,7 +49,7 @@ Legend: **Implemented** = executable source and supporting backend are present; 
 | 10 | Purchases / `purchase` | Record-only supplier/invoice/date/item-price ledger, optional request link/private receipt, edit, purchase history, linked delivery status, search/date filters. | Implemented/conditional ledger and private Storage. No inventory receipt from ledger save. |
 | 11 | Reports / `reports` | Inventory monitoring: current inventory, actual saved snapshots, dated movement history, CSV. | Implemented/conditional monitoring install and scheduler for historical captures. Admin only. |
 | 12 | Activity Logs / `activity` | Authorized movement audit, search, exact-record links, CSV. | Implemented; not a combined all-module audit. |
-| 13 | People & Accountability / `users` | Admin accounts list/search, non-Admin invitations, retry/resend, role/status editing, verified recovery linkage, access history; gated real test-account creation. | Implemented/conditional Edge Function/email/capabilities. `1-admin/modules/users/users.js`. |
+| 13 | People & Accountability / `users` | Admin accounts list/search, Add Account form, role/status editing, verified Auth linkage, access history; gated real test-account creation. | Implemented/conditional Edge Function/capabilities. `1-admin/modules/users/users.js`. |
 | 14 | Settings / `settings` | My account identity, light/night preference and logout; directs password reset to login screen. | Implemented/limited. No full profile editor or in-session password form. |
 
 The module loader uses Engineer versions of normal movement/dashboard modules for Engineer/Architect. It deliberately shares current Admin implementations for Projects, Settings and certain other modules; routes still gate access. Tool Handler uses the read-only Equipment Tracking implementation. Several old `2-engr` Users/Reports/Settings files remain but are not evidence of accessible features.
@@ -101,8 +101,8 @@ Roles are exact stored values: `admin`, `engineer`, `architect`, `secretary`, `t
 ## Authentication and account management findings
 
 - Supabase Auth owns passwords and sessions. `mcpa_my_profile` verifies the permanent company profile and active authorized role. Unknown/unlinked/inactive profiles are denied.
-- Password recovery and invitation callbacks are implemented. New-password setup requires at least 12 characters and signs the user out after saving. Real email/redirect behavior was not tested.
-- There is no public registration. Invite User offers Engineer, Architect, Secretary and Tool Handler; Admin creation/promotion is refused by the current account-management gateway and omitted from non-Admin UI options.
+- Password recovery callbacks are implemented. New-password setup requires at least 12 characters and signs the user out after saving. Real email/redirect behavior was not tested.
+- There is no public registration. Company accounts are provisioned by the administrator; the app retains verified account linking, role/status editing and gated test accounts.
 - Edit access preserves the person record; existing Auth links cannot be reassigned/removed through the recovery form. Self-removal of Admin authority is refused. No account deletion or general profile editor is confirmed.
 - Real development-account creation supports Engineer/Architect only, requires an explicit capability and 12–128-character password, and can access company records. It is separate from offline demonstration.
 - Offline demo is explicitly chosen, available for Admin/Engineer/Architect only, and uses browser-local sample data. Users, Material Requests and Purchases are excluded; Projects is read-only; receiving QR requires authenticated company service access.
@@ -129,7 +129,6 @@ Roles are exact stored values: `admin`, `engineer`, `architect`, `secretary`, `t
 | Existing deployment notes identify absent `public.project_history` | Engineer/Architect project snapshots and project history can fail despite a visible Projects menu. The prepared guarded repair is not proof of live installation. No repair/migration was run here. |
 | QR libraries/service unavailable in the capture network | Genuine QR interfaces/code references are shown; receiving/handover bitmaps, optical scanning and equipment-tag printing are not claimed as captured/verified. |
 | Private image/receipt behavior requires Storage setup | Format/size/path/authorization code exists; actual deployed uploads, retrieval and signed URLs are unverified. No private production files were opened. |
-| Email invitation requires Edge deployment and explicit enablement | Local capability responses are modeled. Invitations/recovery emails and their delivery were not executed. |
 | Scheduler is external | Weekly snapshots/overdue reminders are implemented prospectively, but regular Monday 16:00 generation requires a backend job. No historical backfill or automatic job installation is confirmed. |
 | Admin asset profile history is registration-only | Use movement modules/Activity Logs for actual saved history. |
 | Old bulk metadata controls remain in HTML/functions | Runtime labels/actions become Review repairs and Review transfers. They are navigation, not bulk status/location changes. |
@@ -170,7 +169,7 @@ The obsolete prose/placeholder files were treated as context, not proof of opera
 **43 genuine PNG captures** were completed at a 1440×1000 viewport, with native clipping/scrolling for dialogs. The Administrator manual embeds **23 verified figures**; the Engineer/Architect manual embeds **19**. One login image is used in both; the two additional Secretary/Tool Handler navigation captures support this review. See [screenshot-manifest.json](screenshot-manifest.json) for role, route, viewport, caption and SHA-256 of every file. No generated/raster mockup is included.
 
 - Dashboard/sidebar captures exist for Admin, Engineer and Architect.
-- Admin captures cover inventory/form, Projects/form, Requests/review/release, Transfers, Returns, repair completion, recovery, consumables/request, ledger/form, reports, activity, people/invitation, account and notifications.
+- Admin captures cover inventory/form, Projects/form, Requests/review/release, Transfers, Returns, repair completion, recovery, consumables/request, ledger/form, reports, activity, people/account access, account and notifications.
 - Field captures cover personal equipment/details, assigned Projects, request/withdrawal, manual transfer, receiving QR/lookup interface, initial and lower inspection, unsaved refusal fields, history, return, repair/loss reports, activity and account.
 - Real-looking passwords, personal production records and authentication/QR secrets were excluded by using synthetic fixture identities and empty forms. No destructive redaction or synthetic success overlay was needed.
 - QR display/scanning libraries and external fonts were blocked with HTTPS. Some local UI uses browser fallback fonts; this is the actual rendered repository interface under the recorded environment. No fake scanner/QR image was supplied.
@@ -187,7 +186,6 @@ The following **exact remaining screenshots** are useful for later deployment-sp
 | Admin / authorized field user | Relevant saved record with successful post-action notice and completed inspection detail | Browser business writes denied. Existing isolated request/release/return records were shown, but no browser save-success sequence is claimed. |
 | Admin | Equipment Tracking photo preview/saved private photo; Purchases > View > Open private receipt | No real private file transport or production attachments used. |
 | Admin | Reports > Saved inventory snapshot with actual scheduler capture and Notifications > weekly/overdue notice | External scheduler unverified; snapshot/notices not invented. |
-| Admin / new user | Invitation delivery and Set your password callback | Email/Edge/Auth transport modeled; no actual email sent. |
 
 ## Deliverables, validation and reproducibility
 

@@ -39,11 +39,13 @@
     <select id="siteFilter" class="chip-filter" aria-label="Filter equipment by project" onchange="filterAndResetPage()"><option value="">Project</option></select>
     <select id="typeFilter" class="chip-filter" aria-label="Filter equipment by category" onchange="filterAndResetPage()"><option value="">Category</option></select>
     <select id="statusFilter" class="chip-filter" aria-label="Filter equipment by status" onchange="navigateEquipmentStatus(this.value)">
-      <option value="">Status</option>
+      <option value="">All Equipment</option>
       <option value="Available">Available to request</option>
       <option value="In Use">In Use</option>
       <option value="For Repair">For Repair</option>
       <option value="Missing">Missing</option>
+      <option value="Sold">Sold</option>
+      <option value="Disposed">Disposed</option>
     </select>
   </div>
 

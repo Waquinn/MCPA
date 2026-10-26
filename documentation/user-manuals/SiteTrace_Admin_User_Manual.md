@@ -1,6 +1,6 @@
 # SiteTrace Web Application — Administrator User Manual
 
-Version 1.0 · Prepared 12 October 2026 · Admin
+Version 1.1 · Prepared 27 October 2026 · Admin
 
 ## Table of contents
 
@@ -19,8 +19,8 @@ Version 1.0 · Prepared 12 October 2026 · Admin
 
 | Item | Value |
 | --- | --- |
-| Version | 1.0 |
-| Prepared | 12 October 2026 · Asia/Manila |
+| Version | 1.1 |
+| Prepared | 27 October 2026 · Asia/Manila |
 | Audience | Active Admin accounts |
 | Basis | Current local repository, source and isolated browser review |
 | Scope | 14 primary modules; authentication and account access are cross-cutting functions |
@@ -28,11 +28,11 @@ Version 1.0 · Prepared 12 October 2026 · Admin
 
 Naming: these documents use the requested SiteTrace title. The inspected application displays MCPA (Material & Construction Property Allocation), Construction Asset Management and Accountability System, and BuildRight Corp. Follow the on-screen MCPA labels when using the application. No application branding was changed.
 
-Verification scope: instructions describe the current repository implementation. Genuine interface screenshots were captured from the unmodified application using isolated local PGlite test records. Authentication and account-service capability responses were modeled locally. They are training illustrations, not production screenshots or proof of deployed services.
+Verification scope: instructions describe the current repository implementation. Most interface screenshots were captured on 12 October using isolated local PGlite records. People & Accountability was refreshed on 27 October after feature removal, using the local functionality-audit fixture. Authentication is modeled locally. They are training illustrations, not production screenshots or proof of deployed services.
 
-The capture browser blocked external HTTPS and permitted business reads only after fixture setup. No live login, migration, invitation, stock change, approval, handover, receipt, return, role change, or notification-read update was performed. The live REQ-00001 test was not accessed. Its unchanged state was not independently compared because production was not contacted.
+The capture browser blocked external HTTPS. Original training captures permitted business reads only after fixture setup; the updated People capture came from a test run that writes only to disposable local fixtures. No live login, migration, stock change, approval, handover, receipt, return, role change, or notification-read update was performed. The live REQ-00001 test was not accessed. Its unchanged state was not independently compared because production was not contacted.
 
-Operational availability: use the procedures only in an authorized company workspace whose required Supabase database functions, policies and services are installed. Source-confirmed write procedures were not executed in the capture browser. Supabase deployment, email delivery, private file retrieval, optical QR scanning and the monitoring scheduler remain unverified in production.
+Operational availability: use the procedures only in an authorized company workspace whose required Supabase database functions, policies and services are installed. The original training captures did not execute write procedures; current automated regression checks use disposable local records. Supabase deployment, email delivery, private file retrieval, optical QR scanning and the monitoring scheduler remain unverified in production.
 
 Screenshot conventions: all figure captions identify the local training environment. Fixture names, example.test addresses, asset references beginning DOC-, and transaction numbers in the 007xx range are synthetic. Password fields are empty or absent. No authentication tokens or receiving QR secrets are embedded in the manuals. Figures are numbered separately in each manual.
 
@@ -79,7 +79,7 @@ Source evidence: index.html; js/auth.js; js/permissions.js; supabase/functions/m
 
 **Purpose:** Open the pages and actions authorized for your company identity.
 
-**Access / prerequisites:** An issued company account, a confirmed invitation if applicable, and an Active company profile.
+**Access / prerequisites:** An issued company account, an Active company profile.
 
 1. Open the application address supplied by your administrator. Both index.html and 2-engr/index.html use authenticated role checks; the URL alone does not select your role.
 2. In Welcome back, enter your company Email and Password. Show reveals the password locally; Hide masks it again. Keep passwords out of shared screenshots.
@@ -95,20 +95,20 @@ Source evidence: index.html; js/auth.js; js/permissions.js; supabase/functions/m
 Figure 1. Welcome back sign-in screen. Local capture; credential fields are empty. [Isolated local training environment.]
 
 
-### Accept an invitation or reset a password
+### Reset your password
 
-**Purpose:** Set a password for an issued account or recover access.
+**Purpose:** Recover access to an existing company account.
 
-**Access / prerequisites:** A valid invitation or password-reset email, configured Supabase Auth redirects and working email delivery.
+**Access / prerequisites:** A valid password-reset email, configured Supabase Auth redirects and working email delivery.
 
-1. For a new account, open the administrator-issued invitation link. For a reset, enter your Email on the login page and select Forgot password?.
+1. Enter your Email on the login page and select Forgot password?.
 2. For a reset request, read the neutral response: If an account exists for this email, a password reset link has been sent. This message does not confirm that the email exists or that delivery succeeded.
 3. Open the fresh email link and use Set your password. Enter a New password of at least 12 characters and select Save password.
 4. After the application signs you out, sign in with the new password. Cancel and sign out abandons the setup screen.
 
 **Expected result:** The password is saved by Supabase Auth and the user signs in again.
 
-**Limits / errors:** An invalid, expired or unavailable invitation session needs a fresh invitation or password reset. This documentation session did not send or receive email.
+**Limits / errors:** An invalid or expired reset link needs a fresh password reset. This documentation session did not send or receive email.
 
 
 ### 2.2 Understand the Dashboard
@@ -305,19 +305,15 @@ Source evidence: js/monitoring.js; 1-admin/modules/reports/reports.js; js/moveme
 
 ### 3.9 People & Accountability and Settings
 
-People & Accountability is restricted to Admin. Find a person searches name, email or role. Rows show Person, Email, Role, Status, Account and Actions. Invite User creates or links a non-Admin company account through the manage-accounts Edge Function when invitations are enabled. Edit access changes role/status, while preserving person identity and accountability history.
+People & Accountability is restricted to Admin. Find a person searches name, email or role. Rows show Person, Email, Role, Status, Account and Actions. Edit access changes role/status, while preserving person identity and accountability history.
 
-Advanced / Recovery Account Linking links a verified existing Auth identity to a company person. Existing Auth links cannot be reassigned through this form. Account access history loads recent changes. No account deletion or general personal-profile editing interface is implemented. Admin creation is not offered through Invite User; Edit access can retain an existing Admin, but a non-Admin row has no Admin promotion option.
+Add Account is a visible form for a new or existing company profile. Enter Full name, Authorized role, Supabase Auth user ID and Account status. Create the sign-in account in Supabase Authentication > Users first for active access; an inactive profile can be saved without a sign-in link. Existing Auth links cannot be reassigned through this form. Account access history loads recent changes. No account deletion or general personal-profile editing interface is implemented. Edit access can retain an existing Admin, but a non-Admin row has no Admin promotion option.
 
-Development / Testing Only appears only when that capability is enabled. It can create Engineer/Architect test accounts without email. These are real logins with access to live company records; the feature is not the browser-only offline demo. It was disabled in the screenshot environment.
+Development / Testing Only appears only when that capability is enabled. It can create Engineer/Architect test accounts without email. These are real logins with access to live company records; the feature is not the browser-only offline demo. Its visibility depends on the server configuration.
 
-![Figure 22. People & Accountability with synthetic local identities. [Isolated local training environment.]](screenshots/admin-people.png)
+![Figure 22. People & Accountability with the restored Add Account form; synthetic local identities. [Isolated local training environment.]](screenshots/admin-people.png)
 
-Figure 22. People & Accountability with synthetic local identities. [Isolated local training environment.]
-
-![Figure 23. Invite User panel. Edge capability is modeled; no invitation was sent. [Isolated local training environment.]](screenshots/admin-invite.png)
-
-Figure 23. Invite User panel. Edge capability is modeled; no invitation was sent. [Isolated local training environment.]
+Figure 22. People & Accountability with the restored Add Account form; synthetic local identities. [Isolated local training environment.]
 
 Source evidence: 1-admin/modules/users/users.js; 1-admin/modules/settings/settings.js; migrations 202610060001_account_management.sql and 202610060003_development_accounts.sql; supabase/functions/manage-accounts/handler.mjs.
 
@@ -678,40 +674,24 @@ The following procedures describe source-supported company operations. They were
 **Limits / errors:** Activity Logs does not include all module-specific audits. Scheduled weekly/overdue notices depend on a backend scheduler. Opening the bell alone does not mark every notice read.
 
 
-### 4.23 Invite a company user or complete an unfinished invitation
+### 4.23 Add an account or update an existing company profile
 
-**Purpose:** Issue access while preserving a person’s existing history.
+**Purpose:** Create company access while preserving accountability identities.
 
-**Access / prerequisites:** Admin; manage-accounts Edge Function deployed; email invitations enabled.
+**Access / prerequisites:** Admin; existing verified Auth user ID for active sign-in access.
 
-1. Select People & Accountability > Invite User, or Invite on an unlinked person’s row.
-2. Choose Company person if the person already has records; otherwise choose Create a new company person and enter Full name.
-3. Enter Email and Authorized role: Engineer, Architect, Secretary or Tool Handler. If a truly different person shares an existing name, confirm This is a different person who shares an existing person’s name.
-4. Select Send Invitation. Ask the recipient to use the issued email link to set a password.
-5. Use Retry invitation for a prepared-but-incomplete invitation, or Resend invitation for an active pending invitation, when those controls appear.
+1. Select People & Accountability > Add Account. The account form is visible on the main page.
+2. Keep New company profile selected and enter Full name and Authorized role. To update a person, select their Company profile instead.
+3. For active access, create or verify the person in Supabase Authentication > Users, copy their user ID into Supabase Auth user ID and select Active. You may instead save an Inactive company profile without an Auth link.
+4. Select Add Account for a new profile, or Save account access for an existing one. Confirm the saved row. Existing linked Auth IDs cannot be reassigned.
+5. For a quick role/status change, use the row Edit access action. Load Account access history to review recorded changes.
 
-**Expected result:** The service creates/links the intended account and the page shows the invitation state.
+**Expected result:** The account is saved through the existing account-management RPC. The form remains available when the optional test-account service is unavailable.
 
-**Limits / errors:** Invitation controls are disabled when delivery is not configured or capabilities are unavailable. Reuse the original prepared request; do not create duplicate people. Admin accounts cannot be invited through this interface.
-
-
-### 4.24 Edit account access or link a verified existing Auth account
-
-**Purpose:** Maintain access without replacing accountability identities.
-
-**Access / prerequisites:** Admin; verified company person and account linkage.
-
-1. For normal access, select People & Accountability > Edit access. Review the named person/email. Choose Authorized role and Account status, then select Save access.
-2. For recovery linking, expand Advanced / Recovery Account Linking. Choose Company person, review Full name/Authorized role and enter the verified Supabase Auth user ID obtained by the authorized administrator.
-3. Select Account status and Link verified account.
-4. Expand Account access history and select Load recent history to review the latest recorded changes.
-
-**Expected result:** Role/status or verified linkage is saved while custody/history stay attached to the person.
-
-**Limits / errors:** An Active account must have a valid Auth linkage. Existing links cannot be reassigned. The server prevents removal of your own Admin access. Non-Admin rows do not provide an Admin promotion option. No account deletion is supported.
+**Limits / errors:** Active access requires a valid Auth link. The server prevents removing your own Admin access, reassigning a linked Auth identity or promoting a new Admin. This form does not create Auth credentials or send email.
 
 
-### 4.25 Use development accounts only in authorized testing
+### 4.24 Use development accounts only in authorized testing
 
 **Purpose:** Create a controlled test login when email-based onboarding is unavailable.
 
@@ -744,7 +724,6 @@ Source evidence: Procedures 4.1–4.25 follow the module handlers cited in Chapt
 | Movement storage is not configured. | Ask the system maintainer to verify the current authenticated movement installation; refresh after configuration is completed. |
 | A tool is reserved by an approved request or pending transfer. | Open the owning request/transfer and coordinate with the eligible field user. Do not clear assignments manually. |
 | Purchase setup / Monitoring setup is not installed. | Report the configuration message and module. A visible menu does not establish that its deployed database functions exist. |
-| Production email invitations are not yet configured. | Invitation buttons remain disabled until authorized deployment/configuration is completed. Development test accounts are a separate capability. |
 | Photo or private receipt could not load/upload | Check permitted format/size, network, Storage access and popup permissions. Confirm the intended asset/purchase before retrying. |
 | Unexpected Available / Unavailable display | Read both status and location availability; inspect reservations/holder and eligibility. The helper is not a complete issue-readiness check. |
 | Counts differ from the number of rows | Dashboard/project totals sum quantities, zero-quantity records may be hidden, and inventory previews show only six rows. |
@@ -817,7 +796,7 @@ The companion system review contains the five-role permission matrix, module inv
 
 | Version | Date | Revision |
 | --- | --- | --- |
-| 1.0 | 12 October 2026 | Initial source-based Administrator manual; genuine isolated screenshots; deployment and hardware limits identified. |
+| 1.1 | 27 October 2026 | Initial source-based Administrator manual; genuine isolated screenshots; deployment and hardware limits identified. |
 
 Future revision: repeat source/permission review after any workflow, label, migration or role change. Replace the corresponding figures using dedicated staging accounts and approved records. Do not reuse production transactions merely to illustrate a procedure.
 

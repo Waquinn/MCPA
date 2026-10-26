@@ -3,47 +3,38 @@ const assert=require('node:assert/strict');
 const {randomUUID}=require('node:crypto');
 const {authDatabase}=require('./auth-test-db.cjs');
 
-test('invitations preserve identities, restrict privileges, reconcile retries and audit changes',async()=>{
+test('invitation retirement preserves history and secure access editing and verified recovery',async()=>{
  const f=await authDatabase(),{db,actors:a,query,rpc}=f;
- const step=async(actor,action,payload)=>{await db.exec('set role service_role');try{return (await db.query('select mcpa_invitation_step($1,$2,$3) value',[actor.authId,action,payload])).rows[0].value;}finally{await db.exec('reset role');}};
  try{
-  const existing=randomUUID();await db.query('insert into profiles(id,name) values($1,$2)',[existing,'Historical Engineer']);
-  const input={id:randomUUID(),profile_id:existing,name:'Historical Engineer',email:'history@example.test',role:'engineer'};
-  await assert.rejects(()=>query(a.admin,'select mcpa_invitation_step($1,$2,$3)',[a.admin.authId,'prepare',input]),/permission denied/);
-  await assert.rejects(()=>step(a.sky,'prepare',input),/Active Admin/);
-  await assert.rejects(()=>step(a.admin,'prepare',{...input,role:'admin'}),/supported role/);
-  const job=await step(a.admin,'prepare',input);assert.equal(job.profile_id,existing);
-  assert.equal((await step(a.admin,'prepare',{...input,id:randomUUID()})).id,job.id,'Same email reuses durable job');
-  await assert.rejects(()=>step(a.admin,'prepare',{...input,name:'Another person'}),/different details/);
-  const claim=await step(a.admin,'claim',{id:job.id});
-  await assert.rejects(()=>step(a.admin,'claim',{id:job.id}),/already being sent/);
-  const authId=randomUUID();
-  await db.query("insert into auth.users(id,email,invited_at,raw_user_meta_data) values($1,$2,now(),$3)",[authId,input.email,{mcpa_invitation_id:job.id}]);
-  await step(a.admin,'release',{id:job.id,lease_id:claim.lease_id});
-  const retry=await step(a.admin,'claim',{id:job.id});assert.equal(retry.auth_user_id,authId);
-  await step(a.admin,'finish',{id:job.id,lease_id:retry.lease_id,auth_user_id:authId});
-  const profile=(await db.query('select * from profiles where id=$1',[existing])).rows[0];assert.equal(profile.auth_user_id,authId);assert.notEqual(profile.id,authId);assert.equal(profile.account_status,'active');
-  let account=(await rpc(a.admin,'mcpa_accounts')).find(p=>p.id===existing);assert.equal(account.invitation_pending,true);assert.equal(account.email,input.email);
-  await assert.rejects(()=>step(a.admin,'claim',{id:job.id}),/Wait one minute/);
-  await db.query("update mcpa_account_invitations set sent_at=now()-interval '2 minutes' where id=$1",[job.id]);
-  const resend=await step(a.admin,'claim',{id:job.id});
-  await step(a.admin,'finish',{id:job.id,lease_id:resend.lease_id,auth_user_id:authId});
-  await assert.rejects(()=>step(a.admin,'finish',{id:job.id,lease_id:resend.lease_id,auth_user_id:authId}),/attempt changed/);
-  await db.query('update auth.users set email_confirmed_at=now() where id=$1',[authId]);
-  account=(await rpc(a.admin,'mcpa_accounts')).find(p=>p.id===existing);assert.equal(account.invitation_pending,false);
-  const args={p_id:existing,p_name:input.name,p_role:'architect',p_status:'inactive',p_auth_user_id:authId};
+  const person=randomUUID(),job=randomUUID(),authId=randomUUID();
+  await db.query('insert into profiles(id,name) values($1,$2)',[person,'Historical Engineer']);
+  await db.query('insert into mcpa_account_invitations(id,profile_id,email,name,role,created_by) values($1,$2,$3,$4,$5,$6)',[job,person,'history@example.test','Historical Engineer','engineer',a.admin.id]);
+  await db.query("insert into mcpa_account_audit(actor_id,profile_id,event) values($1,$2,'person_created')",[a.admin.id,person]);
+  const before=(await db.query('select * from profiles order by id')).rows;
+  const history=(await db.query('select * from mcpa_account_audit order by id')).rows;
+  const jobs=(await db.query('select * from mcpa_account_invitations order by id')).rows;
+  const sql=require('node:fs').readFileSync(require('node:path').join(__dirname,'../supabase/migrations/202610270001_remove_user_invitations.sql'),'utf8');
+  const reports=await db.exec(sql);for(const [key,value]of Object.entries(reports.at(-1).rows[0].invite_user_removal_verification))assert.equal(value,true,key);
+  assert.deepEqual((await db.query('select * from profiles order by id')).rows,before);
+  assert.deepEqual((await db.query('select * from mcpa_account_audit order by id')).rows,history);
+  assert.deepEqual((await db.query('select * from mcpa_account_invitations order by id')).rows,jobs);
+  const account=(await rpc(a.admin,'mcpa_accounts')).find(p=>p.id===person);assert.equal(account.email,'history@example.test');assert.ok(!Object.keys(account).some(k=>k.startsWith('invitation_')));
+  await assert.rejects(()=>rpc(a.sky,'mcpa_accounts'),/Admin access/);
+  for(const role of ['anon','authenticated','service_role']){await db.exec('set role '+role);try{await assert.rejects(()=>db.query('select public.mcpa_invitation_step($1,$2,$3)',[a.admin.authId,'prepare',{}]),e=>e.code==='42883');}finally{await db.exec('reset role');}}
+  const args={p_id:person,p_name:'Historical Engineer',p_role:'architect',p_status:'inactive',p_auth_user_id:null};
+  await assert.rejects(()=>rpc(a.sky,'mcpa_save_account',args),/Admin access/);
   await rpc(a.admin,'mcpa_save_account',args);
-  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...args,p_auth_user_id:a.sky.authId}),/cannot be reassigned/);
+  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...args,p_status:'active'}),/Link a Supabase Auth/);
   await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...args,p_role:'admin'}),/separately authorized/);
-  await rpc(a.admin,'mcpa_save_account',{...args,p_status:'active'});
-  const events=(await query(a.admin,'select * from mcpa_account_audit where profile_id=$1',[existing])).rows;
-  for(const event of ['user_invited','invitation_resent','account_linked','role_changed','account_deactivated','account_reactivated'])assert.ok(events.some(row=>row.event===event&&row.actor_id===a.admin.id&&row.created_at));
+  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...args,p_auth_user_id:authId}),/verified Auth account/);
+  await db.query('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())',[authId,'history@example.test']);
+  await rpc(a.admin,'mcpa_save_account',{...args,p_status:'active',p_auth_user_id:authId});
+  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{...args,p_auth_user_id:a.sky.authId}),/cannot be reassigned/);
+  const after=(await db.query('select * from profiles where id=$1',[person])).rows[0];assert.equal(after.id,person);assert.equal(after.auth_user_id,authId);assert.equal(after.account_status,'active');
+  await assert.rejects(()=>rpc(a.admin,'mcpa_save_account',{p_id:a.admin.id,p_name:a.admin.name,p_role:'admin',p_status:'inactive',p_auth_user_id:a.admin.authId}),/own administrator access/);
   assert.equal((await query(a.sky,'select * from mcpa_account_audit')).rows.length,0);
-  await assert.rejects(()=>query(a.admin,"insert into mcpa_account_audit(actor_id,profile_id,event) values($1,$2,'forged')",[a.admin.id,existing]),/permission denied/);
-  await assert.rejects(()=>step(a.admin,'prepare',{id:randomUUID(),name:a.sky.name,email:'duplicate@example.test',role:'engineer'}),/person with this name exists/);
-  const distinct=await step(a.admin,'prepare',{id:randomUUID(),name:a.sky.name,email:'duplicate@example.test',role:'engineer',distinct_person:true});assert.notEqual(distinct.profile_id,a.sky.id);
-  await assert.rejects(()=>step(a.admin,'prepare',{id:randomUUID(),name:'Existing email',email:'sky@example.test',role:'engineer'}),/already has an Auth/);
-  assert.equal((await db.query('select auth_user_id from profiles where id=$1',[a.admin.id])).rows[0].auth_user_id,a.admin.authId);
+  await assert.rejects(()=>query(a.admin,"insert into mcpa_account_audit(actor_id,profile_id,event) values($1,$2,'forged')",[a.admin.id,person]),/permission denied/);
+  await db.exec(sql);assert.deepEqual((await db.query('select * from mcpa_account_invitations order by id')).rows,jobs);
  }finally{await f.close();}
 });
 

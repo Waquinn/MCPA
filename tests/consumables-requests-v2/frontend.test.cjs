@@ -14,8 +14,8 @@ test('quantities reject overflow, invalid decimals, exponent notation and non-fi
  assert.equal(C.quantity('999999999.999'),999999999.999);assert.equal(C.quantity('0.001'),0.001);assert.equal(C.quantity(0,true),0);
 });
 test('multi-item requests preserve SKU/unit, validate site and require distinct active items',()=>{
- const request={site_id:id(9),purpose:' site work ',items:[{consumable_id:id(1),quantity:'2.125',unit:'pieces'},{consumable_id:id(2),quantity:1,unit:'box'}]};
- assert.deepEqual(C.validateRequest(request,catalog,sites),{...request,purpose:'site work',items:[{consumable_id:id(1),quantity:2.125,unit:'pieces'},{consumable_id:id(2),quantity:1,unit:'box'}]});
+ const request={site_id:id(9),purpose:' site work ',items:[{consumable_id:id(1),quantity:'2',unit:'pieces'},{consumable_id:id(2),quantity:1,unit:'box'}]};
+ assert.deepEqual(C.validateRequest(request,catalog,sites),{...request,purpose:'site work',items:[{consumable_id:id(1),quantity:2,unit:'pieces'},{consumable_id:id(2),quantity:1,unit:'box'}]});
  for(const bad of [{...request,site_id:id(8)},{...request,items:[]},{...request,items:[request.items[0],request.items[0]]},{...request,items:[{...request.items[0],unit:'box'}]},{...request,items:[{consumable_id:id(3),quantity:1,unit:'kg'}]},{...request,purpose:'a'.repeat(1001)}])assert.throws(()=>C.validateRequest(bad,catalog,sites));
 });
 test('request may exceed current stock for later approval; approval never implies issuance',()=>{

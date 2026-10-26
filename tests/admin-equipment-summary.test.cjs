@@ -4,7 +4,7 @@ const read=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
 
 test('status route accepts only existing masterlist statuses',()=>{
  const c=vm.createContext({window:{},URLSearchParams});vm.runInContext(read('js/navigation.js'),c);
- for(const status of ['all','available','inuse','repair','missing'])assert.equal(c.window.MCPAMovementLinks.parse('#masterlist?status='+status).status,status);
+ for(const status of ['all','available','inuse','repair','missing','sold','disposed'])assert.equal(c.window.MCPAMovementLinks.parse('#masterlist?status='+status).status,status);
  for(const route of ['#users?status=available','#masterlist?status=deployed','#masterlist?status=<script>','#masterlist'])assert.equal(c.window.MCPAMovementLinks.parse(route).status,undefined);
 });
 

@@ -187,6 +187,7 @@
       field('minimum', 'Minimum stock *', item?.minimum_stock ?? catalog.defaultMinimum, numeric) +
       (item ? '' : field('opening', 'Opening stock *', 0, numeric)), item ? 'Save Changes' : 'Add Consumable'),
     { type: 'item', item, id: item?.id || uuid() });
+    updateQuantityRules(item?.unit || '',true);
   }
   function stockForm(item) {
     openDialog('Update Stock', `<p class="cons-description">${escape(item.name)} · Available: ${number(item.current_stock)} ${escape(item.unit)}.${openRequest(item.id) ? ' An open purchase request exists. Use Receive Stock on that request to record its delivery.' : ''}</p>` + form(
@@ -199,7 +200,7 @@
     const kind = $('#cons-kind').value;
     const input = $('#cons-quantity');
     $('label[for="cons-quantity"]').textContent = ({ usage: 'Quantity used *', restock: 'Quantity added *', correction: 'Correct total stock *' })[kind];
-    input.min = kind === 'correction' ? '0' : '0.001';
+    updateQuantityRules(formContext.item.unit,kind==='correction');
     input.max = kind === 'usage' ? formContext.item.current_stock : kind === 'restock' ? round(999999999.999 - Number(formContext.item.current_stock)) : '999999999.999';
     const quantity = Number(input.value);
     const balance = round(kind === 'correction' ? quantity : Number(formContext.item.current_stock) + (kind === 'usage' ? -quantity : quantity));
@@ -219,6 +220,7 @@
   }
   function requestSuggestion() {
     const item = itemById($('#cons-item').value);
+    updateQuantityRules(item.unit);
     const shortage = round(Math.max(0, Number(item.minimum_stock) - Number(item.current_stock)));
     $('#cons-quantity').value = shortage || 1;
     $('#cons-purpose').value = item.stock_status !== 'ok' ? `Restock ${item.name} to maintain material availability.` : '';
@@ -234,6 +236,7 @@
     const outstanding = round(request.quantity - request.received_quantity);
     openDialog('Receive Stock', `<p class="cons-description">${reference(request)} · ${escape(identity(request))}. Outstanding: ${number(outstanding)} ${escape(request.unit)}. Record only the quantity delivered; it will be added to available stock.</p>` + form(
       field('quantity', 'Quantity received *', outstanding, `type="number" min="0.001" max="${outstanding}" step="0.001" required autofocus`, true) + note('note', 'Delivery reference / notes *'), 'Confirm Receipt'), { type: 'receive', request, operationId: uuid() });
+    updateQuantityRules(request.unit);
   }
   function cancelForm(request) {
     openDialog('Cancel Purchase Request', `<p class="cons-description">Cancel the outstanding ${number(round(request.quantity - request.received_quantity))} ${escape(request.unit)} for ${reference(request)}? Already received stock and the request history will be retained.</p>` + form(note('reason', 'Cancellation reason *'), 'Confirm Cancellation'), { type: 'cancel', request });
@@ -250,11 +253,26 @@
       if (root.isConnected && dialog.open && revision === dialogRevision) $('#consumables-dialog-content').innerHTML = `<p role="alert" class="cons-form-error">${escape(errorMessage(error))}</p><div class="cons-dialog-actions">${button('history', 'Try Again', item.id)}${button('close', 'Close')}</div>`;
     }
   }
+  function updateQuantityRules(unit,allowZero=false) {
+    const rules=catalog.quantityRules(unit,allowZero);
+    for(const input of dialog.querySelectorAll('input[type="number"]')) {
+      input.min=String(rules.min);input.step=String(rules.step);input.inputMode=rules.inputmode;
+    }
+    // Metadata edits must not force a repair of a historical fractional minimum.
+    // Changed values are still checked by JS and the database quantity guard.
+    if(formContext?.type==='item'&&formContext.item&&catalog.isWholeUnit(unit)&&!Number.isInteger(Number(formContext.item.minimum_stock))){
+      const minimum=$('#cons-minimum');if(minimum)minimum.step='any';
+    }
+  }
+  dialog.addEventListener('input',event=>{if(event.target.id==='cons-unit')updateQuantityRules(event.target.value,true);});
   function quantity(formData, key) {
     const raw = String(formData.get(key) ?? '');
     const value = Number(raw);
     if (value < 0) throw new Error('Stock quantity cannot be negative.');
     if (!raw.trim() || !Number.isFinite(value) || value < 0 || value > 999999999.999 || Math.abs(value * 1000 - Math.round(value * 1000)) > 0.0001) throw new Error('Enter valid quantities with up to three decimal places.');
+    const unit=formContext?.type==='item'?formData.get('unit'):formContext?.item?.unit || formContext?.request?.unit || itemById(formData.get('item'))?.unit;
+    const unchangedMinimum=formContext?.type==='item'&&key==='minimum'&&formContext.item&&Number(formContext.item.minimum_stock)===value;
+    if(catalog.isWholeUnit(unit)&&!Number.isInteger(value)&&!unchangedMinimum)throw new Error('Enter a whole number for '+unit+'. Fractions are not allowed.');
     return value;
   }
   function payload(formData, context) {

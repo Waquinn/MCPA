@@ -73,8 +73,8 @@ function filterAndResetPage() {
 // Status has one owner: the existing dropdown. Use the app's hash/history
 // navigation so dashboard links, local filters, back and reload agree.
 function navigateEquipmentStatus(value) {
-  const key = {'':'all',Available:'available','In Use':'inuse','For Repair':'repair',Missing:'missing'}[value] || value;
-  if (['all','available','inuse','repair','missing'].includes(key)) showScreen('masterlist?status=' + key);
+  const key = {'':'all',Available:'available','In Use':'inuse','For Repair':'repair',Missing:'missing',Sold:'sold',Disposed:'disposed'}[value] || value;
+  if (['all','available','inuse','repair','missing','sold','disposed'].includes(key)) showScreen('masterlist?status=' + key);
 }
 
 function updateEquipmentSummary() {
@@ -882,7 +882,7 @@ function formatDate(dateString) {
   owner.setStatus = key => {
     if (owner.disposed) return;
     const select = document.getElementById('statusFilter');
-    const value = {all:'',available:'Available',inuse:'In Use',repair:'For Repair',missing:'Missing'}[key];
+    const value = {all:'',available:'Available',inuse:'In Use',repair:'For Repair',missing:'Missing',sold:'Sold',disposed:'Disposed'}[key];
     if (!select || value === undefined) return;
     if (select.value !== value) currentPage = 1;
     select.value = value;

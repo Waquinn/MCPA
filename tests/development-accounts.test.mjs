@@ -40,13 +40,13 @@ test('development endpoint fails closed, authenticates Admins, bounds roles and 
    for(const role of ['admin','secretary','tool_handler','owner'])assert.equal((await f.send(form('Denied',role))).status,400);
    for(const change of [{password:'short'},{password:' '.repeat(12)},{password:'a'.repeat(129)},{email:'invalid'},{profile_id:randomUUID()}])assert.equal((await f.send({...form(),...change})).status,400);
    assert.equal((await f.send(form(),'admin','http://localhost:5500')).status,403);
-   assert.equal((await f.send({action:'invite',id:randomUUID()})).status,409);
+   assert.equal((await f.send({action:'invite',id:randomUUID()})).status,400);
    assert.equal(f.calls.length,0,'Rejected operations never reach privileged RPC/Auth Admin');
    const defaults=createHandler({admin:f.admin,appUrl:base});
    const response=await defaults(new Request('https://edge.example',{method:'POST',headers:{authorization:'Bearer admin'},body:JSON.stringify(form())}));
    assert.equal(response.status,403);
    const capabilities=await (await f.send({action:'capabilities'})).json();
-   assert.equal(capabilities.invitations_enabled,false);assert.equal(capabilities.development_enabled,true);
+   assert.equal(Object.hasOwn(capabilities,'invitations_enabled'),false);assert.equal(capabilities.development_enabled,true);
    const local=createHandler({admin:f.admin,appUrl:base,developmentEnabled:true,developmentOrigins:['http://localhost:5500']});
    const preflight=await local(new Request('https://edge.example',{method:'OPTIONS',headers:{origin:'http://localhost:5500'}}));
    assert.equal(preflight.status,204);assert.equal(preflight.headers.get('access-control-allow-origin'),'http://localhost:5500');

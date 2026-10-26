@@ -13,6 +13,10 @@
     const label = value => ({pending:'Pending',approved:'Approved',rejected:'Rejected',partially_fulfilled:'Partially fulfilled',partial:'Partially fulfilled',issued:'Issued'}[value] || value);
     const options = (rows, current, placeholder) => `<option value="">${placeholder}</option>` + rows.map(row => `<option value="${E(row.id)}" ${row.id === current ? 'selected' : ''}>${E(row.name)}</option>`).join('');
     const stock = row => `<span class="wa-status" data-stock-status="${E(row.status)}">${E(row.status)}</span>`;
+    function quantityAttributes(unit) {
+      const rules=scope.ConsumablesCatalog.quantityRules(unit);
+      return `inputmode="${rules.inputmode}" min="${rules.min}" max="${rules.max}" step="${rules.step}"`;
+    }
     function inventoryDetails() {
       const row = inventoryRows.find(row => row.key === inventorySelected);
       if (!row) return '';
@@ -42,7 +46,7 @@
     }
     function catalogRows() {
       const rows = snapshot.catalog.filter(item => (!category || (item.category || 'Unclassified') === category) && (!search || [item.name,item.category,item.item_code,item.specification].join(' ').toLowerCase().includes(search.trim().toLowerCase())));
-      return rows.length ? `<table><thead><tr><th>Consumable</th><th>Required quantity</th><th>Available stock</th><th>Category</th></tr></thead><tbody>${rows.map(item=>`<tr><td>${E(item.name)}<small>${E(item.item_code)} ${E(item.specification)}</small><small class="wa-mobile-stock">Available: ${C.format(item.current_stock)} ${E(item.unit)}</small></td><td><input data-quantity="${E(item.id)}" aria-label="Required quantity for ${E(item.name)} ${E(item.specification)}" type="number" inputmode="decimal" min="0.001" max="999999999.999" step="0.001" value="${E(draft.quantities[item.id] || '')}"><small>${E(item.unit)}</small></td><td>${C.format(item.current_stock)} ${E(item.unit)}</td><td>${E(item.category || 'Unclassified')}</td></tr>`).join('')}</tbody></table>` : '<div class="wa-empty">No consumables match. Try another item or category.</div>';
+      return rows.length ? `<table><thead><tr><th>Consumable</th><th>Required quantity</th><th>Available stock</th><th>Category</th></tr></thead><tbody>${rows.map(item=>`<tr><td>${E(item.name)}<small>${E(item.item_code)} ${E(item.specification)}</small><small class="wa-mobile-stock">Available: ${C.format(item.current_stock)} ${E(item.unit)}</small></td><td><input data-quantity="${E(item.id)}" aria-label="Required quantity for ${E(item.name)} ${E(item.specification)}" type="number" ${quantityAttributes(item.unit)} value="${E(draft.quantities[item.id] || '')}"><small>${E(item.unit)}</small></td><td>${C.format(item.current_stock)} ${E(item.unit)}</td><td>${E(item.category || 'Unclassified')}</td></tr>`).join('')}</tbody></table>` : '<div class="wa-empty">No consumables match. Try another item or category.</div>';
     }
     function render() {
       if (destroyed) return;

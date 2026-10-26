@@ -1,6 +1,6 @@
 # SiteTrace Web Application — Engineer and Architect User Manual
 
-Version 1.0 · Prepared 12 October 2026 · Engineer and Architect
+Version 1.1 · Prepared 27 October 2026 · Engineer and Architect
 
 ## Table of contents
 
@@ -22,8 +22,8 @@ Version 1.0 · Prepared 12 October 2026 · Engineer and Architect
 
 | Item | Value |
 | --- | --- |
-| Version | 1.0 |
-| Prepared | 12 October 2026 · Asia/Manila |
+| Version | 1.1 |
+| Prepared | 27 October 2026 · Asia/Manila |
 | Audience | Active Engineer and Architect accounts |
 | Basis | Current repository; source and isolated browser review |
 | Scope | 10 authorized primary modules; identical role permissions |
@@ -31,11 +31,11 @@ Version 1.0 · Prepared 12 October 2026 · Engineer and Architect
 
 Naming: these documents use the requested SiteTrace title. The inspected application displays MCPA (Material & Construction Property Allocation), Construction Asset Management and Accountability System, and BuildRight Corp. Follow the on-screen MCPA labels when using the application. No application branding was changed.
 
-Verification scope: instructions describe the current repository implementation. Genuine interface screenshots were captured from the unmodified application using isolated local PGlite test records. Authentication and account-service capability responses were modeled locally. They are training illustrations, not production screenshots or proof of deployed services.
+Verification scope: instructions describe the current repository implementation. Most interface screenshots were captured on 12 October using isolated local PGlite records. People & Accountability was refreshed on 27 October after feature removal, using the local functionality-audit fixture. Authentication is modeled locally. They are training illustrations, not production screenshots or proof of deployed services.
 
-The capture browser blocked external HTTPS and permitted business reads only after fixture setup. No live login, migration, invitation, stock change, approval, handover, receipt, return, role change, or notification-read update was performed. The live REQ-00001 test was not accessed. Its unchanged state was not independently compared because production was not contacted.
+The capture browser blocked external HTTPS. Original training captures permitted business reads only after fixture setup; the updated People capture came from a test run that writes only to disposable local fixtures. No live login, migration, stock change, approval, handover, receipt, return, role change, or notification-read update was performed. The live REQ-00001 test was not accessed. Its unchanged state was not independently compared because production was not contacted.
 
-Operational availability: use the procedures only in an authorized company workspace whose required Supabase database functions, policies and services are installed. Source-confirmed write procedures were not executed in the capture browser. Supabase deployment, email delivery, private file retrieval, optical QR scanning and the monitoring scheduler remain unverified in production.
+Operational availability: use the procedures only in an authorized company workspace whose required Supabase database functions, policies and services are installed. The original training captures did not execute write procedures; current automated regression checks use disposable local records. Supabase deployment, email delivery, private file retrieval, optical QR scanning and the monitoring scheduler remain unverified in production.
 
 Screenshot conventions: all figure captions identify the local training environment. Fixture names, example.test addresses, asset references beginning DOC-, and transaction numbers in the 007xx range are synthetic. Password fields are empty or absent. No authentication tokens or receiving QR secrets are embedded in the manuals. Figures are numbered separately in each manual.
 
@@ -72,7 +72,7 @@ Source evidence: js/permissions.js; js/auth.js; js/navigation.js; supabase/migra
 
 **Purpose:** Open the pages and actions authorized for your company identity.
 
-**Access / prerequisites:** An issued company account, a confirmed invitation if applicable, and an Active company profile.
+**Access / prerequisites:** An issued company account, an Active company profile.
 
 1. Open the application address supplied by your administrator. Both index.html and 2-engr/index.html use authenticated role checks; the URL alone does not select your role.
 2. In Welcome back, enter your company Email and Password. Show reveals the password locally; Hide masks it again. Keep passwords out of shared screenshots.
@@ -88,20 +88,20 @@ Source evidence: js/permissions.js; js/auth.js; js/navigation.js; supabase/migra
 Figure 1. Company sign-in screen; local capture with empty credential fields. [Isolated local training environment.]
 
 
-### Accept an invitation or reset a password
+### Reset your password
 
-**Purpose:** Set a password for an issued account or recover access.
+**Purpose:** Recover access to an existing company account.
 
-**Access / prerequisites:** A valid invitation or password-reset email, configured Supabase Auth redirects and working email delivery.
+**Access / prerequisites:** A valid password-reset email, configured Supabase Auth redirects and working email delivery.
 
-1. For a new account, open the administrator-issued invitation link. For a reset, enter your Email on the login page and select Forgot password?.
+1. Enter your Email on the login page and select Forgot password?.
 2. For a reset request, read the neutral response: If an account exists for this email, a password reset link has been sent. This message does not confirm that the email exists or that delivery succeeded.
 3. Open the fresh email link and use Set your password. Enter a New password of at least 12 characters and select Save password.
 4. After the application signs you out, sign in with the new password. Cancel and sign out abandons the setup screen.
 
 **Expected result:** The password is saved by Supabase Auth and the user signs in again.
 
-**Limits / errors:** An invalid, expired or unavailable invitation session needs a fresh invitation or password reset. This documentation session did not send or receive email.
+**Limits / errors:** An invalid or expired reset link needs a fresh password reset. This documentation session did not send or receive email.
 
 
 ### 2.2 Dashboard and navigation
@@ -692,7 +692,7 @@ The companion system review includes the role-permission matrix, current module 
 
 | Version | Date | Revision |
 | --- | --- | --- |
-| 1.0 | 12 October 2026 | Initial Engineer/Architect manual, identical role-policy finding, genuine isolated UI captures, explicit custody/return/refusal and deployment limits. |
+| 1.1 | 27 October 2026 | Initial Engineer/Architect manual, identical role-policy finding, genuine isolated UI captures, explicit custody/return/refusal and deployment limits. |
 
 Future revision: update this manual whenever labels, eligibility, ownership rules, role maps or backend migrations change. Capture new figures with safe dedicated staging records; preserve protected live transactions.
 

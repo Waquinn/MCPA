@@ -106,7 +106,7 @@ window.MCPAMovementLinks = {
     const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail','activity','purchase','consumables','reports','asset-retirement-v2','quantity-request','transfer-inbox','outward-materials'].includes(screen)) && record && record.length <= 120 ? record : ''};
     if (screen === 'site-detail' && params.get('tool')?.length <= 120) result.tool = params.get('tool');
     if (screen === 'transfer' && ['send','receive','history'].includes(params.get('view'))) result.view = params.get('view');
-    if (screen === 'masterlist' && ['all','available','inuse','repair','missing'].includes(params.get('status'))) result.status = params.get('status');
+    if (screen === 'masterlist' && ['all','available','inuse','repair','missing','sold','disposed'].includes(params.get('status'))) result.status = params.get('status');
     return result;
   }
 };

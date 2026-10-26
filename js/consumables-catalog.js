@@ -101,6 +101,11 @@
     })));
   });
   const normalize = value => String(value ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const isWholeUnit = unit => /^(pcs?|pieces?|bags?|box(?:es)?|sets?|pairs?|rolls?|sheets?|tubes?|packs?|bottles?|bundles?|cans?|lengths?|units?|each|ea|sacks?)$/.test(normalize(unit).replace(/\.+$/, ''));
+  function quantityRules(unit, allowZero = false) {
+    const whole = isWholeUnit(unit);
+    return {step:whole ? 1 : 0.001,min:allowZero ? 0 : whole ? 1 : 0.001,max:whole ? 999999999 : 999999999.999,inputmode:whole ? 'numeric' : 'decimal'};
+  }
   const isActive = item => !item.archived_at;
   const attentionCount = items => items.filter(item => isActive(item) && ['out', 'low'].includes(item.stock_status)).length;
   function filter(items, {search = '', category = '', status = '', archived = false} = {}) {
@@ -109,5 +114,5 @@
       (!status || (status === 'attention' ? ['out', 'low'].includes(item.stock_status) : item.stock_status === status)) &&
       normalize([item.name, item.item_code, item.category, item.specification, item.unit].join(' ')).includes(query));
   }
-  return Object.freeze({categories: Object.freeze(categories), items: Object.freeze(items), defaultMinimum: 20, openingStock: 100, normalize, filter, isActive, attentionCount});
+  return Object.freeze({categories: Object.freeze(categories), items: Object.freeze(items), defaultMinimum: 20, openingStock: 100, normalize, filter, isActive, attentionCount, isWholeUnit, quantityRules});
 });

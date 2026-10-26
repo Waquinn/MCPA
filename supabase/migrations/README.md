@@ -1,5 +1,22 @@
 # Manual migration gate
 
+Invite User has been removed from the application. Its former revocation proposal
+and one-file deployment bundle have been withdrawn. To retire its database
+entrypoint, review and apply only `202610270001_remove_user_invitations.sql` to
+the verified target, then deploy the updated `manage-accounts` function and frontend.
+This migration preserves people, Auth identities, legacy jobs and audit history;
+it removes invitation RPCs, stops exposing invitation actions and lets Admins
+edit/link accounts without the obsolete prepared-job restriction. Its final query
+verifies removal and account permissions. It is independent of profile/stock work.
+
+The functionality audit retains two separate, unapplied proposals:
+`202610260001_self_profile.sql` and `202610260002_consumable_whole_units.sql`.
+Review the read-only [preflight](../functionality-audit-preflight.sql) and
+[audit report](../../documentation/FUNCTIONALITY-AUDIT-2026-10-26.md). Apply only
+reviewed, missing migrations to the verified target. The combined
+[verification](../functionality-audit-verify.sql) expects both proposals and the
+removal migration. No hosted migrations or deployments have been performed here.
+
 For the quantity/custody release, the forward correction
 `202610250004_read_rpc_authorization.sql` follows the reviewed 001 -> 002 -> 003
 sequence. It preserves mutation locking and changes authorization only for seven

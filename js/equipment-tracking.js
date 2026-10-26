@@ -89,6 +89,10 @@
     if (!value) return true;
     const normalize = status => String(status || '').toLowerCase().replace(/[\s_-]/g, '').replace(/^forrepair$/, 'repair');
     const expected = normalize(value);
+    const retired = normalize(tool.retirementDisposition);
+    if (expected === 'sold') return retired === 'sold' || normalize(tool.status) === 'sold';
+    if (expected === 'disposed') return normalize(tool.status) === 'disposed' && retired !== 'sold';
+    if (expected === 'repair') return ['repair','underrepair'].includes(normalize(tool.status));
     if (expected === 'available') return availability(tool, data) === 'Available';
     if (['inuse', 'deployed'].includes(expected)) return availability(tool, data) === 'Deployed';
     return normalize(tool.status) === expected;

@@ -1,3 +1,5 @@
-/* No styles specific to the users module — every class its markup
-   uses (.card, .table-wrap, table, .badge, .form-grid, .kv, .two-col,
-   etc.) is a shared primitive defined in css/components.css. */
+/* Keep the original account form visible below the sticky workspace controls. */
+#screen-users #account-panel { scroll-margin-top: 80px; }
+@media (max-width: 768px) {
+  #screen-users #account-panel { scroll-margin-top: 132px; }
+}

@@ -1,13 +1,12 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2';
+import { corsHeaders } from 'npm:@supabase/supabase-js@2.117.2/cors';
 import { createHandler } from './handler.mjs';
+import { readConfiguration } from './runtime.mjs';
 
 // Configured only in Edge Function secrets, never frontend assets.
-const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('MCPA_SUPABASE_SECRET_KEY')!, {
+const {url,serverKey,...options}=readConfiguration(name=>Deno.env.get(name));
+const admin = createClient(url,serverKey, {
   auth: {persistSession:false, autoRefreshToken:false, detectSessionInUrl:false},
 });
-Deno.serve(createHandler({
-  admin, appUrl:Deno.env.get('MCPA_APP_URL')!,
-  invitationsEnabled:Deno.env.get('MCPA_EMAIL_INVITATIONS_ENABLED') === 'true',
-  developmentEnabled:Deno.env.get('MCPA_ENABLE_DEVELOPMENT_ACCOUNTS') === 'true',
-  developmentOrigins:(Deno.env.get('MCPA_DEV_ORIGINS') || '').split(',').map(value => value.trim()).filter(Boolean),
-}));
+Deno.serve(createHandler({admin,...options,corsAllowedHeaders:[corsHeaders['Access-Control-Allow-Headers'],
+  'x-supabase-client-platform','x-supabase-client-platform-version','x-supabase-client-runtime','x-supabase-client-runtime-version'].join(', ')}));

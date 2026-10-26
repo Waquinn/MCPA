@@ -1,17 +1,18 @@
 /* Workstream A: pure quantity/analytics helpers. No stock or custody writes. */
 (function (scope, factory) {
-  const api = factory();
+  const api = factory(typeof module === 'object' && module.exports ? require('../../consumables-catalog.js') : scope.ConsumablesCatalog);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else scope.MCPAConsumablesRequests = api;
-})(typeof globalThis === 'object' ? globalThis : this, function () {
+})(typeof globalThis === 'object' ? globalThis : this, function (units) {
   'use strict';
   const MAX = 1000000000;
   const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function quantity(value, allowZero = false) {
+  function quantity(value, allowZero = false, unit = '') {
     const text = String(value ?? '').trim();
     if (!/^\d+(?:\.\d{1,3})?$/.test(text)) throw Error('Enter a quantity with at most three decimal places.');
     const number = Number(text);
     if (!Number.isFinite(number) || number >= MAX || (allowZero ? number < 0 : number <= 0)) throw Error(allowZero ? 'Enter a quantity from 0 to 999,999,999.999.' : 'Enter a quantity greater than 0 and below 1,000,000,000.');
+    if (units.isWholeUnit(unit) && !Number.isInteger(number)) throw Error('Enter a whole number for '+unit+'. Fractions are not allowed.');
     return number;
   }
   const millis = value => Math.round(Number(value) * 1000);
@@ -29,7 +30,7 @@
       if (seen.has(item.id)) throw Error('Each consumable can appear only once. Adjust its quantity.');
       seen.add(item.id);
       if (line.unit !== item.unit) throw Error('Use the catalog unit. Unit conversions are not supported.');
-      return {consumable_id:item.id, quantity:quantity(line.quantity), unit:item.unit};
+      return {consumable_id:item.id, quantity:quantity(line.quantity,false,item.unit), unit:item.unit};
     })};
   }
   function csvCell(value) {

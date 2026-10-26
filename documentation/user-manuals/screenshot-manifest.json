@@ -213,25 +213,16 @@
     },
     {
       "filename": "admin-people.png",
-      "caption": "People & Accountability, isolated example.test identities.",
+      "caption": "Restored original Add Account form; isolated fixture, blank credentials, no hosted changes.",
       "role": "admin",
       "route": "#users",
       "viewport": {
         "width": 1440,
         "height": 1000
       },
-      "sha256": "4ad10f5396a80b44e8e0c73a4d35f5a14483994c0aa2c9de938dfdb0aac9f60a"
-    },
-    {
-      "filename": "admin-invite.png",
-      "caption": "Invite User panel, email service modeled locally. No invitation sent.",
-      "role": "admin",
-      "route": "#users",
-      "viewport": {
-        "width": 1440,
-        "height": 1000
-      },
-      "sha256": "b99f2975cf3e9df31b19a241983bfec5026a17ec90a7cba0c4cc86b05fdc880f"
+      "sha256": "838876070b1bbfe95df1bead5cc0942204daa6d7cfd5544e19589e11c2d1fc5d",
+      "refreshedDate": "2026-10-27",
+      "environment": "Disposable local functionality-audit fixture; this test run includes local business writes. External HTTPS blocked."
     },
     {
       "filename": "shared-account.png",
