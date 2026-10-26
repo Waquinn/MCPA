@@ -149,12 +149,14 @@
     const interval = setInterval(visible, 30000);
     window.addEventListener('focus', visible);
     window.addEventListener('online', visible);
+    window.addEventListener('mcpa:data-change', visible);
     document.addEventListener('visibilitychange', visible);
     const dispose = () => {
       if (disposed) return;
       disposed = true; clearTimeout(timer); clearInterval(interval);
       window.removeEventListener('focus', visible);
       window.removeEventListener('online', visible);
+      window.removeEventListener('mcpa:data-change', visible);
       window.removeEventListener('pagehide', dispose);
       document.removeEventListener('visibilitychange', visible);
       if (channel) Promise.resolve(client().removeChannel(channel)).catch(() => {});

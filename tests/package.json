@@ -28,7 +28,8 @@
     "test:equipment-fixes": "node --test feature-frontend.test.cjs equipment-photos-compatibility.test.cjs && node auth.browser.cjs --equipment-fixes",
     "test:combined": "node --test --test-concurrency=1 integration-quantity-custody-v2/database.test.cjs integration-quantity-custody-v2/client.test.cjs integration-quantity-custody-v2/final-races.test.cjs && node auth.browser.cjs --combined-integration && node auth.browser.cjs --final-races",
     "test:review-fixes": "node --test integration-quantity-custody-v2/client.test.cjs && node auth.browser.cjs --review-fixes",
-    "test:final-races": "node --test --test-concurrency=1 integration-quantity-custody-v2/final-races.test.cjs individual-import-expansion-v2/controller.test.cjs && node auth.browser.cjs --final-races"
+    "test:final-races": "node --test --test-concurrency=1 integration-quantity-custody-v2/final-races.test.cjs individual-import-expansion-v2/controller.test.cjs && node auth.browser.cjs --final-races",
+    "test:engineer-upgrade": "node engineer-upgrade/run.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

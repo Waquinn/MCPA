@@ -1,0 +1,8 @@
+Local Chrome ready; external HTTPS blocked
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-s8MG8b\combined-engineer-mobile.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-s8MG8b\combined-admin-materials.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-s8MG8b\combined-admin-retirement.png
+PASS Combined real application shells: project-relative routes, quantity request/allocation/release/receipt, materials issuance, inspected return, retirement, permissions, history, mobile layout and logout cleanup
+Browser artifacts: C:\Users\maeko\AppData\Local\Temp\mcpa-auth-s8MG8b
+
+EXIT_CODE=0

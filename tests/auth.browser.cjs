@@ -4,10 +4,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 // The default application smoke test follows the integrated production routes.
 // Historical fixture-specific modes remain explicit flags below.
 if(process.argv.length===2)process.argv.push('--combined-integration');
-if(process.argv.includes('--review-fixes')||process.argv.includes('--final-races')||process.argv.includes('--unified-requests'))process.argv.push('--combined-integration');
+if(process.argv.includes('--engineer-upgrade')||process.argv.includes('--review-fixes')||process.argv.includes('--final-races')||process.argv.includes('--unified-requests'))process.argv.push('--combined-integration');
 const {spawn}=require('node:child_process'),{once}=require('node:events'),{authDatabase}=require('./auth-test-db.cjs');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'mcpa-auth-'));
-let fixture,chrome,socket,passwordLogged=false;const errors=[],calls=[];
+let fixture,chrome,socket,accountHandler,passwordLogged=false;const errors=[],calls=[];
 const storedFiles=new Map(),signedFiles=new Map();
 const turnoverRun=process.argv.includes('--turnover-sync'),fixtureStreams=new Map(),fixtureEvents=new Set();
 const sdk=`window.__syncTimers=new Map();const realInterval=window.setInterval,realClear=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=realInterval(fn,ms,...args);if(ms===30000)__syncTimers.set(id,fn);return id;};window.clearInterval=id=>{__syncTimers.delete(id);realClear(id);};window.__tickSync=()=>__syncTimers.forEach(fn=>fn());window.__channels=new Set();
@@ -19,11 +19,19 @@ window.supabase={createClient(){let listener;const session=()=>{const key=localS
  rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},insert(values){q.write='insert';q.values=values;return this},update(values){q.write='update';q.values=values;return this},single(){q.single=true;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
 }}};`;
 const server=http.createServer(async(req,res)=>{
+ if(process.argv.includes('--engineer-upgrade')&&req.url==='/__accounts'){
+  let body='';for await(const part of req)body+=part;
+  const reply=await accountHandler(new Request('https://edge.example',{method:'POST',headers:{authorization:'Bearer '+(req.headers.authorization||'')},body}));
+  res.writeHead(reply.status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(await reply.text());return;
+ }
+
  if(process.argv.includes('--equipment-fixes')&&req.url.startsWith('/__qr?')){
   const asset=new URL(req.url,'http://localhost').searchParams.get('data');
   res.setHeader('Content-Type','image/png');res.end(await require('qrcode').toBuffer(asset,{width:120,margin:0}));return;
  }
- if(req.url==='/__sdk.js'){res.setHeader('Content-Type','text/javascript');res.end(sdk+(turnoverRun?`
+ if(req.url==='/__sdk.js'){res.setHeader('Content-Type','text/javascript');res.end(sdk+(process.argv.includes('--engineer-upgrade') ? `
+ const original=window.supabase.createClient;window.supabase.createClient=(...args)=>{const c=original(...args);c.functions.invoke=async(name,{body})=>{const r=await fetch('/__accounts',{method:'POST',headers:{authorization:localStorage.getItem('fixture.account')||''},body:JSON.stringify(body)});const data=await r.json();return r.ok?{data}:{error:{context:{json:async()=>data}}};};return c;};
+ ` : '')+(turnoverRun?`
   const originalFixtureClient=window.supabase.createClient;
   window.supabase.createClient=(...args)=>{const client=originalFixtureClient(...args);let stream=null;const channel=client.channel.bind(client),remove=client.removeChannel.bind(client);
     client.channel=(...values)=>{const current=channel(...values),subscribe=current.subscribe.bind(current);current.subscribe=(...subscriptions)=>{if(!stream){stream=new EventSource('/__events?account='+encodeURIComponent(localStorage.getItem('fixture.account')||''));stream.onopen=()=>window.__fixtureRealtimeReady=true;stream.onmessage=event=>{if(window.__fixtureRealtime===false)return;const notice=JSON.parse(event.data);for(const c of __channels)if(c.tables.includes(notice.table))c.notify?.({eventType:'INSERT'});};}return subscribe(...subscriptions);};return current;};
@@ -98,6 +106,11 @@ const server=http.createServer(async(req,res)=>{
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
  fixture=process.argv.includes('--combined-integration')?await require('./integration-quantity-custody-v2/fixture.cjs').fixture():await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ if(process.argv.includes('--combined-integration'))await require('./engineer-upgrade/fixture.cjs').upgrade(fixture);
+ if(process.argv.includes('--engineer-upgrade')){
+  await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations/202610100005_purchase_ledger.sql'),'utf8'));
+  accountHandler=await require('./engineer-upgrade/account-service.cjs').create(fixture);
+ }
  if(!process.argv.includes('--combined-integration')){
  if(process.argv.includes('--project-construction') || process.argv.includes('--admin-equipment-summary'))await require('./project-construction-fixture.cjs').upgrade(fixture);
  console.log('Browser fixture ready; isolated local database');
@@ -155,7 +168,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  console.log('Local Chrome ready; external HTTPS blocked');
  const base=`http://127.0.0.1:${server.address().port}`;
  if(process.argv.includes('--combined-integration')){
-  await require(process.argv.includes('--unified-requests')?'./unified-requests.browser-checks.cjs':process.argv.includes('--final-races')?'./integration-quantity-custody-v2/final-races.browser-checks.cjs':process.argv.includes('--review-fixes')?'./integration-quantity-custody-v2/review-fixes.browser-checks.cjs':'./integration-quantity-custody-v2/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot});
+  await require(process.argv.includes('--engineer-upgrade')?'./engineer-upgrade/browser-checks.cjs':process.argv.includes('--unified-requests')?'./unified-requests.browser-checks.cjs':process.argv.includes('--final-races')?'./integration-quantity-custody-v2/final-races.browser-checks.cjs':process.argv.includes('--review-fixes')?'./integration-quantity-custody-v2/review-fixes.browser-checks.cjs':'./integration-quantity-custody-v2/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;
  }
  if(process.argv.includes('--terminology')){

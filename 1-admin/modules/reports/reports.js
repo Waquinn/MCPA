@@ -48,7 +48,7 @@
     feedback('Offline demonstration records. No historical company snapshots are loaded.');
    }else{
     const response=await EquipmentTracking.client().rpc('mcpa_monitoring_report',{p_start:start,p_end:end});
-    if(response.error)throw response.error;if(!root.isConnected)return;data=response.data;feedback('');
+    if(response.error)throw response.error;if(!root.isConnected||start!==$('#report-start').value||end!==$('#report-end').value)return;data=response.data;feedback('');
    }
    const previous=$('#report-snapshot').value;
    $('#report-snapshot').innerHTML=data.snapshots.map(s=>'<option value="'+esc(s.id)+'">'+esc(date(s.capturedAt))+' Manila</option>').join('');
@@ -81,7 +81,8 @@
    widths:kind==='activity'?[39,36,34,39,36,85]:[34,54,43,42,22,33,41]
   }});}finally{exporting=false;if(root.isConnected)exportState();}
  },{signal:controller.signal});
- window.MCPAReports={openRecord(id){if(['current','history','activity'].includes(id)){$('#report-kind').value=id;render();}},dispose(){controller.abort();}};
+ const stopSync=MCPAAuth.isDemo?()=>{}:EquipmentTracking.watch(()=>{if(loadedPeriod()&&!exporting)return load();},message=>{if(message&&root.isConnected)feedback(message,true);},{tables:['equipment','sites','mcpa_notifications','mcpa_movements','mcpa_inventory_snapshots']});
+ window.MCPAReports={openRecord(id){if(['current','history','activity'].includes(id)){$('#report-kind').value=id;render();}},dispose(){stopSync();controller.abort();}};
  const mounted = load();
  window.MCPANavigation?.track(root, mounted);
 })();

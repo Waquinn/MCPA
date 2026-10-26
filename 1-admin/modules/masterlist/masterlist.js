@@ -906,4 +906,23 @@ function formatDate(dateString) {
   owner.openRecord = assetId => showToolProfile(assetId, true);
   window.MCPANavigation?.track(document.getElementById('content').firstElementChild, ready);
   window.MCPANavigation?.track(document.getElementById('screen-tool-profile'), ready);
+  if(window.MCPAAuth?.profile?.role==='admin'&&!window.MCPAAuth.isDemo){
+    const panel=document.createElement('details');panel.className='card card-pad';
+    panel.innerHTML='<summary>Equipment request classification</summary><p>Standard tools are requested by quantity. Designated specialized equipment is selected by Asset ID. Changes apply to new requests; saved requests keep their history.</p><p role="status" data-classification-status></p><form data-classification-form><div class="field"><label for="classification-type">Equipment type / variant</label><select id="classification-type" required><option value="">Loading catalog…</option></select></div><div class="field"><label for="classification-mode">Engineer request method</label><select id="classification-mode"><option value="quantity">Request by Quantity</option><option value="specific">Request Specific Asset</option></select></div><button type="submit" class="btn btn-primary">Save classification</button></form>';
+    document.getElementById('screen-masterlist').append(panel);
+    let groups=[],loading=false;
+    const type=panel.querySelector('#classification-type'),mode=panel.querySelector('#classification-mode'),status=panel.querySelector('[data-classification-status]');
+    panel.addEventListener('toggle',async()=>{if(!panel.open||loading)return;loading=true;
+      try{const {data,error}=await EquipmentTracking.client().rpc('mcpa_wa_equipment_catalog');if(error)throw error;if(owner.disposed)return;
+        groups=data.groups;type.innerHTML='<option value="">Choose an equipment type</option>'+groups.map(g=>`<option value="${escapeHTML(g.type_id)}">${escapeHTML([g.type_name,g.brand,g.model,g.details,g.condition].filter(Boolean).join(' · '))}</option>`).join('');status.textContent='';
+      }catch(_){if(!owner.disposed)status.textContent='Catalog unavailable. Close and reopen to retry.';}finally{loading=false;}
+    });
+    type.onchange=()=>{mode.value=groups.find(g=>g.type_id===type.value)?.request_mode||'quantity';};
+    panel.querySelector('form').onsubmit=async event=>{event.preventDefault();if(loading||!type.value)return;loading=true;
+      const button=event.submitter;button.disabled=true;
+      try{const {error}=await EquipmentTracking.client().rpc('mcpa_set_equipment_request_mode',{p_type_id:type.value,p_mode:mode.value});if(error)throw error;
+        const group=groups.find(g=>g.type_id===type.value);if(group)group.request_mode=mode.value;status.textContent='Classification saved for new requests.';window.dispatchEvent(new CustomEvent('mcpa:data-change'));
+      }catch(error){status.textContent=error.message||'Classification could not be saved. Retry.';}finally{loading=false;button.disabled=false;}
+    };
+  }
 })();

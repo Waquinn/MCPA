@@ -49,3 +49,12 @@ operation; these instructions do not authorize it.
 The original Storage SQL remains unchanged for provenance. Its presence here is
 not permission to apply it. The new receipt migration fails closed on existing
 receipt artifacts and unexpected browser policies rather than overwriting them.
+
+### Engineer UX and Admin invitation upgrade (prepared 2026-10-27)
+
+From the verified Production prerequisites through `202610250004`, apply only
+`202610280001_engineer_request_permissions.sql` then
+`202610280002_secure_invitation_registration.sql` in an isolated staging project.
+See [implementation, security, configuration and non-destructive rollback](../../documentation/engineer-upgrade/IMPLEMENTATION.md).
+No Production execution is authorized. The QA branch's invitation-removal
+migration conflicts with this workflow and must be reconciled before integration.

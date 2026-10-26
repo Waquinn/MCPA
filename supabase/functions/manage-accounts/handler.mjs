@@ -1,10 +1,11 @@
-// Runtime-independent handler, exercised with Node tests. Never returns Auth tokens or links.
+// Runtime-independent handler. Only active Admins receive private invitation links;
+// session tokens and server keys are never returned.
 const roles = ['engineer', 'architect', 'secretary', 'tool_handler'];
 const uuid = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 class RequestError extends Error {
   constructor(message, status = 400) { super(message); this.status = status; }
 }
-export function createHandler({ admin, appUrl, invitationsEnabled = false, developmentEnabled = false, developmentOrigins = [] }) {
+export function createHandler({ admin, appUrl, invitationsEnabled = false, invitationLinksEnabled = false, developmentEnabled = false, developmentOrigins = [] }) {
   const redirect = new URL(appUrl);
   if (redirect.protocol !== 'https:' && !(redirect.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(redirect.hostname))) throw new Error('MCPA_APP_URL must be an HTTPS login URL.');
   redirect.search = '?account_setup=invite'; redirect.hash = '';
@@ -17,7 +18,7 @@ export function createHandler({ admin, appUrl, invitationsEnabled = false, devel
   }
   return async request => {
     const requestOrigin = request.headers.get('origin');
-    const headers = { 'Access-Control-Allow-Origin': origins.has(requestOrigin) ? requestOrigin : origin, 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Vary': 'Origin', 'Cache-Control': 'no-store' };
+    const headers = { 'Access-Control-Allow-Origin': origins.has(requestOrigin) ? requestOrigin : origin, 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-retry-count, traceparent, tracestate, baggage, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Vary': 'Origin', 'Cache-Control': 'no-store' };
     const reply = (body, status = 200) => Response.json(body, {status, headers});
     if (requestOrigin && !origins.has(requestOrigin)) return reply({error:'This application origin is not allowed.'}, 403);
     if (request.method === 'OPTIONS') return new Response(null, {status:204, headers});
@@ -27,14 +28,28 @@ export function createHandler({ admin, appUrl, invitationsEnabled = false, devel
       if (!token) throw new RequestError('Sign in with an active Admin account.', 401);
       const {data:identity, error:authError} = await admin.auth.getUser(token);
       if (authError || !identity?.user) throw new RequestError('Your session could not be verified. Sign in again.', 401);
-      const {data:actor, error:profileError} = await admin.from('profiles').select('id,role,account_status').eq('auth_user_id', identity.user.id).maybeSingle();
-      if (profileError || actor?.role !== 'admin' || actor.account_status !== 'active') throw new RequestError('Active Admin access required.', 403);
       const text = await request.text();
       if (text.length > 4096) throw new RequestError('Request is too large.');
       let input;
       try { input = JSON.parse(text); } catch (_) { throw new RequestError('Send a valid JSON request.'); }
-      if (!input || !['capabilities','createDevelopmentAccount','invite','resend','retry'].includes(input.action)
-        || (input.action !== 'capabilities' && !uuid(input.id))) throw new RequestError('Choose a valid account action and request ID.');
+      if (!input || !['capabilities','createDevelopmentAccount','invite','resend','retry','revoke','accept','invitationInfo'].includes(input.action)
+        || (!['capabilities','accept','invitationInfo'].includes(input.action) && !uuid(input.id))) throw new RequestError('Choose a valid account action and request ID.');
+      if (['accept','invitationInfo'].includes(input.action)) {
+        const check = async finish => {
+          const {data,error} = await admin.rpc('mcpa_complete_invitation', {p_user:identity.user.id,p_name:input.name || '',p_finish:finish});
+          if(error)throw new RequestError(['42501','22023'].includes(error.code) ? error.message : 'Invitation could not be verified. Retry shortly.', error.code === '42501' ? 403 : 503);
+          return data;
+        };
+        const info = await check(false);
+        if(input.action === 'invitationInfo')return reply(info);
+        if(typeof input.name !== 'string' || !input.name.trim() || input.name.length > 120 || typeof input.password !== 'string' || input.password.length < 12 || input.password.length > 128 || !input.password.trim())throw new RequestError('Enter your full name and a password of 12?128 characters.');
+        const {error} = await admin.auth.admin.updateUserById(identity.user.id,{password:input.password});
+        if(error)throw new RequestError('Password could not be saved. Check password requirements and retry.',400);
+        await check(true);
+        return reply({ok:true,message:'Registration complete. Sign in with your new password.'});
+      }
+      const {data:actor, error:profileError} = await admin.from('profiles').select('id,role,account_status').eq('auth_user_id', identity.user.id).maybeSingle();
+      if (profileError || actor?.role !== 'admin' || actor.account_status !== 'active') throw new RequestError('Active Admin access required.', 403);
       const step = async (action, payload, rpc = 'mcpa_invitation_step') => {
         const {data, error} = await admin.rpc(rpc, {p_actor:identity.user.id, p_action:action, p_payload:payload});
         if (error) {
@@ -46,7 +61,7 @@ export function createHandler({ admin, appUrl, invitationsEnabled = false, devel
       };
       const devStep = (action, payload) => step(action, payload, 'mcpa_development_account_step');
       if (input.action === 'capabilities') return reply({
-        invitations_enabled: invitationsEnabled, development_enabled: developmentEnabled,
+        invitations_enabled: invitationsEnabled || invitationLinksEnabled, email_enabled: invitationsEnabled, invitation_links_enabled: invitationLinksEnabled, development_enabled: developmentEnabled,
         pending_development_accounts: developmentEnabled ? await devStep('list', {}) : [],
       });
       if (input.action === 'createDevelopmentAccount') {
@@ -82,7 +97,9 @@ export function createHandler({ admin, appUrl, invitationsEnabled = false, devel
           throw error;
         }
       }
-      if (!invitationsEnabled) throw new RequestError('Production email invitations are not configured. Use Development / Testing Only for test accounts.', 409);
+      if (input.action === 'revoke') { await step('revoke',{id:input.id});return reply({ok:true,message:'Invitation revoked. Account access remains inactive.'}); }
+      const linkDelivery = input.delivery === 'link';
+      if (linkDelivery ? !invitationLinksEnabled : !invitationsEnabled) throw new RequestError('Production email invitations are not configured. Use Development / Testing Only for test accounts.', 409);
       let job;
       if (input.action === 'invite') {
         if (typeof input.name !== 'string' || !input.name.trim() || input.name.trim().length > 120 || typeof input.email !== 'string'
@@ -92,17 +109,20 @@ export function createHandler({ admin, appUrl, invitationsEnabled = false, devel
         if (job.state === 'sent') return reply({ok:true, profile_id:job.profile_id, message:'This invitation was already sent. Refresh to see its current status.'});
       }
       const claim = await step('claim', {id:job?.id || input.id});
-      let authId = claim.auth_user_id;
+      let authId = claim.auth_user_id, invitationLink;
       try {
         // A retry after an accepted email but interrupted linking must finish the
         // existing job; inviteUserByEmail rejects already-confirmed accounts.
         if (!claim.confirmed) {
-          const {data, error} = await admin.auth.admin.inviteUserByEmail(claim.email, {redirectTo:redirect.href, data:{mcpa_invitation_id:claim.id}});
+          const {data, error} = linkDelivery
+            ? await admin.auth.admin.generateLink({type:'invite',email:claim.email,options:{redirectTo:redirect.href,data:{mcpa_invitation_id:claim.id}}})
+            : await admin.auth.admin.inviteUserByEmail(claim.email, {redirectTo:redirect.href, data:{mcpa_invitation_id:claim.id}});
+          if(linkDelivery){invitationLink=data?.properties?.action_link;if(!invitationLink)throw new RequestError('The invitation link could not be generated. Retry this invitation.',503);}
           if (error || !data?.user) throw new RequestError(error?.status === 429 ? 'Email is rate limited. Wait before retrying this invitation.' : 'The invitation email could not be sent. Check Supabase email/SMTP settings, then retry this person’s invitation.', 503);
           authId = data.user.id;
         }
         const result = await step('finish', {id:claim.id, lease_id:claim.lease_id, auth_user_id:authId});
-        return reply({ok:true, profile_id:result.profile_id, message:claim.confirmed ? 'The existing invitation account has been linked.' : 'Invitation sent. The recipient can use the email link to set their password.'});
+        return reply({ok:true, profile_id:result.profile_id, ...(invitationLink ? {invitation_link:invitationLink} : {}), message:invitationLink ? 'Secure invitation link created. Share it privately with the invited recipient; it expires within 24 hours.' : claim.confirmed ? 'The existing invitation account has been linked.' : 'Invitation sent. The recipient can use the email link to set their password.'});
       } catch (error) {
         // An email may already have been sent. Keep the durable job/profile so
         // a retry can reconcile it without creating a second company identity.

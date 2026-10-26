@@ -80,7 +80,7 @@
       try { if (loading) await loading.catch(() => {}); await refresh(); }
       catch (error) { if (requestRevision === revision) stale = true; throw new Error('Saved successfully, but the updated records could not load. Refresh before continuing. ' + error.message); }
       if (requestRevision !== revision) throw new Error('Your session changed. Check the saved records after signing in again.');
-      pending.delete(key);
+      pending.delete(key);window.dispatchEvent(new CustomEvent('mcpa:data-change'));
       return data;
     } finally { if (requestRevision === revision) saving = false; }
   }

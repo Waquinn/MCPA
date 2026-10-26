@@ -1,0 +1,13 @@
+Local Chrome ready; external HTTPS blocked
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe\upgrade-request-desktop-light.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe\upgrade-request-desktop-dark.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe\upgrade-request-mobile-dark.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe\upgrade-request-mobile-light.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe\upgrade-transfer-empty-mobile.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe\upgrade-admin-invitation.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe\upgrade-registration-desktop.png
+SCREENSHOT C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe\upgrade-registration-mobile.png
+PASS engineer upgrade: classification, stock, desktop/mobile light/dark, draft synchronization, subscription cleanup, destinations, Admin invitation and recipient registration. Auth link delivery is simulated, not verified.
+Browser artifacts: C:\Users\maeko\AppData\Local\Temp\mcpa-auth-7zKSEe
+
+EXIT_CODE=0
