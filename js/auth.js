@@ -84,7 +84,13 @@
     let menu=document.getElementById('account-menu');
     if(!menu){menu=document.createElement('details');menu.id='account-menu';document.querySelector('.topbar-actions').append(menu);}
     document.querySelector('.topbar-actions > .avatar')?.classList.add('hidden');
-    menu.innerHTML=`<summary aria-label="Account menu" aria-expanded="${menu.open}" aria-controls="account-dropdown"><span class="account-name">${esc(name)}</span><span>${esc(label)}${demo?' · Demo':''}</span></summary><div class="account-dropdown" id="account-dropdown">${profile.username?`<p class="account-message">@${esc(profile.username)}</p>`:''}<button data-account-profile>My Account</button><button data-account-theme>Change theme</button><button data-account-logout>${demo?'Exit demo':'Log Out'}</button></div>`;
+    const menuIdentity=JSON.stringify([profile.id,name,label,demo,profile.username]);
+    // Token refreshes re-verify the same profile. Keep existing controls and
+    // keyboard/pointer focus when their displayed identity has not changed.
+    if(menu.dataset.identity!==menuIdentity){
+      menu.innerHTML=`<summary aria-label="Account menu" aria-expanded="${menu.open}" aria-controls="account-dropdown"><span class="account-name">${esc(name)}</span><span>${esc(label)}${demo?' · Demo':''}</span></summary><div class="account-dropdown" id="account-dropdown">${profile.username?`<p class="account-message">@${esc(profile.username)}</p>`:''}<button data-account-profile>My Account</button><button data-account-theme>Change theme</button><button data-account-logout>${demo?'Exit demo':'Log Out'}</button></div>`;
+      menu.dataset.identity=menuIdentity;
+    }
     menu.querySelector('summary').onclick=()=>{if(!menu.open)window.MCPAMonitoring?.close(false);};
     menu.ontoggle=()=>{menu.querySelector('summary')?.setAttribute('aria-expanded',String(menu.open));if(menu.open)window.MCPAMonitoring?.close(false);};
     menu.querySelector('[data-account-profile]').onclick=()=>{closeAccount();showScreen('settings');};

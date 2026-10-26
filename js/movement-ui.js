@@ -324,6 +324,9 @@
     const detail=current.root.querySelector('[data-detail]');
     const id=current.detailId;
     cancelTarget();current.detailId='';current.detailDirty=false;detail.close();syncModalLock();renderLists();
+    restoreDetailFocus(id);
+  }
+  function restoreDetailFocus(id){
     const visible=element=>element?.isConnected&&element.getClientRects().length>0;
     const focus=[...current.root.querySelectorAll('button[data-action="view"]')].find(button=>button.dataset.id===id&&visible(button))||current.detailFocus;
     if(visible(focus))focus.focus({preventScroll:true});
@@ -848,8 +851,10 @@
     openRecord,
     clearRecord() {
       if (!current) return;
+      const id=current.detailId,wasOpen=current.root.querySelector('[data-detail]')?.open;
       current.detailId = ''; current.detailDirty = false;
       current.root.querySelector('[data-detail]')?.close(); syncModalLock();
+      if(wasOpen&&id)restoreDetailFocus(id);
     },
     capture() {
       if (!current) return null;

@@ -17,6 +17,9 @@ test('Pinned local assets are intact; report exports use PDF in both portal entr
   // Import receipts are a machine-readable row/Asset-ID reconciliation file,
   // explicitly separate from existing PDF report controls.
   if(dir==='js'&&entry==='equipment-import.js')continue;
+  // Consumables usage offers separate, intentional machine-readable analytics
+  // downloads; these are not replacements for the existing PDF report controls.
+  if(dir==='1-admin/modules'&&entry.replaceAll('\\','/')==='consumables-usage-v2/consumables-usage.js')continue;
   assert.doesNotMatch(fs.readFileSync(path.join(root,dir,entry),'utf8'),/Export CSV|Download CSV|text\/csv|\.csv['"`]|Export Excel/i,entry);
  }
  for(const file of ['index.html','2-engr/index.html'])assert.match(fs.readFileSync(path.join(root,file),'utf8'),/src="(?:\.\.\/)?js\/pdf-reports.js"/);

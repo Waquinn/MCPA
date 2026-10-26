@@ -16,6 +16,8 @@ exports.verify=async({fixture,evaluate,command,wait,click,login,logout,base})=>{
   const pointer=async selector=>{const point=await evaluate(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`);await command('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...point});await command('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...point});};
   await command('Page.navigate',{url:base+'/index.html'});await login('admin');await wait('window.MCPAAuth?.profile?.role==="admin" && document.querySelector("#screen-dashboard.active .overview-kpis")');
   await evaluate('new Promise(resolve=>setTimeout(resolve,300))');
+  await evaluate('window.__accountSummary=document.querySelector("#account-menu summary");__accountSummary.focus();MCPAAuth.verify()');
+  assert.equal(await evaluate('document.activeElement===__accountSummary && __accountSummary.isConnected'),true,'Refreshing the authenticated profile preserves the account summary and keyboard focus');
   await evaluate('applyTheme(true)');await install();
   await pointer('#account-menu summary');await wait('document.querySelector("#account-menu").open');await wait('document.querySelector("#account-menu summary").getAttribute("aria-expanded")==="true"');await shot('desktop-account-open');
   await pointer('#content');assert.equal(await evaluate('document.querySelector("#account-menu").open'),false);await shot('desktop-account-outside-dismissed');check('Profile opens; a real outside click closes it and synchronizes aria-expanded');

@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 // The default application smoke test follows the integrated production routes.
 // Historical fixture-specific modes remain explicit flags below.
 if(process.argv.length===2)process.argv.push('--combined-integration');
-if(process.argv.includes('--review-fixes')||process.argv.includes('--final-races')||process.argv.includes('--unified-requests')||process.argv.includes('--engineer-consumables')||process.argv.includes('--functionality-audit'))process.argv.push('--combined-integration');
+if(process.argv.includes('--review-fixes')||process.argv.includes('--final-races')||process.argv.includes('--unified-requests')||process.argv.includes('--engineer-consumables')||process.argv.includes('--functionality-audit')||process.argv.includes('--final-system-qa'))process.argv.push('--combined-integration');
 const {spawn}=require('node:child_process'),{once}=require('node:events'),{authDatabase}=require('./auth-test-db.cjs');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'mcpa-auth-'));
 let fixture,chrome,socket,passwordLogged=false;const errors=[],calls=[];
@@ -102,8 +102,8 @@ const server=http.createServer(async(req,res)=>{
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
- fixture=process.argv.includes('--combined-integration')?await require('./integration-quantity-custody-v2/fixture.cjs').fixture():await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
- if(process.argv.includes('--functionality-audit'))await require('./functionality-audit-v2/fixture.cjs').upgrade(fixture);
+ fixture=process.argv.includes('--combined-integration')?await require('./integration-quantity-custody-v2/fixture.cjs').fixture(undefined,{ledger:process.argv.includes('--final-system-qa')}):await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
+ if(process.argv.includes('--functionality-audit')||process.argv.includes('--final-system-qa'))await require('./functionality-audit-v2/fixture.cjs').upgrade(fixture);
  if(!process.argv.includes('--combined-integration')){
  if(process.argv.includes('--project-construction') || process.argv.includes('--admin-equipment-summary'))await require('./project-construction-fixture.cjs').upgrade(fixture);
  console.log('Browser fixture ready; isolated local database');
@@ -142,7 +142,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(process.argv.includes('--equipment-import'))await require('./equipment-import-fixture.cjs').upgrade(fixture);
  }
  if(process.argv.includes('--combined-integration')){const original=fixture.rpc;fixture.rpc=(actor,name,args)=>/^(mcpa_(wa_|b_|import_equipment_v2))/.test(name)?fixture.call(actor,name,args):original(actor,name,args);}
- if(process.argv.includes('--functionality-audit')){const original=fixture.rpc;fixture.rpc=(actor,name,args)=>name==='mcpa_update_my_profile'?fixture.query(actor,'select public.mcpa_update_my_profile($1,$2) value',[args.p_name,args.p_username]).then(r=>r.rows[0].value):original(actor,name,args);}
+ if(process.argv.includes('--functionality-audit')||process.argv.includes('--final-system-qa')){const original=fixture.rpc;fixture.rpc=(actor,name,args)=>name==='mcpa_update_my_profile'?fixture.query(actor,'select public.mcpa_update_my_profile($1,$2) value',[args.p_name,args.p_username]).then(r=>r.rows[0].value):original(actor,name,args);}
  server.listen(0,'127.0.0.1');await once(server,'listening');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new',...(process.env.MCPA_CHROME_NO_SANDBOX==='1'?['--no-sandbox','--disable-gpu','--disable-gpu-sandbox']:[]),'--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
  let port;for(let i=0;i<100;i++){const p=path.join(profile,'DevToolsActivePort');if(fs.existsSync(p)){port=fs.readFileSync(p,'utf8').split('\n')[0];break;}await pause(100);}assert.ok(port);
@@ -163,6 +163,10 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  const base=`http://127.0.0.1:${server.address().port}`;
  if(accountServiceRun)fixture.authModel=(await import('./functionality-audit-v2/account-service.mjs')).accountService(fixture,{base});
  if(process.argv.includes('--combined-integration')){
+  if(process.argv.includes('--final-system-qa')){
+   await require('./final-system-qa.browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot});
+   assert.deepEqual(errors,[],'No uncaught browser errors');return;
+  }
   await require(process.argv.includes('--functionality-audit')?'./functionality-audit-v2/browser-checks.cjs':process.argv.includes('--engineer-consumables')?'./consumables-requests-v2/inventory.browser-checks.cjs':process.argv.includes('--unified-requests')?'./unified-requests.browser-checks.cjs':process.argv.includes('--final-races')?'./integration-quantity-custody-v2/final-races.browser-checks.cjs':process.argv.includes('--review-fixes')?'./integration-quantity-custody-v2/review-fixes.browser-checks.cjs':'./integration-quantity-custody-v2/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;
  }

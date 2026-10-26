@@ -8,7 +8,7 @@ const screenshots = path.join(root, 'documentation/workstream-a/screenshots');
 const scripts = [
   '/js/upgrades/quantity-requests/client.js', '/js/upgrades/quantity-requests/view.js',
   '/2-engr/modules/quantity-requests-v2/index.js', '/1-admin/modules/quantity-allocation-v2/index.js',
-  '/js/upgrades/consumables-requests/core.js', '/js/upgrades/consumables-requests/analytics.js',
+  '/js/consumables-catalog.js', '/js/upgrades/consumables-requests/core.js', '/js/upgrades/consumables-requests/analytics.js',
   '/2-engr/modules/consumables-requests-v2/consumables-requests.js', '/1-admin/modules/consumables-usage-v2/consumables-usage.js'
 ];
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Workstream A isolated mount verification</title><link rel="stylesheet" href="/css/global.css"><link rel="stylesheet" href="/css/theme.css"><link rel="stylesheet" href="/js/upgrades/quantity-requests/styles.css"><link rel="stylesheet" href="/js/upgrades/consumables-requests/styles.css"><style>main{padding:24px;max-width:1320px;margin:auto}@media(max-width:480px){main{padding:16px}}</style></head><body><main id="mount"></main>${scripts.map(src => `<script src="${src}"></script>`).join('')}<script>

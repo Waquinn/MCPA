@@ -62,7 +62,7 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,go,login,logout,shot
   assert.equal(await evaluate("document.querySelectorAll('.site-card').length"),1);
   assert.ok((await evaluate("document.querySelector('.site-card').textContent")).includes(f.actors.pau.name));
   await click('.site-card');await click('[data-action=project-history]');await wait("document.querySelector('#sites-dialog').open");
-  assert.ok((await evaluate("document.querySelector('#sites-dialog-content').textContent")).includes('created'));
+  assert.match(await evaluate("document.querySelector('#sites-dialog-content').textContent"),/created/i);
   await click('[data-action=close-dialog]');await wait("!document.querySelector('#sites-dialog').open");
   // Missing-RPC and unknown errors must not display raw SQL/server text either.
   await evaluate(`window.__originalProjectRpc=supabaseClient.rpc.bind(supabaseClient);

@@ -39,7 +39,14 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
  assert.ok(await evaluate('!document.querySelector(".wa-inventory-table")'));await fill('[data-inventory-filter=status]','Available');assert.ok(await evaluate('!!document.querySelector(".wa-inventory-table")'));
  await click('[data-inventory-open]');assert.ok(await evaluate('document.querySelector("[data-inventory-details]").textContent.includes("Issuance & transaction history")'));
  assert.equal(await evaluate('document.querySelectorAll("[data-inventory-details] tbody tr").length'),2);
- await click('[data-action=close-inventory]');assert.equal(await evaluate('document.activeElement.hasAttribute("data-inventory-open")'),true);
+ await click('[data-action=close-inventory]');assert.equal(await evaluate('document.activeElement.hasAttribute("data-inventory-open")'),true,JSON.stringify(await evaluate('({focused:document.activeElement.tagName,action:document.activeElement.dataset.action,busy:document.querySelector(".wa-engineer").getAttribute("aria-busy"),details:!!document.querySelector("[data-inventory-details]"),openButtons:[...document.querySelectorAll("[data-inventory-open]")].map(n=>({disabled:n.disabled,visible:!!n.getClientRects().length}))})')));
+ // An automatic refresh must keep the keyboard user's place in inventory.
+ await wait('document.querySelector(".wa-engineer").getAttribute("aria-busy")==="false"');
+ await evaluate('document.querySelector("[data-inventory-open]").focus();window.__focusRpc=window.supabaseClient.rpc;window.supabaseClient.rpc=async(name,args)=>{if(name==="mcpa_wa_consumables_snapshot")await new Promise(resolve=>window.__releaseFocusRead=resolve);return window.__focusRpc(name,args)};window.dispatchEvent(new Event("focus"))');
+ await wait('typeof window.__releaseFocusRead==="function"');
+ await evaluate('window.__releaseFocusRead();window.supabaseClient.rpc=window.__focusRpc');
+ await wait('document.querySelector(".wa-engineer").getAttribute("aria-busy")==="false"');
+ assert.equal(await evaluate('document.activeElement.hasAttribute("data-inventory-open")'),true,'Automatic refresh preserves the focused inventory item');
  // Pagination and status counts use real additional SKU issues, never UI mocks.
  const extra=[];for(let i=0;i<20;i++)extra.push(await seed('Additional field material '+String(i).padStart(2,'0'),3));
  const batch=await f.call(sky,'mcpa_wa_submit_consumables',{p_operation_id:id(),p_site_id:f.sites.casa,p_purpose:'',p_items:extra.map(x=>({consumable_id:x.id,quantity:1,unit:x.unit}))});await approve(batch);await issue(batch,1);await notify();

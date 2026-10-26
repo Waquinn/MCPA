@@ -60,8 +60,8 @@
     async function refresh() {
       if (busy || destroyed) return;
       const focused=root.contains(document.activeElement)?document.activeElement:null;
-      const focusField=focused?.dataset.inventoryFilter || focused?.dataset.field;
-      const focusKind=focused?.dataset.inventoryFilter?'inventoryFilter':'field';
+      const focusKind=['inventoryFilter','field','inventoryOpen','tab','action','page'].find(key=>focused?.dataset[key]!=null);
+      const focusValue=focusKind?focused.dataset[focusKind]:null;
       const selection=focused?.selectionStart;
       const priorError=error;
       busy=true;error=false;if(priorError)message='';render();
@@ -77,9 +77,10 @@
         message=C.errorText(e)+(snapshot?' Showing previously loaded records; refresh to retry.':'');error=true;
       }
       finally {
+        const restoreFocus=document.activeElement===document.body || root.contains(document.activeElement);
         busy=false;render();
-        if (!destroyed && focusField) {
-          const control=[...root.querySelectorAll('input,select,textarea')].find(node=>node.dataset[focusKind]===focusField);
+        if (!destroyed && focusKind && restoreFocus) {
+          const control=[...root.querySelectorAll('button,input,select,textarea')].find(node=>node.dataset[focusKind]===focusValue);
           control?.focus({preventScroll:true});
           if (selection!=null && control?.type==='search') control.setSelectionRange(selection,selection);
         }
