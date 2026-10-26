@@ -4,7 +4,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 // The default application smoke test follows the integrated production routes.
 // Historical fixture-specific modes remain explicit flags below.
 if(process.argv.length===2)process.argv.push('--combined-integration');
-if(process.argv.includes('--review-fixes')||process.argv.includes('--final-races'))process.argv.push('--combined-integration');
+if(process.argv.includes('--review-fixes')||process.argv.includes('--final-races')||process.argv.includes('--unified-requests'))process.argv.push('--combined-integration');
 const {spawn}=require('node:child_process'),{once}=require('node:events'),{authDatabase}=require('./auth-test-db.cjs');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'mcpa-auth-'));
 let fixture,chrome,socket,passwordLogged=false;const errors=[],calls=[];
@@ -155,7 +155,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  console.log('Local Chrome ready; external HTTPS blocked');
  const base=`http://127.0.0.1:${server.address().port}`;
  if(process.argv.includes('--combined-integration')){
-  await require(process.argv.includes('--final-races')?'./integration-quantity-custody-v2/final-races.browser-checks.cjs':process.argv.includes('--review-fixes')?'./integration-quantity-custody-v2/review-fixes.browser-checks.cjs':'./integration-quantity-custody-v2/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot});
+  await require(process.argv.includes('--unified-requests')?'./unified-requests.browser-checks.cjs':process.argv.includes('--final-races')?'./integration-quantity-custody-v2/final-races.browser-checks.cjs':process.argv.includes('--review-fixes')?'./integration-quantity-custody-v2/review-fixes.browser-checks.cjs':'./integration-quantity-custody-v2/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;
  }
  if(process.argv.includes('--terminology')){

@@ -13,8 +13,7 @@ const ADMIN_NAV = [
   {id:"sites", label:"Projects", icon:"map"},
   
   {sec:"Movement"},
-  {id:"request", label:"Requests", icon:"inbox"},
-  {id:"quantity-request", label:"Quantity allocation", icon:"inbox"},
+  {id:"request", label:"Equipment Requests", icon:"inbox"},
   {id:"transfer", label:"Transfers", icon:"swap"},
   {id:"return", label:"Returns", icon:"undo"},
   {id:"asset-retirement-v2", label:"Asset retirement", icon:"list"},
@@ -41,8 +40,7 @@ const ENGR_NAV = [
   {id:"sites", label:"Projects", icon:"map"},
   
   {sec:"Movement"},
-  {id:"request", label:"Requests", icon:"inbox"},
-  {id:"quantity-request", label:"Request equipment quantities", icon:"inbox"},
+  {id:"request", label:"Equipment Requests", icon:"inbox"},
   {id:"asset-transfer", label:"Scan & transfer equipment", icon:"swap"},
   {id:"transfer-inbox", label:"Accept equipment", icon:"inbox"},
   {id:"transfer", label:"Transfers", icon:"swap"},
@@ -105,7 +103,7 @@ window.MCPAMovementLinks = {
   parse(value) {
     const [screen, query = ''] = String(value).replace(/^#/, '').split('?');
     const params = new URLSearchParams(query), record = params.get('record');
-    const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail','activity','purchase','consumables','reports','asset-retirement-v2','quantity-request','outward-materials'].includes(screen)) && record && record.length <= 120 ? record : ''};
+    const result = {screen, record: (Object.hasOwn(this.collections, screen) || ['masterlist','tool-profile','site-detail','activity','purchase','consumables','reports','asset-retirement-v2','quantity-request','transfer-inbox','outward-materials'].includes(screen)) && record && record.length <= 120 ? record : ''};
     if (screen === 'site-detail' && params.get('tool')?.length <= 120) result.tool = params.get('tool');
     if (screen === 'transfer' && ['send','receive','history'].includes(params.get('view'))) result.view = params.get('view');
     if (screen === 'masterlist' && ['all','available','inuse','repair','missing'].includes(params.get('status'))) result.status = params.get('status');
@@ -139,7 +137,7 @@ function showScreen(route, afterActivate, options){
     const target = document.getElementById('screen-'+id) || (id === 'tool-profile' ? document.getElementById('screen-masterlist') : null);
     if(target) target.classList.add('active');
     document.getElementById('sidebar')?.classList.remove('open');
-    setActiveNav(id === 'site-detail' ? 'sites' : id === 'tool-profile' ? 'masterlist' : id);
+    setActiveNav(id === 'site-detail' ? 'sites' : id === 'tool-profile' ? 'masterlist' : id === 'quantity-request' ? 'request' : id);
     const open = async () => {
       if(afterActivate) await afterActivate();
       if (ticket && !navigation.isCurrent(ticket)) return;
@@ -159,7 +157,7 @@ function showScreen(route, afterActivate, options){
       else if (record && id === 'activity') window.MovementOverview?.openActivity(record);
       else if(record&&!window.MCPAIntegration?.handles(id)) await window.MovementUI?.openRecord(id, record);
       else {
-        window.MovementUI?.clearRecord?.();
+        if(!window.MCPAIntegration?.handles(id)) window.MovementUI?.clearRecord?.();
         if (id === 'activity') window.MovementOverview?.clearRecord?.();
         if (id === 'purchase') window.MCPAPurchases?.clearRecord?.();
         if (id === 'consumables') window.MCPAConsumables?.clearRecord?.();

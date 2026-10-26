@@ -2,10 +2,11 @@
 (function (scope) {
   'use strict';
   let instance = 0;
-  function mount({ root, supabase }) {
+  function mount({ root, supabase, embedded = false }) {
     const Q = scope.MCPAQuantityRequests, V = scope.MCPAQuantityView;
     if (!Q || !V) throw new Error('Load the Workstream A quantity client and view helpers first.');
     root = V.shell(root, 'Request equipment by quantity', 'Choose a compatible equipment type and quantity. Admin assigns the individual Asset IDs.');
+    if (embedded) root.classList.add('equipment-quantity-create');
     const client = Q.createClient(supabase), prefix = 'wa-q-engineer-' + (++instance);
     const state = { catalog: null, history: [], typeId: '', search: '', siteId: '', quantity: '1', purpose: '', filter: 'all', busy: false, destroyed: false };
     const body = () => root.querySelector('[data-q-body]');

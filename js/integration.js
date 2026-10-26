@@ -5,7 +5,7 @@
   const routes=new Set(['quantity-request','outward-materials','asset-transfer','transfer-inbox','asset-retirement-v2','retired-equipment-v2']);
   let current=null,revision=0;
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function handles(screen){return routes.has(screen)||(!window.MCPAAuth?.isDemo&&screen==='return'&&['admin','engineer','architect'].includes(window.MCPAAuth?.profile?.role));}
+  function handles(screen){return routes.has(screen)||(!window.MCPAAuth?.isDemo&&['request','return'].includes(screen)&&['admin','engineer','architect'].includes(window.MCPAAuth?.profile?.role));}
   function dispose(){++revision;const old=current;current=null;if(!old)return;old.abort.abort();for(const mounted of old.mounts)mounted.destroy();old.api?.dispose();}
   async function mount(screen,root,{record=''}={}){
     dispose();const person=window.MCPAAuth.requireLive(),version=revision;
@@ -31,9 +31,11 @@
       if(!result.error&&/^(mcpa_wa_(submit|allocate|reject|review|issue)_)/.test(name))changed();return result;
     }};
     for(const event of ['input','change'])root.addEventListener(event,()=>{session.dirty=true;++session.draftVersion;},{signal:session.abort.signal});
-    if(screen==='quantity-request'){
-      const module=person.role==='admin'?window.MCPAQuantityAdmin:window.MCPAQuantityEngineer;
-      await add(module.mount({root:host,supabase:wrapper}));
+    if(screen==='request'||screen==='quantity-request'){
+      const module=await import(new URL('js/upgrades/equipment-requests/unified.mjs',base));
+      if(!alive())return;
+      ensureModuleCSS('requests',new URL('1-admin/modules/requests/requests.css',base).href);
+      await add(module.mount(host,{client:wrapper,record}));
     }else if(screen==='outward-materials'){
       const module=person.role==='admin'?window.MCPAConsumablesUsageV2:window.MCPAConsumablesRequesterV2;
       await add(module.mount({root:host,client:wrapper}));
@@ -50,6 +52,7 @@
         options.batchId=returnSnapshot?.returns.find(v=>v.id===record)?.inspectionBatchId||record;
       }else if(screen==='asset-transfer'||screen==='transfer-inbox'){
         path='2-engr/modules/qr-movements-v2/qr-movements.mjs';fn=screen==='asset-transfer'?'mountTransferSubmission':'mountTransferInbox';
+        options.recordId=record;
       }else if(screen==='asset-retirement-v2'){
         path='1-admin/modules/asset-retirement-v2/asset-retirement.mjs';fn='mountAssetRetirement';options.recordId=record;
       }else{path='2-engr/modules/retired-equipment-v2/retired-equipment.mjs';fn='mountRetiredEquipment';}
@@ -94,7 +97,6 @@
       root.querySelector('[data-integration-history]').innerHTML=`<details class="integration-history" ${records.some(v=>v.id===record)?'open':''}><summary>Historical returns (${records.length})</summary>${records.map(v=>`<article><h3>${escape(v.id)}</h3><p>${escape((v.toolIds||[]).join(', '))} · ${escape(v.status)} · ${escape(v.returnedBy)}</p><p>${escape(v.notes)}</p></article>`).join('')||'<p>No historical returns.</p>'}</details>`;
     }
     if(record&&screen==='asset-retirement-v2')host.querySelector(`[data-retirement-record="${CSS.escape(record)}"]`)?.setAttribute('open','');
-    if(record&&screen==='quantity-request')host.querySelector(`[data-q-request="${CSS.escape(record)}"]`)?.click();
     if(record&&screen==='outward-materials')host.querySelector(`[data-open="${CSS.escape(record)}"]`)?.click();
   }
   window.MCPAIntegration={handles,mount,dispose};
