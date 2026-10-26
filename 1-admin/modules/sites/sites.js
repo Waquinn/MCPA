@@ -54,12 +54,7 @@
 
   function client() {
     if (!window.supabaseClient) {
-      if (!window.supabase?.createClient) throw projectError('The project service could not load. Reload the page and try again.');
-      // Same public project configuration as Masterlist. Reuse its client when loaded.
-      window.supabaseClient = window.supabase.createClient(
-        'https://zpqxlmiqwevhlstjirei.supabase.co',
-        'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58'
-      );
+      return window.MCPADatabase.client();
     }
     return window.supabaseClient;
   }

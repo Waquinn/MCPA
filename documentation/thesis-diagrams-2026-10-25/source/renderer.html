@@ -1,0 +1,43 @@
+<!doctype html><meta charset="utf-8"><title>Documentation-only native Draw.io renderer</title>
+<style>html,body{margin:0;background:#fff}#graph{position:relative;overflow:hidden}</style>
+<script>var mxLoadResources=false,mxLoadStylesheets=false,mxBasePath='';</script>
+<script src="../../../SYSTEM_DOCUMENTATION/02_SYSTEM_DIAGRAMS/REFERENCE_STANDARDIZED/source/vendor/mxClient.min.js"></script>
+<script src="../../../SYSTEM_DOCUMENTATION/02_SYSTEM_DIAGRAMS/REFERENCE_STANDARDIZED/source/vendor/drawio-custom-shapes.js"></script>
+<div id="graph"></div>
+<script>
+let graph;
+window.render=function(xml,w,h){
+ const host=document.getElementById('graph');if(graph)graph.destroy();host.replaceChildren();host.style.width=w+'px';host.style.height=h+'px';
+ graph=new mxGraph(host);graph.setEnabled(false);graph.setHtmlLabels(false);graph.gridEnabled=false;
+ const sheet=graph.getStylesheet();sheet.putCellStyle('text',{shape:'rectangle',fillColor:'none',strokeColor:'none',fontFamily:'Arial',fontSize:14,align:'left',verticalAlign:'top',spacing:0});
+ Object.assign(sheet.getDefaultVertexStyle(),{fillColor:'#ffffff',strokeColor:'#000000',fontColor:'#000000',fontFamily:'Arial',spacing:0});
+ const doc=mxUtils.parseXml(xml);new mxCodec(doc).decode(doc.documentElement,graph.getModel());graph.view.validate();
+ const text=[],shapes=[],edges=[],issues=[];
+ for(const cell of Object.values(graph.model.cells)){
+  const s=graph.view.getState(cell);if(!s)continue;
+  if(cell.vertex&&s.style.strokeColor&&s.style.strokeColor!=='none')shapes.push({id:cell.id,label:cell.value,x:s.x,y:s.y,w:s.width,h:s.height});
+  if(cell.edge)edges.push({id:cell.id,from:cell.source?.id,to:cell.target?.id,points:s.absolutePoints?.filter(Boolean).map(p=>({x:p.x,y:p.y}))});
+  if(s.text?.boundingBox&&cell.value){const b=s.text.boundingBox;const rec={id:cell.id,label:cell.value,x:b.x,y:b.y,w:b.width,h:b.height};text.push(rec);
+   if(b.x<0||b.y<0||b.x+b.width>w+1||b.y+b.height>h+1)issues.push({kind:'outside-page',...rec});
+   if(cell.vertex&&s.style.strokeColor&&s.style.strokeColor!=='none'){
+    for(const line of s.text.node.querySelectorAll('text')){
+     const r=line.getBBox(),m=line.getCTM();const corners=[[r.x,r.y],[r.x+r.width,r.y],[r.x,r.y+r.height],[r.x+r.width,r.y+r.height]].map(([x,y])=>({x:m.a*x+m.c*y+m.e,y:m.b*x+m.d*y+m.f}));
+     const within=p=>{const x=p.x-s.x,y=p.y-s.y,W=s.width,H=s.height;
+      if(s.style.shape==='rhombus')return Math.abs(x-W/2)/(W/2)+Math.abs(y-H/2)/(H/2)<=0.98;
+      if(s.style.shape==='ellipse')return (x-W/2)**2/(W/2)**2+(y-H/2)**2/(H/2)**2<=0.98;
+      if(s.style.shape==='parallelogram'){const inset=W*0.12;return y>=1&&y<=H-1&&x>=inset*(1-y/H)-1&&x<=W-inset*y/H+1;}
+      return x>=2&&x<=W-2&&y>=1&&y<=H-1;
+     };
+     if(corners.some(p=>!within(p)))issues.push({kind:'text-outside-shape',id:cell.id,line:line.textContent,label:cell.value});
+    }
+   }
+  }
+ }
+ const overlap=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)>1;
+ for(let i=0;i<text.length;i++)for(let j=i+1;j<text.length;j++)if(overlap(text[i],text[j]))issues.push({kind:'text-overlap',a:text[i],b:text[j]});
+ for(let i=0;i<shapes.length;i++)for(let j=i+1;j<shapes.length;j++)if(overlap(shapes[i],shapes[j]))issues.push({kind:'shape-overlap',a:shapes[i].id,b:shapes[j].id});
+ const svg=host.querySelector('svg').cloneNode(true);svg.setAttribute('xmlns','http://www.w3.org/2000/svg');svg.setAttribute('width',w);svg.setAttribute('height',h);svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.removeAttribute('style');
+ for(const group of [...svg.children])if(group.getAttribute('style')?.includes('visibility: hidden'))group.remove();
+ return{svg:new XMLSerializer().serializeToString(svg),issues,text,shapes,edges};
+};
+</script>

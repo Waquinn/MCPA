@@ -1,0 +1,120 @@
+[
+  {
+    "name": "main",
+    "pages": [
+      {
+        "page": 1,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Main role flowchart  Page 1 of 6 | Login to Dashboard  Continue to Admin workspace modules  To ADMIN MAIN / P2  START  Open SiteTrace; enter email and password,  or restore an existing Auth session.  Restore Auth session or submit  signInWithPassword.  Authentication  successful?  Show normal sign-in for no  session.  Show feedback for a failed  submitted login.  1  Read authorized company profile  using mcpa_my_profile.  Active, authorized  company profile?  Show inactive/unauthorized  profile or  verification feedback;  contact Admin.  END Switch movement store to live mode; build  Admin menus; initialize monitoring.  Display Dashboard, or a permitted  initial route requested by the user.  A  No  Yes  No  Yes  XX  1"
+      },
+      {
+        "page": 2,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Main role flowchart  Page 2 of 6 | Available modules and entry events - 1  From Admin workspace modules  Continue: Authentication and  session  Continue: Tools and Equipment  Masterlist  Continue: Tool Profile  Continue: Tool Requests  More choices on next page  To ADMIN AUTHENTICATION / P1  To ADMIN MASTERLIST / P1  To ADMIN TOOL PROFILE / P1  To ADMIN REQUEST / P1  To ADMIN MAIN / P3  A  Use sign-in help, email  callback or sign-out?  B  Open Tools and  Equipment Masterlist?  C  Open Tool Profile?   D  Open Tool Requests?   E  U  Yes  No  Yes  No  Yes  No  Yes  No"
+      },
+      {
+        "page": 3,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Main role flowchart  Page 3 of 6 | Available modules and entry events - 2  From Main role flowchart / Available modules and entry events next choices  Continue: Equipment Transfers  Continue: Equipment Returns  Continue: Repair Management  Continue: Missing Equipment  More choices on next page  To ADMIN TRANSFER / P1  To ADMIN RETURN / P1  To ADMIN REPAIR / P1  To ADMIN MISSING / P1  To ADMIN MAIN / P4  U  Open Equipment  Transfers?  F  Open Equipment Returns?   G  Open Repair  Management?  H  Open Missing Equipment?   I  V  Yes  No  Yes  No  Yes  No  Yes  No"
+      },
+      {
+        "page": 4,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Main role flowchart  Page 4 of 6 | Available modules and entry events - 3  From Main role flowchart / Available modules and entry events next choices  Continue: Dashboard / Movement  Overview  Continue: Projects / Site List  Continue: Project Details /  Accountability and History  Continue: Material Requests /  Consumables Procurement  More choices on next page  To ADMIN DASHBOARD / P1  To ADMIN SITES / P1  To ADMIN SITE DETAIL / P1  To ADMIN CONSUMABLES / P1  To ADMIN MAIN / P5  V  Open Dashboard /  Movement Overview?  J  Open Projects / Site List?   K  Open Project Details /  Accountability and  History?  L  Open Material Requests /  Consumables  Procurement?  M  W  Yes  No  Yes  No  Yes  No  Yes  No"
+      },
+      {
+        "page": 5,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Main role flowchart  Page 5 of 6 | Available modules and entry events - 4  From Main role flowchart / Available modules and entry events next choices  Continue: Purchases / Recorded  Purchase Ledger  Continue: Reports / Current and  Historical Monitoring  Continue: Activity Logs / Saved  Movement Audit  Continue: People and  Accountability / Account  Management  More choices on next page  To ADMIN PURCHASE / P1  To ADMIN REPORTS / P1  To ADMIN ACTIVITY / P1  To ADMIN USERS / P1  To ADMIN MAIN / P6  W  Open Purchases /  Recorded Purchase  Ledger?  N  Open Reports / Current  and Historical Monitoring?  O  Open Activity Logs / Saved  Movement Audit?  P  Open People and  Accountability / Account  Management?  Q  X  Yes  No  Yes  No  Yes  No  Yes  No"
+      },
+      {
+        "page": 6,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Main role flowchart  Page 6 of 6 | Available modules and entry events - 5  From Main role flowchart / Available modules and entry events next choices  Continue: My Account / Display  Preferences and Sign Out  Continue: Global Search /  Authorized Record Discovery  Continue: Notifications /  Own-Recipient Monitoring  Use workspace navigation to return  To ADMIN MAIN / P2  To ADMIN SETTINGS / P1  To ADMIN GLOBAL SEARCH / P1  To ADMIN NOTIFICATIONS / P1  X  Open My Account /  Display Preferences and  Sign Out?  R  Open Global Search /  Authorized Record  Discovery?  S  Open Notifications /  Own-Recipient  Monitoring?  T  A  Yes  No  Yes  No  Yes  No"
+      }
+    ]
+  },
+  {
+    "name": "authentication",
+    "pages": [
+      {
+        "page": 1,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 1 of 12 | Action selection - 1  From Admin / Authentication and session  Continue: action pages  Continue: action pages  Continue: action pages  Continue: action pages  More choices on next page  To ADMIN AUTHENTICATION / P3  To ADMIN AUTHENTICATION / P5  To ADMIN AUTHENTICATION / P6  To ADMIN AUTHENTICATION / P8  To ADMIN AUTHENTICATION / P2  B  Sign in or restore a  session?  Y  Request password  recovery?  Z  Set password from  invitation or reset?  AA  Sign out and retry failed  sign-out?  AB  AF  Yes  No  Yes  No  Yes  No  Yes  No"
+      },
+      {
+        "page": 2,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 2 of 12 | Action selection - 2  From Authentication and session / Action selection next choices  Continue: action pages  Continue: action pages  Continue: action pages  Use workspace navigation to return  To ADMIN MAIN / P2  To ADMIN AUTHENTICATION / P9  To ADMIN AUTHENTICATION / P10  To ADMIN AUTHENTICATION / P12  AF  Use and exit offline  demonstration?  AC  Handle session boot and  revalidation?  AD  Load authorized module  and retry loading?  AE  A  Yes  No  Yes  No  Yes  No"
+      },
+      {
+        "page": 3,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 3 of 12 | Sign in or restore a session - 1 / 2  From Admin / Authentication and session / Sign in or restore a session  Continue on next page  To ADMIN AUTHENTICATION / P4  Y  Open SiteTrace; enter email and password  if an existing session is unavailable.  Use Auth getSession for restoration, or  signInWithPassword for submitted credentials.  Authenticated session  available?  No existing session: show  normal sign-in.  Submitted login failure: show  error and retry.  1  Clear submitted password after sign-in;  read mcpa_my_profile for the session user.  Profile read succeeds?  Show profile-verification  error.  Check connection and sign  in again.  AG  No  Yes  No  Yes  1  XX"
+      },
+      {
+        "page": 4,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 4 of 12 | Sign in or restore a session - 2 / 2  From Authentication and session / Sign in or restore a session continuation AG  Active, supported  company profile?  Show unauthorized or  inactive-account message;  contact Admin. Workspace  remains closed.  Switch MovementStore to live mode; build  permitted menus and initialize monitoring.  Open permitted initial route if supplied;  otherwise open Dashboard.  Authorized workspace opened  No  Yes  XX  XX"
+      },
+      {
+        "page": 5,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 5 of 12 | Request password recovery  From Admin / Authentication and session / Request password recovery Z  Enter a valid email on sign-in;  choose Forgot password.  Email passes native  form validity?  Browser requests a valid  email.  Correct the email before  continuing.  1  Call resetPasswordForEmail with the email  and root sign-in URL as redirect.  Reset request succeeds?  Show  unable-to-request-reset  message;  check connection and retry.  1  Show neutral confirmation: if the account  exists, a reset link has been sent.  Await email callback  No  Yes  No  Yes  1  XX"
+      },
+      {
+        "page": 6,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 6 of 12 | Set password from invitation or reset - 1 / 2  From Admin / Authentication and session / Set password from invitation or reset  Continue on next page  To ADMIN AUTHENTICATION / P7  AA  Open invitation/reset email callback  or resume pending password setup.  Callback valid and  session available?  Reject invalid/expired link;  request  a fresh invitation or  password reset.  Hide workspace; remember setup user/kind  in sessionStorage and clean callback URL.  Enter new password (at least 12  characters);  submit Set your password.  Password meets native  minimum length?  Correct password; setup  form remains open.  1  1  AH  No  Yes  No  Yes  XX"
+      },
+      {
+        "page": 7,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 7 of 12 | Set password from invitation or reset - 2 / 2  From Authentication and session / Set password from invitation or reset continuation AH  Continue with current screen / retained form;  retry as directed by the displayed feedback.  Call Auth updateUser with new password.  Password saved?  Show save failure; check  connection/password.  Expired links require a fresh  email link.  1  1  Clear setup state and attempt local sign-out;  failed sign-out offers Retry sign out.  Show password-saved message;  sign in with the new password.  Password setup completed  No  Yes  XX"
+      },
+      {
+        "page": 8,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 8 of 12 | Sign out and retry failed sign-out  From Admin / Authentication and session / Sign out and retry failed sign-out AB  Choose Log Out in the account menu  or Cancel and sign out during setup.  Clear profile, application, navigation and  setup/demo session flags; show sign-in.  Call Auth signOut with local scope.  Sign-out confirmed?  Show unconfirmed sign-out  and Retry sign out.  Use that button to repeat  local sign-out.  1  1  Display signed-out confirmation.  Local session ended  No  Yes  XX"
+      },
+      {
+        "page": 9,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 9 of 12 | Use and exit offline demonstration  From Admin / Authentication and session / Use and exit offline demonstration AC  Choose Try offline demo; select Admin,  Engineer or Architect sample identity.  Set sample profile and demo role in  sessionStorage; use browser-only demo store.  Open demo Dashboard. Users,  Consumables and  Purchases are blocked in demo mode.  Perform supported sample workflows locally;  no live credentials or database writes.  Choose Exit demo in account menu.  Clear demo session role and workspace;  retain browser sample records.  Show Demo closed on sign-in screen.  Demo session ended  XX"
+      },
+      {
+        "page": 10,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 10 of 12 | Handle session boot and revalidation - 1 / 2  From Admin / Authentication and session / Handle session boot and revalidation  Continue on next page  To ADMIN AUTHENTICATION / P11  AD  On boot, request Auth session; on focus,  Auth storage change or 60-second check, verify  session.  Session service  responds?  On boot show service-load  error; refresh.  Offline demonstration  remains available.  Authenticated session  still exists?  Clear workspace and  navigation;  show sign-in after session  ends.  Recheck mcpa_my_profile; refresh account UI  or rebuild workspace for changed identity/role.  Profile verification  succeeds?  Close workspace; show  verification,  inactive-account or  authorization feedback.  AI  No  Yes  No  Yes  No  Yes  XX  XX  XX"
+      },
+      {
+        "page": 11,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 11 of 12 | Handle session boot and revalidation - 2 / 2  From Authentication and session / Handle session boot and revalidation continuation AI  Continue authorized workspace.  Session state reconciled  XX"
+      },
+      {
+        "page": 12,
+        "width": 594.95996,
+        "height": 841.91998,
+        "text": "SITETRACE (MCPA) - Admin  Authentication and session  Page 12 of 12 | Load authorized module and retry loading  From Admin / Authentication and session / Load authorized module and retry loading AE  Select module, detail link or browser-history  route from the workspace.  Role can access route?  Show Access restricted with  Return to workspace.  Do not load the restricted  module.  Reuse active module, or load mapped module  HTML, CSS and script; dispose previous views.  HTML and script load?  Show Unable to load this  screen and Retry.  Retry repeats the requested  route.  1  1  Render the requested view; preserve  current route context and navigation history.  Display authorized module or detail screen.  Module rendered  No  Yes  No  Yes  XX  XX"
+      }
+    ]
+  }
+]

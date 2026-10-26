@@ -1,0 +1,898 @@
+{
+  "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"816\" height=\"1248\" viewBox=\"0 0 816 1248\"><g><g/><g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 212 L 195 235.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 212 L 195 235.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 240.6 L 191.38 233.35 L 195 235.16 L 198.63 233.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 466 L 195 479.17\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 466 L 195 479.17\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 484.6 L 191.38 477.35 L 195 479.17 L 198.63 477.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 586 L 195 599.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 586 L 195 599.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 604.6 L 191.38 597.35 L 195 599.16 L 198.63 597.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"183\" y=\"590\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"195\" y=\"601\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 670 L 195 683.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 670 L 195 683.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 688.6 L 191.38 681.35 L 195 683.16 L 198.63 681.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 766 L 195 779.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 766 L 195 779.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 784.6 L 191.38 777.35 L 195 779.16 L 198.63 777.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 886 L 195 899.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 886 L 195 899.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 904.6 L 191.38 897.35 L 195 899.16 L 198.63 897.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"183\" y=\"890\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"195\" y=\"901\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 306 L 605 319.17\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 306 L 605 319.17\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 324.6 L 601.38 317.35 L 605 319.17 L 608.63 317.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 426 L 605 439.17\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 426 L 605 439.17\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 444.6 L 601.38 437.35 L 605 439.17 L 608.63 437.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"593\" y=\"430\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"605\" y=\"441\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 510 L 605 523.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 510 L 605 523.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 528.6 L 601.38 521.35 L 605 523.16 L 608.63 521.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 606 L 605 619.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 606 L 605 619.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 624.6 L 601.38 617.35 L 605 619.16 L 608.63 617.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 726 L 605 739.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 726 L 605 739.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 744.6 L 601.38 737.35 L 605 739.16 L 608.63 737.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"593\" y=\"730\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"605\" y=\"741\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 342 L 195 383.17\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 342 L 195 383.17\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 388.6 L 191.38 381.35 L 195 383.17 L 198.63 381.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"183\" y=\"360\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"195\" y=\"371\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 345 292 L 362.17 292\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 345 292 L 362.17 292\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 367.6 292 L 360.35 295.63 L 362.17 292 L 360.35 288.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 208 L 605 223.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 208 L 605 223.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 228.6 L 601.38 221.35 L 605 223.16 L 608.63 221.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 345 536 L 362.17 536\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 345 536 L 362.17 536\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 367.6 536 L 360.35 539.63 L 362.17 536 L 360.35 532.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 35 409 L 65.17 409\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 35 409 L 65.17 409\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 70.6 409 L 63.35 412.63 L 65.17 409 L 63.35 405.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 345 836 L 362.17 836\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 345 836 L 362.17 836\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 367.6 836 L 360.35 839.63 L 362.17 836 L 360.35 832.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 35 709 L 65.17 709\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 35 709 L 65.17 709\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 70.6 709 L 63.35 712.63 L 65.17 709 L 63.35 705.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 755 376 L 772.16 376\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 755 376 L 772.16 376\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 777.6 376 L 770.35 379.63 L 772.16 376 L 770.35 372.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 445 249 L 475.17 249\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 445 249 L 475.17 249\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 480.6 249 L 473.35 252.63 L 475.17 249 L 473.35 245.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 755 676 L 772.16 676\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 755 676 L 772.16 676\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 777.6 676 L 770.35 679.63 L 772.16 676 L 770.35 672.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 445 549 L 475.17 549\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 445 549 L 475.17 549\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 480.6 549 L 473.35 552.63 L 475.17 549 L 473.35 545.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 970 L 195 983.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 970 L 195 983.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 988.6 L 191.38 981.35 L 195 983.16 L 198.63 981.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 810 L 605 823.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 810 L 605 823.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 828.6 L 601.38 821.35 L 605 823.16 L 608.63 821.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"visibility: visible;\"><rect x=\"36\" y=\"22\" width=\"744\" height=\"36\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"36\" y=\"22\" width=\"744\" height=\"36\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" font-size=\"22px\"><text x=\"36\" y=\"43\">Repair and missing-equipment cases</text></g></g><g style=\"visibility: visible;\"><rect x=\"36\" y=\"67\" width=\"744\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"36\" y=\"67\" width=\"744\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" font-size=\"12px\"><text x=\"36\" y=\"78\">Page 9 of 13</text></g></g><g style=\"visibility: visible;\"><path d=\"M 157 150 L 233 150 L 233 188.75 L 195 212 L 157 188.75 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"195\" y=\"175\">H</text><text x=\"195\" y=\"189\">FROM P01</text></g></g><g style=\"visibility: visible;\"><rect x=\"45\" y=\"119\" width=\"345\" height=\"25\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"45\" y=\"119\" width=\"345\" height=\"25\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" font-weight=\"bold\" font-size=\"14px\"><text x=\"45\" y=\"132\">CUSTODIAN REPORT / ADMIN REPAIR</text></g></g><g style=\"visibility: visible;\"><rect x=\"455\" y=\"119\" width=\"325\" height=\"25\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"455\" y=\"119\" width=\"325\" height=\"25\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" font-weight=\"bold\" font-size=\"14px\"><text x=\"455\" y=\"132\">CUSTODIAN REPORT / ADMIN RECOVERY</text></g></g><g style=\"visibility: visible;\"><path d=\"M 195 242 L 345 292 L 195 342 L 45 292 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"289.5\">Repair case</text><text x=\"195\" y=\"306.5\">rather than missing?</text></g></g><g style=\"visibility: visible;\"><path d=\"M 45 466 L 81 390 L 345 390 L 309 466 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"417\">Custodian records damaged</text><text x=\"195\" y=\"434\">equipment, fault details and</text><text x=\"195\" y=\"451\">relevant notes.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 195 486 L 345 536 L 195 586 L 45 536 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"533.5\">Reporter and asset</text><text x=\"195\" y=\"550.5\">state permitted?</text></g></g><g style=\"visibility: visible;\"><rect x=\"45\" y=\"606\" width=\"300\" height=\"64\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"635.5\">Create repair case; equipment</text><text x=\"195\" y=\"652.5\">becomes unavailable for requests.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 45 766 L 81 690 L 345 690 L 309 766 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"717\">Admin reviews fault / case; starts</text><text x=\"195\" y=\"734\">repair and records completion notes</text><text x=\"195\" y=\"751\">/ destination.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 195 786 L 345 836 L 195 886 L 45 836 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"833.5\">Completion valid for</text><text x=\"195\" y=\"850.5\">current repair?</text></g></g><g style=\"visibility: visible;\"><rect x=\"45\" y=\"906\" width=\"300\" height=\"64\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"927\">Record completed repair; return</text><text x=\"195\" y=\"944\">asset to Available at the selected</text><text x=\"195\" y=\"961\">site.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 455 306 L 491 230 L 755 230 L 719 306 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"257\">Custodian records missing</text><text x=\"605\" y=\"274\">equipment, last known place and</text><text x=\"605\" y=\"291\">circumstances.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 605 326 L 755 376 L 605 426 L 455 376 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"373.5\">Reporter and asset</text><text x=\"605\" y=\"390.5\">state permitted?</text></g></g><g style=\"visibility: visible;\"><rect x=\"455\" y=\"446\" width=\"300\" height=\"64\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"467\">Create missing case; mark</text><text x=\"605\" y=\"484\">unavailable and retain</text><text x=\"605\" y=\"501\">accountability.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 455 606 L 491 530 L 755 530 L 719 606 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"557\">Admin records actual recovery,</text><text x=\"605\" y=\"574\">inspected condition, destination</text><text x=\"605\" y=\"591\">and notes.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 605 626 L 755 676 L 605 726 L 455 676 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"673.5\">Recovery valid for</text><text x=\"605\" y=\"690.5\">this open case?</text></g></g><g style=\"visibility: visible;\"><rect x=\"455\" y=\"746\" width=\"300\" height=\"64\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"767\">Good -&gt; Available; Damaged -&gt;</text><text x=\"605\" y=\"784\">repair case. Preserve recovery and</text><text x=\"605\" y=\"801\">custody history.</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"385\" cy=\"292\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"385\" y=\"297\">1</text></g></g><g style=\"visibility: visible;\"><rect x=\"346\" y=\"265\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"346\" y=\"265\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"353\" y=\"265\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"362\" y=\"275\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"605\" cy=\"192\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"605\" y=\"197\">1</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"195\" cy=\"1016\" rx=\"110\" ry=\"26\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"195\" y=\"1014\">RETURN TO MAIN MENU</text><text x=\"195\" y=\"1028\">(Page 1)</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"385\" cy=\"536\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"385\" y=\"541\">2</text></g></g><g style=\"visibility: visible;\"><rect x=\"346\" y=\"509\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"346\" y=\"509\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"353\" y=\"509\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"362\" y=\"519\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"19\" cy=\"409\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"19\" y=\"414\">2</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"385\" cy=\"836\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"385\" y=\"841\">3</text></g></g><g style=\"visibility: visible;\"><rect x=\"346\" y=\"809\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"346\" y=\"809\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"353\" y=\"809\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"362\" y=\"819\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"19\" cy=\"709\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"19\" y=\"714\">3</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"795\" cy=\"376\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"795\" y=\"381\">4</text></g></g><g style=\"visibility: visible;\"><rect x=\"756\" y=\"349\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"756\" y=\"349\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"763\" y=\"349\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"772\" y=\"359\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"429\" cy=\"249\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"429\" y=\"254\">4</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"795\" cy=\"676\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"795\" y=\"681\">5</text></g></g><g style=\"visibility: visible;\"><rect x=\"756\" y=\"649\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"756\" y=\"649\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"763\" y=\"649\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"772\" y=\"659\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"429\" cy=\"549\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"429\" y=\"554\">5</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"605\" cy=\"856\" rx=\"110\" ry=\"26\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"605\" y=\"854\">RETURN TO MAIN MENU</text><text x=\"605\" y=\"868\">(Page 1)</text></g></g></g><g/><g/></g></svg>",
+  "issues": [],
+  "text": [
+    {
+      "id": "edge_3",
+      "label": "Yes",
+      "x": 183,
+      "y": 590,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "edge_6",
+      "label": "Yes",
+      "x": 183,
+      "y": 890,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "edge_8",
+      "label": "Yes",
+      "x": 593,
+      "y": 430,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "edge_11",
+      "label": "Yes",
+      "x": 593,
+      "y": 730,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "edge_12",
+      "label": "Yes",
+      "x": 183,
+      "y": 360,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "title",
+      "label": "Repair and missing-equipment cases",
+      "x": 36,
+      "y": 23,
+      "w": 361.96875,
+      "h": 25
+    },
+    {
+      "id": "pagenum",
+      "label": "Page 9 of 13",
+      "x": 36,
+      "y": 67,
+      "w": 68.3828125,
+      "h": 14
+    },
+    {
+      "id": "moduleEntry",
+      "label": "H\nFROM P01",
+      "x": 164.9921875,
+      "y": 164,
+      "w": 60.015625,
+      "h": 28
+    },
+    {
+      "id": "leftheading",
+      "label": "CUSTODIAN REPORT / ADMIN REPAIR",
+      "x": 45,
+      "y": 119,
+      "w": 258.8642578125,
+      "h": 16
+    },
+    {
+      "id": "rightheading",
+      "label": "CUSTODIAN REPORT / ADMIN RECOVERY",
+      "x": 455,
+      "y": 119,
+      "w": 284.83203125,
+      "h": 16
+    },
+    {
+      "id": "action",
+      "label": "Repair case\nrather than missing?",
+      "x": 131.578125,
+      "y": 276.5,
+      "w": 127.0546875,
+      "h": 33
+    },
+    {
+      "id": "report",
+      "label": "Custodian records damaged\nequipment, fault details and\nrelevant notes.",
+      "x": 107.0546875,
+      "y": 404,
+      "w": 176.095703125,
+      "h": 50
+    },
+    {
+      "id": "valid",
+      "label": "Reporter and asset\nstate permitted?",
+      "x": 135.4609375,
+      "y": 520.5,
+      "w": 120.1787109375,
+      "h": 33
+    },
+    {
+      "id": "case",
+      "label": "Create repair case; equipment\nbecomes unavailable for requests.",
+      "x": 88.3828125,
+      "y": 622.5,
+      "w": 213.234375,
+      "h": 33
+    },
+    {
+      "id": "review",
+      "label": "Admin reviews fault / case; starts\nrepair and records completion notes\n/ destination.",
+      "x": 83.328125,
+      "y": 704,
+      "w": 223.34375,
+      "h": 50
+    },
+    {
+      "id": "complete",
+      "label": "Completion valid for\ncurrent repair?",
+      "x": 133.1328125,
+      "y": 820.5,
+      "w": 125.0615234375,
+      "h": 33
+    },
+    {
+      "id": "restore",
+      "label": "Record completed repair; return\nasset to Available at the selected\nsite.",
+      "x": 93.171875,
+      "y": 914,
+      "w": 203.8701171875,
+      "h": 50
+    },
+    {
+      "id": "missing",
+      "label": "Custodian records missing\nequipment, last known place and\ncircumstances.",
+      "x": 503.0390625,
+      "y": 244,
+      "w": 204.123046875,
+      "h": 50
+    },
+    {
+      "id": "validMissing",
+      "label": "Reporter and asset\nstate permitted?",
+      "x": 545.4609375,
+      "y": 360.5,
+      "w": 120.1787109375,
+      "h": 33
+    },
+    {
+      "id": "register",
+      "label": "Create missing case; mark\nunavailable and retain\naccountability.",
+      "x": 522.140625,
+      "y": 454,
+      "w": 166.716796875,
+      "h": 50
+    },
+    {
+      "id": "found",
+      "label": "Admin records actual recovery,\ninspected condition, destination\nand notes.",
+      "x": 507.3203125,
+      "y": 544,
+      "w": 195.5712890625,
+      "h": 50
+    },
+    {
+      "id": "validRecovery",
+      "label": "Recovery valid for\nthis open case?",
+      "x": 548.9765625,
+      "y": 660.5,
+      "w": 113.37890625,
+      "h": 33
+    },
+    {
+      "id": "recover",
+      "label": "Good -> Available; Damaged ->\nrepair case. Preserve recovery and\ncustody history.",
+      "x": 496.0625,
+      "y": 754,
+      "w": 218.0888671875,
+      "h": 50
+    },
+    {
+      "id": "local1out",
+      "label": "1",
+      "x": 381.65625,
+      "y": 286,
+      "w": 6.6875,
+      "h": 14
+    },
+    {
+      "id": "local1outlabel",
+      "label": "No",
+      "x": 353,
+      "y": 265,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local1in",
+      "label": "1",
+      "x": 601.65625,
+      "y": 186,
+      "w": 6.6875,
+      "h": 14
+    },
+    {
+      "id": "moduleComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 124.21875,
+      "y": 1003,
+      "w": 141.5625,
+      "h": 28
+    },
+    {
+      "id": "local2out",
+      "label": "2",
+      "x": 381.65625,
+      "y": 530,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local2outlabel",
+      "label": "No",
+      "x": 353,
+      "y": 509,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local2in",
+      "label": "2",
+      "x": 15.65625,
+      "y": 403,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local3out",
+      "label": "3",
+      "x": 381.65625,
+      "y": 830,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local3outlabel",
+      "label": "No",
+      "x": 353,
+      "y": 809,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local3in",
+      "label": "3",
+      "x": 15.65625,
+      "y": 703,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local4out",
+      "label": "4",
+      "x": 791.65625,
+      "y": 370,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local4outlabel",
+      "label": "No",
+      "x": 763,
+      "y": 349,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local4in",
+      "label": "4",
+      "x": 425.65625,
+      "y": 243,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local5out",
+      "label": "5",
+      "x": 791.65625,
+      "y": 670,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local5outlabel",
+      "label": "No",
+      "x": 763,
+      "y": 649,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local5in",
+      "label": "5",
+      "x": 425.65625,
+      "y": 543,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "recoverComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 534.21875,
+      "y": 843,
+      "w": 141.5625,
+      "h": 28
+    }
+  ],
+  "shapes": [
+    {
+      "id": "moduleEntry",
+      "label": "H\nFROM P01",
+      "x": 157,
+      "y": 150,
+      "w": 76,
+      "h": 62
+    },
+    {
+      "id": "action",
+      "label": "Repair case\nrather than missing?",
+      "x": 45,
+      "y": 242,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "report",
+      "label": "Custodian records damaged\nequipment, fault details and\nrelevant notes.",
+      "x": 45,
+      "y": 390,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "valid",
+      "label": "Reporter and asset\nstate permitted?",
+      "x": 45,
+      "y": 486,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "case",
+      "label": "Create repair case; equipment\nbecomes unavailable for requests.",
+      "x": 45,
+      "y": 606,
+      "w": 300,
+      "h": 64
+    },
+    {
+      "id": "review",
+      "label": "Admin reviews fault / case; starts\nrepair and records completion notes\n/ destination.",
+      "x": 45,
+      "y": 690,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "complete",
+      "label": "Completion valid for\ncurrent repair?",
+      "x": 45,
+      "y": 786,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "restore",
+      "label": "Record completed repair; return\nasset to Available at the selected\nsite.",
+      "x": 45,
+      "y": 906,
+      "w": 300,
+      "h": 64
+    },
+    {
+      "id": "missing",
+      "label": "Custodian records missing\nequipment, last known place and\ncircumstances.",
+      "x": 455,
+      "y": 230,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "validMissing",
+      "label": "Reporter and asset\nstate permitted?",
+      "x": 455,
+      "y": 326,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "register",
+      "label": "Create missing case; mark\nunavailable and retain\naccountability.",
+      "x": 455,
+      "y": 446,
+      "w": 300,
+      "h": 64
+    },
+    {
+      "id": "found",
+      "label": "Admin records actual recovery,\ninspected condition, destination\nand notes.",
+      "x": 455,
+      "y": 530,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "validRecovery",
+      "label": "Recovery valid for\nthis open case?",
+      "x": 455,
+      "y": 626,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "recover",
+      "label": "Good -> Available; Damaged ->\nrepair case. Preserve recovery and\ncustody history.",
+      "x": 455,
+      "y": 746,
+      "w": 300,
+      "h": 64
+    },
+    {
+      "id": "local1out",
+      "label": "1",
+      "x": 369,
+      "y": 276,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local1in",
+      "label": "1",
+      "x": 589,
+      "y": 176,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "moduleComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 85,
+      "y": 990,
+      "w": 220,
+      "h": 52
+    },
+    {
+      "id": "local2out",
+      "label": "2",
+      "x": 369,
+      "y": 520,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local2in",
+      "label": "2",
+      "x": 3,
+      "y": 393,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local3out",
+      "label": "3",
+      "x": 369,
+      "y": 820,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local3in",
+      "label": "3",
+      "x": 3,
+      "y": 693,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local4out",
+      "label": "4",
+      "x": 779,
+      "y": 360,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local4in",
+      "label": "4",
+      "x": 413,
+      "y": 233,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local5out",
+      "label": "5",
+      "x": 779,
+      "y": 660,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local5in",
+      "label": "5",
+      "x": 413,
+      "y": 533,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "recoverComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 495,
+      "y": 830,
+      "w": 220,
+      "h": 52
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_1",
+      "from": "moduleEntry",
+      "to": "action",
+      "points": [
+        {
+          "x": 195,
+          "y": 212
+        },
+        {
+          "x": 195,
+          "y": 242
+        }
+      ]
+    },
+    {
+      "id": "edge_2",
+      "from": "report",
+      "to": "valid",
+      "points": [
+        {
+          "x": 195,
+          "y": 466
+        },
+        {
+          "x": 195,
+          "y": 486
+        }
+      ]
+    },
+    {
+      "id": "edge_3",
+      "from": "valid",
+      "to": "case",
+      "points": [
+        {
+          "x": 195,
+          "y": 586
+        },
+        {
+          "x": 195,
+          "y": 606
+        }
+      ]
+    },
+    {
+      "id": "edge_4",
+      "from": "case",
+      "to": "review",
+      "points": [
+        {
+          "x": 195,
+          "y": 670
+        },
+        {
+          "x": 195,
+          "y": 690
+        }
+      ]
+    },
+    {
+      "id": "edge_5",
+      "from": "review",
+      "to": "complete",
+      "points": [
+        {
+          "x": 195,
+          "y": 766
+        },
+        {
+          "x": 195,
+          "y": 786
+        }
+      ]
+    },
+    {
+      "id": "edge_6",
+      "from": "complete",
+      "to": "restore",
+      "points": [
+        {
+          "x": 195,
+          "y": 886
+        },
+        {
+          "x": 195,
+          "y": 906
+        }
+      ]
+    },
+    {
+      "id": "edge_7",
+      "from": "missing",
+      "to": "validMissing",
+      "points": [
+        {
+          "x": 605,
+          "y": 306
+        },
+        {
+          "x": 605,
+          "y": 326
+        }
+      ]
+    },
+    {
+      "id": "edge_8",
+      "from": "validMissing",
+      "to": "register",
+      "points": [
+        {
+          "x": 605,
+          "y": 426
+        },
+        {
+          "x": 605,
+          "y": 446
+        }
+      ]
+    },
+    {
+      "id": "edge_9",
+      "from": "register",
+      "to": "found",
+      "points": [
+        {
+          "x": 605,
+          "y": 510
+        },
+        {
+          "x": 605,
+          "y": 530
+        }
+      ]
+    },
+    {
+      "id": "edge_10",
+      "from": "found",
+      "to": "validRecovery",
+      "points": [
+        {
+          "x": 605,
+          "y": 606
+        },
+        {
+          "x": 605,
+          "y": 626
+        }
+      ]
+    },
+    {
+      "id": "edge_11",
+      "from": "validRecovery",
+      "to": "recover",
+      "points": [
+        {
+          "x": 605,
+          "y": 726
+        },
+        {
+          "x": 605,
+          "y": 746
+        }
+      ]
+    },
+    {
+      "id": "edge_12",
+      "from": "action",
+      "to": "report",
+      "points": [
+        {
+          "x": 195,
+          "y": 342
+        },
+        {
+          "x": 195,
+          "y": 390
+        }
+      ]
+    },
+    {
+      "id": "edge_13",
+      "from": "action",
+      "to": "local1out",
+      "points": [
+        {
+          "x": 345,
+          "y": 292
+        },
+        {
+          "x": 369,
+          "y": 292
+        }
+      ]
+    },
+    {
+      "id": "edge_14",
+      "from": "local1in",
+      "to": "missing",
+      "points": [
+        {
+          "x": 605,
+          "y": 208
+        },
+        {
+          "x": 605,
+          "y": 230
+        }
+      ]
+    },
+    {
+      "id": "edge_15",
+      "from": "valid",
+      "to": "local2out",
+      "points": [
+        {
+          "x": 345,
+          "y": 536
+        },
+        {
+          "x": 369,
+          "y": 536
+        }
+      ]
+    },
+    {
+      "id": "localEntryArrow2",
+      "from": "local2in",
+      "to": "report",
+      "points": [
+        {
+          "x": 35,
+          "y": 409
+        },
+        {
+          "x": 72,
+          "y": 409
+        }
+      ]
+    },
+    {
+      "id": "edge_16",
+      "from": "complete",
+      "to": "local3out",
+      "points": [
+        {
+          "x": 345,
+          "y": 836
+        },
+        {
+          "x": 369,
+          "y": 836
+        }
+      ]
+    },
+    {
+      "id": "localEntryArrow3",
+      "from": "local3in",
+      "to": "review",
+      "points": [
+        {
+          "x": 35,
+          "y": 709
+        },
+        {
+          "x": 72,
+          "y": 709
+        }
+      ]
+    },
+    {
+      "id": "edge_17",
+      "from": "validMissing",
+      "to": "local4out",
+      "points": [
+        {
+          "x": 755,
+          "y": 376
+        },
+        {
+          "x": 779,
+          "y": 376
+        }
+      ]
+    },
+    {
+      "id": "localEntryArrow4",
+      "from": "local4in",
+      "to": "missing",
+      "points": [
+        {
+          "x": 445,
+          "y": 249
+        },
+        {
+          "x": 482,
+          "y": 249
+        }
+      ]
+    },
+    {
+      "id": "edge_18",
+      "from": "validRecovery",
+      "to": "local5out",
+      "points": [
+        {
+          "x": 755,
+          "y": 676
+        },
+        {
+          "x": 779,
+          "y": 676
+        }
+      ]
+    },
+    {
+      "id": "localEntryArrow5",
+      "from": "local5in",
+      "to": "found",
+      "points": [
+        {
+          "x": 445,
+          "y": 549
+        },
+        {
+          "x": 482,
+          "y": 549
+        }
+      ]
+    },
+    {
+      "id": "edge_19",
+      "from": "restore",
+      "to": "moduleComplete",
+      "points": [
+        {
+          "x": 195,
+          "y": 970
+        },
+        {
+          "x": 195,
+          "y": 990
+        }
+      ]
+    },
+    {
+      "id": "edge_20",
+      "from": "recover",
+      "to": "recoverComplete",
+      "points": [
+        {
+          "x": 605,
+          "y": 810
+        },
+        {
+          "x": 605,
+          "y": 830
+        }
+      ]
+    }
+  ]
+}

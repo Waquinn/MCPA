@@ -1,0 +1,243 @@
+{
+  "passed": true,
+  "pages": 13,
+  "arrows": 316,
+  "renderedSegments": 316,
+  "decisions": 67,
+  "onPagePairs": 61,
+  "offPageRoutes": 14,
+  "routeMap": {
+    "A": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 2,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 2,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "B": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 3,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 3,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "C": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 4,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 4,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "D": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 5,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 5,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "E": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 6,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 6,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "F": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 7,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 7,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "G": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 8,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 8,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "H": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 9,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 9,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "I": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 10,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 10,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "J": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 11,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 11,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "K": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 12,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 12,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "L": [
+      {
+        "page": 1,
+        "direction": "departure",
+        "referencePage": 13,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 13,
+        "direction": "arrival",
+        "referencePage": 1,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "X": [
+      {
+        "page": 5,
+        "direction": "departure",
+        "referencePage": 7,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 7,
+        "direction": "arrival",
+        "referencePage": 5,
+        "in": 0,
+        "out": 1
+      }
+    ],
+    "Y": [
+      {
+        "page": 6,
+        "direction": "departure",
+        "referencePage": 7,
+        "in": 1,
+        "out": 0
+      },
+      {
+        "page": 7,
+        "direction": "arrival",
+        "referencePage": 6,
+        "in": 0,
+        "out": 1
+      }
+    ]
+  },
+  "unrelatedDfdEditorSavesPreserved": [
+    {
+      "file": "MCPA_DFD_Level_1.drawio",
+      "startingSha256": "dbab21446ff0ccaf03f4c055e9fffd0d9756d734503e1cdfddb5001eb816eb74",
+      "currentSha256": "ff5da0ca3da1426764470e900f4da0a78bc30d137f41eb4bc2864029db1accd1"
+    }
+  ],
+  "issues": []
+}

@@ -1,0 +1,867 @@
+{
+  "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"816\" height=\"1248\" viewBox=\"0 0 816 1248\"><g><g/><g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 212 L 195 235.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 212 L 195 235.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 240.6 L 191.38 233.35 L 195 235.16 L 198.63 233.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 466 L 195 478.17\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 466 L 195 478.17\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 483.6 L 191.38 476.35 L 195 478.17 L 198.63 476.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 585 L 195 597.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 585 L 195 597.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 602.6 L 191.38 595.35 L 195 597.16 L 198.63 595.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"183\" y=\"589\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"195\" y=\"600\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 668 L 195 680.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 668 L 195 680.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 685.6 L 191.38 678.35 L 195 680.16 L 198.63 678.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 763 L 195 775.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 763 L 195 775.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 780.6 L 191.38 773.35 L 195 775.16 L 198.63 773.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 882 L 195 894.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 882 L 195 894.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 899.6 L 191.38 892.35 L 195 894.16 L 198.63 892.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"183\" y=\"886\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"195\" y=\"897\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 965 L 195 977.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 965 L 195 977.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 982.6 L 191.38 975.35 L 195 977.16 L 198.63 975.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 306 L 605 319.17\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 306 L 605 319.17\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 324.6 L 601.38 317.35 L 605 319.17 L 608.63 317.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 402 L 605 415.17\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 402 L 605 415.17\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 420.6 L 601.38 413.35 L 605 415.17 L 608.63 413.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 522 L 605 535.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 522 L 605 535.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 540.6 L 601.38 533.35 L 605 535.16 L 608.63 533.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"593\" y=\"526\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"605\" y=\"537\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 606 L 605 619.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 606 L 605 619.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 624.6 L 601.38 617.35 L 605 619.16 L 608.63 617.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 342 L 195 383.17\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 342 L 195 383.17\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 388.6 L 191.38 381.35 L 195 383.17 L 198.63 381.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"183\" y=\"360\" width=\"23\" height=\"14\" stroke-width=\"0\"/><text x=\"195\" y=\"371\">Yes</text></g></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 345 292 L 362.17 292\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 345 292 L 362.17 292\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 367.6 292 L 360.35 295.63 L 362.17 292 L 360.35 288.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 208 L 605 223.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 208 L 605 223.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 228.6 L 601.38 221.35 L 605 223.16 L 608.63 221.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 345 535 L 362.17 535\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 345 535 L 362.17 535\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 367.6 535 L 360.35 538.63 L 362.17 535 L 360.35 531.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 35 409 L 65.17 409\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 35 409 L 65.17 409\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 70.6 409 L 63.35 412.63 L 65.17 409 L 63.35 405.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 755 472 L 772.16 472\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 755 472 L 772.16 472\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 777.6 472 L 770.35 475.63 L 772.16 472 L 770.35 468.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 445 249 L 475.17 249\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 445 249 L 475.17 249\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 480.6 249 L 473.35 252.63 L 475.17 249 L 473.35 245.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 195 1060 L 195 1073.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 195 1060 L 195 1073.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 195 1078.6 L 191.38 1071.35 L 195 1073.16 L 198.63 1071.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 702 L 605 715.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 702 L 605 715.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 720.6 L 601.38 713.35 L 605 715.16 L 608.63 713.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 345 832 L 362.17 832\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 345 832 L 362.17 832\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 367.6 832 L 360.35 835.63 L 362.17 832 L 360.35 828.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 445 1046 L 448.17 1046\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 445 1046 L 448.17 1046\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 453.6 1046 L 446.35 1049.63 L 448.17 1046 L 446.35 1042.38 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g transform=\"translate(0.5,0.5)\" style=\"visibility: visible;\"><path d=\"M 605 1094 L 605 1107.16\" fill=\"none\" stroke=\"white\" stroke-width=\"9.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\" visibility=\"hidden\"/><path d=\"M 605 1094 L 605 1107.16\" fill=\"none\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"stroke\"/><path d=\"M 605 1112.6 L 601.38 1105.35 L 605 1107.16 L 608.63 1105.35 Z\" fill=\"#000000\" stroke=\"#000000\" stroke-width=\"1.25\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"visibility: visible;\"><rect x=\"36\" y=\"22\" width=\"744\" height=\"36\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"36\" y=\"22\" width=\"744\" height=\"36\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" font-size=\"22px\"><text x=\"36\" y=\"43\">Asset retirement and purchase records</text></g></g><g style=\"visibility: visible;\"><rect x=\"36\" y=\"67\" width=\"744\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"36\" y=\"67\" width=\"744\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" font-size=\"12px\"><text x=\"36\" y=\"78\">Page 10 of 13</text></g></g><g style=\"visibility: visible;\"><path d=\"M 157 150 L 233 150 L 233 188.75 L 195 212 L 157 188.75 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"195\" y=\"175\">I</text><text x=\"195\" y=\"189\">FROM P01</text></g></g><g style=\"visibility: visible;\"><rect x=\"45\" y=\"119\" width=\"345\" height=\"25\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"45\" y=\"119\" width=\"345\" height=\"25\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" font-weight=\"bold\" font-size=\"14px\"><text x=\"45\" y=\"132\">ADMIN: TWO-PERSON RETIREMENT</text></g></g><g style=\"visibility: visible;\"><rect x=\"455\" y=\"119\" width=\"325\" height=\"25\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"455\" y=\"119\" width=\"325\" height=\"25\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" font-weight=\"bold\" font-size=\"14px\"><text x=\"455\" y=\"132\">ADMIN / SECRETARY: PURCHASE LEDGER</text></g></g><g style=\"visibility: visible;\"><path d=\"M 195 242 L 345 292 L 195 342 L 45 292 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"289.5\">Equipment retirement</text><text x=\"195\" y=\"306.5\">action?</text></g></g><g style=\"visibility: visible;\"><path d=\"M 45 466 L 81 390 L 345 390 L 309 466 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"417\">Select eligible unheld Individual</text><text x=\"195\" y=\"434\">asset; enter Sold / Disposed,</text><text x=\"195\" y=\"451\">reason, date and evidence.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 195 485 L 345 535 L 195 585 L 45 535 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"532.5\">No custody or</text><text x=\"195\" y=\"549.5\">unresolved movement?</text></g></g><g style=\"visibility: visible;\"><rect x=\"45\" y=\"604\" width=\"300\" height=\"64\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"625\">Save proposed retirement; notify</text><text x=\"195\" y=\"642\">Admins; retain permanent Asset ID</text><text x=\"195\" y=\"659\">and history.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 45 763 L 81 687 L 345 687 L 309 763 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"714\">A different active Admin reviews</text><text x=\"195\" y=\"731\">the proposal, evidence and current</text><text x=\"195\" y=\"748\">asset eligibility.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 195 782 L 345 832 L 195 882 L 45 832 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"829.5\">Approve the</text><text x=\"195\" y=\"846.5\">retirement?</text></g></g><g style=\"visibility: visible;\"><rect x=\"45\" y=\"901\" width=\"300\" height=\"64\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"922\">Recheck eligibility; record</text><text x=\"195\" y=\"939\">approval; mark asset retired /</text><text x=\"195\" y=\"956\">unavailable.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 45 1060 L 81 984 L 345 984 L 309 1060 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"195\" y=\"1011\">View permitted sold / disposed</text><text x=\"195\" y=\"1028\">history; record an issue report</text><text x=\"195\" y=\"1045\">when needed.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 455 306 L 491 230 L 755 230 L 719 306 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"257\">Enter supplier, reference, date,</text><text x=\"605\" y=\"274\">lines / totals and optional</text><text x=\"605\" y=\"291\">procurement link.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 455 402 L 491 326 L 755 326 L 719 402 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"361.5\">Optionally select a private PDF /</text><text x=\"605\" y=\"378.5\">image purchase receipt.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 605 422 L 755 472 L 605 522 L 455 472 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"469.5\">Purchase, receipt</text><text x=\"605\" y=\"486.5\">and version valid?</text></g></g><g style=\"visibility: visible;\"><rect x=\"455\" y=\"542\" width=\"300\" height=\"64\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"563\">Save ledger entry and change</text><text x=\"605\" y=\"580\">history; purchase recording does</text><text x=\"605\" y=\"597\">not receive stock.</text></g></g><g style=\"visibility: visible;\"><path d=\"M 455 702 L 491 626 L 755 626 L 719 702 Z\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" stroke-miterlimit=\"10\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"661.5\">View authorized purchase / receipt</text><text x=\"605\" y=\"678.5\">access, history and purchase PDF.</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"385\" cy=\"292\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"385\" y=\"297\">1</text></g></g><g style=\"visibility: visible;\"><rect x=\"346\" y=\"265\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"346\" y=\"265\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"353\" y=\"265\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"362\" y=\"275\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"605\" cy=\"192\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"605\" y=\"197\">1</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"195\" cy=\"1106\" rx=\"110\" ry=\"26\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"195\" y=\"1104\">RETURN TO MAIN MENU</text><text x=\"195\" y=\"1118\">(Page 1)</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"385\" cy=\"535\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"385\" y=\"540\">2</text></g></g><g style=\"visibility: visible;\"><rect x=\"346\" y=\"508\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"346\" y=\"508\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"353\" y=\"508\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"362\" y=\"518\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"19\" cy=\"409\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"19\" y=\"414\">2</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"795\" cy=\"472\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"795\" y=\"477\">3</text></g></g><g style=\"visibility: visible;\"><rect x=\"756\" y=\"445\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"756\" y=\"445\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"763\" y=\"445\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"772\" y=\"455\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"429\" cy=\"249\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"429\" y=\"254\">3</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"605\" cy=\"748\" rx=\"110\" ry=\"26\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"605\" y=\"746\">RETURN TO MAIN MENU</text><text x=\"605\" y=\"760\">(Page 1)</text></g></g><g style=\"visibility: visible;\"><rect x=\"455\" y=\"1030\" width=\"300\" height=\"64\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"14px\"><text x=\"605\" y=\"1051\">Record rejection and decision</text><text x=\"605\" y=\"1068\">notes; keep the proposal history</text><text x=\"605\" y=\"1085\">without retiring the asset.</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"385\" cy=\"832\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"385\" y=\"837\">4</text></g></g><g style=\"visibility: visible;\"><rect x=\"346\" y=\"805\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"white\" pointer-events=\"stroke\" visibility=\"hidden\" stroke-width=\"9\"/><rect x=\"346\" y=\"805\" width=\"32\" height=\"18\" fill=\"none\" stroke=\"none\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"11px\"><rect fill=\"#ffffff\" stroke=\"none\" x=\"353\" y=\"805\" width=\"17\" height=\"12\" stroke-width=\"0\"/><text x=\"362\" y=\"815\">No</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"429\" cy=\"1046\" rx=\"16\" ry=\"16\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"429\" y=\"1051\">4</text></g></g><g style=\"visibility: visible;\"><ellipse cx=\"605\" cy=\"1140\" rx=\"110\" ry=\"26\" fill=\"#ffffff\" stroke=\"#000000\" stroke-width=\"1.5\" pointer-events=\"all\"/></g><g style=\"\"><g fill=\"#000000\" font-family=\"Arial\" text-anchor=\"middle\" font-size=\"12px\"><text x=\"605\" y=\"1138\">RETURN TO MAIN MENU</text><text x=\"605\" y=\"1152\">(Page 1)</text></g></g></g><g/><g/></g></svg>",
+  "issues": [],
+  "text": [
+    {
+      "id": "edge_3",
+      "label": "Yes",
+      "x": 183,
+      "y": 589,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "edge_6",
+      "label": "Yes",
+      "x": 183,
+      "y": 886,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "edge_10",
+      "label": "Yes",
+      "x": 593,
+      "y": 526,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "edge_12",
+      "label": "Yes",
+      "x": 183,
+      "y": 360,
+      "w": 23,
+      "h": 14
+    },
+    {
+      "id": "title",
+      "label": "Asset retirement and purchase records",
+      "x": 35,
+      "y": 23,
+      "w": 380.078125,
+      "h": 25
+    },
+    {
+      "id": "pagenum",
+      "label": "Page 10 of 13",
+      "x": 36,
+      "y": 67,
+      "w": 75.056640625,
+      "h": 14
+    },
+    {
+      "id": "moduleEntry",
+      "label": "I\nFROM P01",
+      "x": 164.9921875,
+      "y": 164,
+      "w": 60.015625,
+      "h": 28
+    },
+    {
+      "id": "leftheading",
+      "label": "ADMIN: TWO-PERSON RETIREMENT",
+      "x": 44,
+      "y": 119,
+      "w": 248.2138671875,
+      "h": 16
+    },
+    {
+      "id": "rightheading",
+      "label": "ADMIN / SECRETARY: PURCHASE LEDGER",
+      "x": 454,
+      "y": 119,
+      "w": 292.533203125,
+      "h": 16
+    },
+    {
+      "id": "action",
+      "label": "Equipment retirement\naction?",
+      "x": 128.078125,
+      "y": 276.5,
+      "w": 134.951171875,
+      "h": 33
+    },
+    {
+      "id": "proposal",
+      "label": "Select eligible unheld Individual\nasset; enter Sold / Disposed,\nreason, date and evidence.",
+      "x": 97.3203125,
+      "y": 404,
+      "w": 195.359375,
+      "h": 50
+    },
+    {
+      "id": "eligible",
+      "label": "No custody or\nunresolved movement?",
+      "x": 122.234375,
+      "y": 519.5,
+      "w": 145.7373046875,
+      "h": 33
+    },
+    {
+      "id": "propose",
+      "label": "Save proposed retirement; notify\nAdmins; retain permanent Asset ID\nand history.",
+      "x": 85.8359375,
+      "y": 612,
+      "w": 217.328125,
+      "h": 50
+    },
+    {
+      "id": "review",
+      "label": "A different active Admin reviews\nthe proposal, evidence and current\nasset eligibility.",
+      "x": 86.203125,
+      "y": 701,
+      "w": 217.6953125,
+      "h": 50
+    },
+    {
+      "id": "approve",
+      "label": "Approve the\nretirement?",
+      "x": 156.25,
+      "y": 816.5,
+      "w": 76.7099609375,
+      "h": 33
+    },
+    {
+      "id": "retire",
+      "label": "Recheck eligibility; record\napproval; mark asset retired /\nunavailable.",
+      "x": 104.3515625,
+      "y": 909,
+      "w": 182.40625,
+      "h": 50
+    },
+    {
+      "id": "history",
+      "label": "View permitted sold / disposed\nhistory; record an issue report\nwhen needed.",
+      "x": 99.1875,
+      "y": 998,
+      "w": 190.8359375,
+      "h": 50
+    },
+    {
+      "id": "purchase",
+      "label": "Enter supplier, reference, date,\nlines / totals and optional\nprocurement link.",
+      "x": 509.2734375,
+      "y": 244,
+      "w": 191.453125,
+      "h": 50
+    },
+    {
+      "id": "receipt",
+      "label": "Optionally select a private PDF /\nimage purchase receipt.",
+      "x": 505.0078125,
+      "y": 348.5,
+      "w": 201.08203125,
+      "h": 33
+    },
+    {
+      "id": "valid",
+      "label": "Purchase, receipt\nand version valid?",
+      "x": 548.5703125,
+      "y": 456.5,
+      "w": 113.0615234375,
+      "h": 33
+    },
+    {
+      "id": "save",
+      "label": "Save ledger entry and change\nhistory; purchase recording does\nnot receive stock.",
+      "x": 503.4453125,
+      "y": 550,
+      "w": 203.109375,
+      "h": 50
+    },
+    {
+      "id": "result",
+      "label": "View authorized purchase / receipt\naccess, history and purchase PDF.",
+      "x": 496.7265625,
+      "y": 648.5,
+      "w": 216.642578125,
+      "h": 33
+    },
+    {
+      "id": "local1out",
+      "label": "1",
+      "x": 381.65625,
+      "y": 286,
+      "w": 6.6875,
+      "h": 14
+    },
+    {
+      "id": "local1outlabel",
+      "label": "No",
+      "x": 353,
+      "y": 265,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local1in",
+      "label": "1",
+      "x": 601.65625,
+      "y": 186,
+      "w": 6.6875,
+      "h": 14
+    },
+    {
+      "id": "moduleComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 124.21875,
+      "y": 1093,
+      "w": 141.5625,
+      "h": 28
+    },
+    {
+      "id": "local2out",
+      "label": "2",
+      "x": 381.65625,
+      "y": 529,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local2outlabel",
+      "label": "No",
+      "x": 353,
+      "y": 508,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local2in",
+      "label": "2",
+      "x": 15.65625,
+      "y": 403,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local3out",
+      "label": "3",
+      "x": 791.65625,
+      "y": 466,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local3outlabel",
+      "label": "No",
+      "x": 763,
+      "y": 445,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local3in",
+      "label": "3",
+      "x": 425.65625,
+      "y": 243,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "resultComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 534.21875,
+      "y": 735,
+      "w": 141.5625,
+      "h": 28
+    },
+    {
+      "id": "reject",
+      "label": "Record rejection and decision\nnotes; keep the proposal history\nwithout retiring the asset.",
+      "x": 505.765625,
+      "y": 1038,
+      "w": 198.46875,
+      "h": 50
+    },
+    {
+      "id": "local4out",
+      "label": "4",
+      "x": 381.65625,
+      "y": 826,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "local4outlabel",
+      "label": "No",
+      "x": 353,
+      "y": 805,
+      "w": 17,
+      "h": 12
+    },
+    {
+      "id": "local4in",
+      "label": "4",
+      "x": 425.65625,
+      "y": 1040,
+      "w": 7,
+      "h": 14
+    },
+    {
+      "id": "rejectComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 534.21875,
+      "y": 1127,
+      "w": 141.5625,
+      "h": 28
+    }
+  ],
+  "shapes": [
+    {
+      "id": "moduleEntry",
+      "label": "I\nFROM P01",
+      "x": 157,
+      "y": 150,
+      "w": 76,
+      "h": 62
+    },
+    {
+      "id": "action",
+      "label": "Equipment retirement\naction?",
+      "x": 45,
+      "y": 242,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "proposal",
+      "label": "Select eligible unheld Individual\nasset; enter Sold / Disposed,\nreason, date and evidence.",
+      "x": 45,
+      "y": 390,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "eligible",
+      "label": "No custody or\nunresolved movement?",
+      "x": 45,
+      "y": 485,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "propose",
+      "label": "Save proposed retirement; notify\nAdmins; retain permanent Asset ID\nand history.",
+      "x": 45,
+      "y": 604,
+      "w": 300,
+      "h": 64
+    },
+    {
+      "id": "review",
+      "label": "A different active Admin reviews\nthe proposal, evidence and current\nasset eligibility.",
+      "x": 45,
+      "y": 687,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "approve",
+      "label": "Approve the\nretirement?",
+      "x": 45,
+      "y": 782,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "retire",
+      "label": "Recheck eligibility; record\napproval; mark asset retired /\nunavailable.",
+      "x": 45,
+      "y": 901,
+      "w": 300,
+      "h": 64
+    },
+    {
+      "id": "history",
+      "label": "View permitted sold / disposed\nhistory; record an issue report\nwhen needed.",
+      "x": 45,
+      "y": 984,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "purchase",
+      "label": "Enter supplier, reference, date,\nlines / totals and optional\nprocurement link.",
+      "x": 455,
+      "y": 230,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "receipt",
+      "label": "Optionally select a private PDF /\nimage purchase receipt.",
+      "x": 455,
+      "y": 326,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "valid",
+      "label": "Purchase, receipt\nand version valid?",
+      "x": 455,
+      "y": 422,
+      "w": 300,
+      "h": 100
+    },
+    {
+      "id": "save",
+      "label": "Save ledger entry and change\nhistory; purchase recording does\nnot receive stock.",
+      "x": 455,
+      "y": 542,
+      "w": 300,
+      "h": 64
+    },
+    {
+      "id": "result",
+      "label": "View authorized purchase / receipt\naccess, history and purchase PDF.",
+      "x": 455,
+      "y": 626,
+      "w": 300,
+      "h": 76
+    },
+    {
+      "id": "local1out",
+      "label": "1",
+      "x": 369,
+      "y": 276,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local1in",
+      "label": "1",
+      "x": 589,
+      "y": 176,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "moduleComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 85,
+      "y": 1080,
+      "w": 220,
+      "h": 52
+    },
+    {
+      "id": "local2out",
+      "label": "2",
+      "x": 369,
+      "y": 519,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local2in",
+      "label": "2",
+      "x": 3,
+      "y": 393,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local3out",
+      "label": "3",
+      "x": 779,
+      "y": 456,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local3in",
+      "label": "3",
+      "x": 413,
+      "y": 233,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "resultComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 495,
+      "y": 722,
+      "w": 220,
+      "h": 52
+    },
+    {
+      "id": "reject",
+      "label": "Record rejection and decision\nnotes; keep the proposal history\nwithout retiring the asset.",
+      "x": 455,
+      "y": 1030,
+      "w": 300,
+      "h": 64
+    },
+    {
+      "id": "local4out",
+      "label": "4",
+      "x": 369,
+      "y": 816,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "local4in",
+      "label": "4",
+      "x": 413,
+      "y": 1030,
+      "w": 32,
+      "h": 32
+    },
+    {
+      "id": "rejectComplete",
+      "label": "RETURN TO MAIN MENU\n(Page 1)",
+      "x": 495,
+      "y": 1114,
+      "w": 220,
+      "h": 52
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_1",
+      "from": "moduleEntry",
+      "to": "action",
+      "points": [
+        {
+          "x": 195,
+          "y": 212
+        },
+        {
+          "x": 195,
+          "y": 242
+        }
+      ]
+    },
+    {
+      "id": "edge_2",
+      "from": "proposal",
+      "to": "eligible",
+      "points": [
+        {
+          "x": 195,
+          "y": 466
+        },
+        {
+          "x": 195,
+          "y": 485
+        }
+      ]
+    },
+    {
+      "id": "edge_3",
+      "from": "eligible",
+      "to": "propose",
+      "points": [
+        {
+          "x": 195,
+          "y": 585
+        },
+        {
+          "x": 195,
+          "y": 604
+        }
+      ]
+    },
+    {
+      "id": "edge_4",
+      "from": "propose",
+      "to": "review",
+      "points": [
+        {
+          "x": 195,
+          "y": 668
+        },
+        {
+          "x": 195,
+          "y": 687
+        }
+      ]
+    },
+    {
+      "id": "edge_5",
+      "from": "review",
+      "to": "approve",
+      "points": [
+        {
+          "x": 195,
+          "y": 763
+        },
+        {
+          "x": 195,
+          "y": 782
+        }
+      ]
+    },
+    {
+      "id": "edge_6",
+      "from": "approve",
+      "to": "retire",
+      "points": [
+        {
+          "x": 195,
+          "y": 882
+        },
+        {
+          "x": 195,
+          "y": 901
+        }
+      ]
+    },
+    {
+      "id": "edge_7",
+      "from": "retire",
+      "to": "history",
+      "points": [
+        {
+          "x": 195,
+          "y": 965
+        },
+        {
+          "x": 195,
+          "y": 984
+        }
+      ]
+    },
+    {
+      "id": "edge_8",
+      "from": "purchase",
+      "to": "receipt",
+      "points": [
+        {
+          "x": 605,
+          "y": 306
+        },
+        {
+          "x": 605,
+          "y": 326
+        }
+      ]
+    },
+    {
+      "id": "edge_9",
+      "from": "receipt",
+      "to": "valid",
+      "points": [
+        {
+          "x": 605,
+          "y": 402
+        },
+        {
+          "x": 605,
+          "y": 422
+        }
+      ]
+    },
+    {
+      "id": "edge_10",
+      "from": "valid",
+      "to": "save",
+      "points": [
+        {
+          "x": 605,
+          "y": 522
+        },
+        {
+          "x": 605,
+          "y": 542
+        }
+      ]
+    },
+    {
+      "id": "edge_11",
+      "from": "save",
+      "to": "result",
+      "points": [
+        {
+          "x": 605,
+          "y": 606
+        },
+        {
+          "x": 605,
+          "y": 626
+        }
+      ]
+    },
+    {
+      "id": "edge_12",
+      "from": "action",
+      "to": "proposal",
+      "points": [
+        {
+          "x": 195,
+          "y": 342
+        },
+        {
+          "x": 195,
+          "y": 390
+        }
+      ]
+    },
+    {
+      "id": "edge_13",
+      "from": "action",
+      "to": "local1out",
+      "points": [
+        {
+          "x": 345,
+          "y": 292
+        },
+        {
+          "x": 369,
+          "y": 292
+        }
+      ]
+    },
+    {
+      "id": "edge_14",
+      "from": "local1in",
+      "to": "purchase",
+      "points": [
+        {
+          "x": 605,
+          "y": 208
+        },
+        {
+          "x": 605,
+          "y": 230
+        }
+      ]
+    },
+    {
+      "id": "edge_15",
+      "from": "eligible",
+      "to": "local2out",
+      "points": [
+        {
+          "x": 345,
+          "y": 535
+        },
+        {
+          "x": 369,
+          "y": 535
+        }
+      ]
+    },
+    {
+      "id": "localEntryArrow2",
+      "from": "local2in",
+      "to": "proposal",
+      "points": [
+        {
+          "x": 35,
+          "y": 409
+        },
+        {
+          "x": 72,
+          "y": 409
+        }
+      ]
+    },
+    {
+      "id": "edge_16",
+      "from": "valid",
+      "to": "local3out",
+      "points": [
+        {
+          "x": 755,
+          "y": 472
+        },
+        {
+          "x": 779,
+          "y": 472
+        }
+      ]
+    },
+    {
+      "id": "localEntryArrow3",
+      "from": "local3in",
+      "to": "purchase",
+      "points": [
+        {
+          "x": 445,
+          "y": 249
+        },
+        {
+          "x": 482,
+          "y": 249
+        }
+      ]
+    },
+    {
+      "id": "edge_17",
+      "from": "history",
+      "to": "moduleComplete",
+      "points": [
+        {
+          "x": 195,
+          "y": 1060
+        },
+        {
+          "x": 195,
+          "y": 1080
+        }
+      ]
+    },
+    {
+      "id": "edge_18",
+      "from": "result",
+      "to": "resultComplete",
+      "points": [
+        {
+          "x": 605,
+          "y": 702
+        },
+        {
+          "x": 605,
+          "y": 722
+        }
+      ]
+    },
+    {
+      "id": "edge_19",
+      "from": "approve",
+      "to": "local4out",
+      "points": [
+        {
+          "x": 345,
+          "y": 832
+        },
+        {
+          "x": 369,
+          "y": 832
+        }
+      ]
+    },
+    {
+      "id": "localEntryArrow4",
+      "from": "local4in",
+      "to": "reject",
+      "points": [
+        {
+          "x": 445,
+          "y": 1046
+        },
+        {
+          "x": 455,
+          "y": 1046
+        }
+      ]
+    },
+    {
+      "id": "edge_20",
+      "from": "reject",
+      "to": "rejectComplete",
+      "points": [
+        {
+          "x": 605,
+          "y": 1094
+        },
+        {
+          "x": 605,
+          "y": 1114
+        }
+      ]
+    }
+  ]
+}

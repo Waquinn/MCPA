@@ -1,0 +1,90 @@
+{
+  "nativeXmlRenderer": true,
+  "outboundHttpBlocked": true,
+  "applicationOrDatabaseCalls": 0,
+  "files": [
+    {
+      "file": "MCPA_DFD_Level_0",
+      "pages": 1,
+      "paperInches": [
+        20,
+        15
+      ],
+      "bytes": 27666
+    },
+    {
+      "file": "MCPA_DFD_Level_1",
+      "pages": 1,
+      "paperInches": [
+        25,
+        31.25
+      ],
+      "bytes": 58997
+    },
+    {
+      "file": "MCPA_System_Flowchart",
+      "pages": 13,
+      "paperInches": [
+        13,
+        8.5
+      ],
+      "pageSizesInches": [
+        [
+          13,
+          8.5
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ],
+        [
+          8.5,
+          13
+        ]
+      ],
+      "bytes": 398877
+    }
+  ],
+  "issues": [],
+  "passed": true
+}

@@ -4,8 +4,7 @@
   let sequence = 0;
   function client() {
     if (!window.supabaseClient) {
-      if (!window.supabase?.createClient) throw new Error('The database connection could not load. Please try again.');
-      window.supabaseClient = window.supabase.createClient('https://zpqxlmiqwevhlstjirei.supabase.co', 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58');
+      return window.MCPADatabase.client();
     }
     return window.supabaseClient;
   }

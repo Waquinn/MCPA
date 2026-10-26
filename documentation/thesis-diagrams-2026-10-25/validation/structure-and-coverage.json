@@ -1,0 +1,439 @@
+{
+  "passed": true,
+  "sourceFilesScanned": 141,
+  "sourceLinesScanned": 15493,
+  "roles": [
+    {
+      "role": "admin",
+      "screens": [
+        "dashboard",
+        "masterlist",
+        "tool-profile",
+        "sites",
+        "site-detail",
+        "request",
+        "quantity-request",
+        "transfer",
+        "return",
+        "repair",
+        "missing",
+        "asset-retirement-v2",
+        "consumables",
+        "outward-materials",
+        "purchase",
+        "reports",
+        "activity",
+        "users",
+        "settings"
+      ]
+    },
+    {
+      "role": "engineer",
+      "screens": [
+        "dashboard",
+        "masterlist",
+        "tool-profile",
+        "sites",
+        "site-detail",
+        "request",
+        "quantity-request",
+        "transfer",
+        "asset-transfer",
+        "transfer-inbox",
+        "return",
+        "repair",
+        "missing",
+        "retired-equipment-v2",
+        "outward-materials",
+        "activity",
+        "settings"
+      ]
+    },
+    {
+      "role": "architect",
+      "screens": [
+        "dashboard",
+        "masterlist",
+        "tool-profile",
+        "sites",
+        "site-detail",
+        "request",
+        "quantity-request",
+        "transfer",
+        "asset-transfer",
+        "transfer-inbox",
+        "return",
+        "repair",
+        "missing",
+        "retired-equipment-v2",
+        "outward-materials",
+        "activity",
+        "settings"
+      ]
+    },
+    {
+      "role": "secretary",
+      "screens": [
+        "consumables",
+        "purchase",
+        "settings"
+      ]
+    },
+    {
+      "role": "tool_handler",
+      "screens": [
+        "dashboard",
+        "masterlist",
+        "tool-profile",
+        "sites",
+        "site-detail",
+        "transfer",
+        "return",
+        "repair",
+        "missing",
+        "activity",
+        "settings"
+      ]
+    }
+  ],
+  "externalEntitiesBalanced": true,
+  "decisionCount": 67,
+  "decisions": [
+    {
+      "page": 1,
+      "id": "menu0",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu1",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu2",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu3",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu4",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu5",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu6",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu7",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu8",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu9",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu10",
+      "branches": 2
+    },
+    {
+      "page": 1,
+      "id": "menu11",
+      "branches": 2
+    },
+    {
+      "page": 2,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 2,
+      "id": "session",
+      "branches": 2
+    },
+    {
+      "page": 2,
+      "id": "active",
+      "branches": 2
+    },
+    {
+      "page": 2,
+      "id": "admin",
+      "branches": 2
+    },
+    {
+      "page": 2,
+      "id": "saved",
+      "branches": 2
+    },
+    {
+      "page": 3,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 3,
+      "id": "edit",
+      "branches": 2
+    },
+    {
+      "page": 3,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 3,
+      "id": "validImport",
+      "branches": 2
+    },
+    {
+      "page": 3,
+      "id": "receipt",
+      "branches": 2
+    },
+    {
+      "page": 4,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 4,
+      "id": "edit",
+      "branches": 2
+    },
+    {
+      "page": 4,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 4,
+      "id": "validUpdate",
+      "branches": 2
+    },
+    {
+      "page": 5,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 5,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 5,
+      "id": "cancel",
+      "branches": 2
+    },
+    {
+      "page": 5,
+      "id": "approve",
+      "branches": 2
+    },
+    {
+      "page": 5,
+      "id": "committed",
+      "branches": 2
+    },
+    {
+      "page": 6,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 6,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 6,
+      "id": "approve",
+      "branches": 2
+    },
+    {
+      "page": 6,
+      "id": "committed",
+      "branches": 2
+    },
+    {
+      "page": 7,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 7,
+      "id": "release",
+      "branches": 2
+    },
+    {
+      "page": 7,
+      "id": "received",
+      "branches": 2
+    },
+    {
+      "page": 7,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 7,
+      "id": "all",
+      "branches": 2
+    },
+    {
+      "page": 8,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 8,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 8,
+      "id": "validFinding",
+      "branches": 2
+    },
+    {
+      "page": 8,
+      "id": "complete",
+      "branches": 2
+    },
+    {
+      "page": 9,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 9,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 9,
+      "id": "complete",
+      "branches": 2
+    },
+    {
+      "page": 9,
+      "id": "validMissing",
+      "branches": 2
+    },
+    {
+      "page": 9,
+      "id": "validRecovery",
+      "branches": 2
+    },
+    {
+      "page": 10,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 10,
+      "id": "eligible",
+      "branches": 2
+    },
+    {
+      "page": 10,
+      "id": "approve",
+      "branches": 2
+    },
+    {
+      "page": 10,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 11,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 11,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 11,
+      "id": "validRequest",
+      "branches": 2
+    },
+    {
+      "page": 11,
+      "id": "within",
+      "branches": 2
+    },
+    {
+      "page": 12,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 12,
+      "id": "valid",
+      "branches": 2
+    },
+    {
+      "page": 12,
+      "id": "approve",
+      "branches": 2
+    },
+    {
+      "page": 12,
+      "id": "within",
+      "branches": 2
+    },
+    {
+      "page": 13,
+      "id": "action",
+      "branches": 2
+    },
+    {
+      "page": 13,
+      "id": "admin",
+      "branches": 2
+    },
+    {
+      "page": 13,
+      "id": "loaded",
+      "branches": 2
+    },
+    {
+      "page": 13,
+      "id": "exit",
+      "branches": 2
+    },
+    {
+      "page": 13,
+      "id": "confirmed",
+      "branches": 2
+    },
+    {
+      "page": 13,
+      "id": "demo",
+      "branches": 2
+    }
+  ],
+  "issues": []
+}

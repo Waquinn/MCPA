@@ -1,0 +1,94 @@
+[
+  {
+    "role": "admin",
+    "screens": [
+      "dashboard",
+      "masterlist",
+      "tool-profile",
+      "sites",
+      "site-detail",
+      "request",
+      "quantity-request",
+      "transfer",
+      "return",
+      "repair",
+      "missing",
+      "asset-retirement-v2",
+      "consumables",
+      "outward-materials",
+      "purchase",
+      "reports",
+      "activity",
+      "users",
+      "settings"
+    ]
+  },
+  {
+    "role": "engineer",
+    "screens": [
+      "dashboard",
+      "masterlist",
+      "tool-profile",
+      "sites",
+      "site-detail",
+      "request",
+      "quantity-request",
+      "transfer",
+      "asset-transfer",
+      "transfer-inbox",
+      "return",
+      "repair",
+      "missing",
+      "retired-equipment-v2",
+      "outward-materials",
+      "activity",
+      "settings"
+    ]
+  },
+  {
+    "role": "architect",
+    "screens": [
+      "dashboard",
+      "masterlist",
+      "tool-profile",
+      "sites",
+      "site-detail",
+      "request",
+      "quantity-request",
+      "transfer",
+      "asset-transfer",
+      "transfer-inbox",
+      "return",
+      "repair",
+      "missing",
+      "retired-equipment-v2",
+      "outward-materials",
+      "activity",
+      "settings"
+    ]
+  },
+  {
+    "role": "secretary",
+    "screens": [
+      "consumables",
+      "purchase",
+      "settings"
+    ]
+  },
+  {
+    "role": "tool_handler",
+    "screens": [
+      "dashboard",
+      "masterlist",
+      "tool-profile",
+      "sites",
+      "site-detail",
+      "transfer",
+      "return",
+      "repair",
+      "missing",
+      "activity",
+      "settings"
+    ]
+  }
+]

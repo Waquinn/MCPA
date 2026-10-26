@@ -19,6 +19,10 @@ window.supabase={createClient(){let listener;const session=()=>{const key=localS
  rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},insert(values){q.write='insert';q.values=values;return this},update(values){q.write='update';q.values=values;return this},single(){q.single=true;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
 }}};`;
 const server=http.createServer(async(req,res)=>{
+ if(req.url==='/js/supabase-config.js'){
+  res.writeHead(200,{'Content-Type':'text/javascript'});
+  res.end('window.MCPA_CONFIG={supabaseUrl:"https://fixture.supabase.co",supabasePublishableKey:"sb_publishable_fixture"};');return;
+ }
  if(process.argv.includes('--equipment-fixes')&&req.url.startsWith('/__qr?')){
   const asset=new URL(req.url,'http://localhost').searchParams.get('data');
   res.setHeader('Content-Type','image/png');res.end(await require('qrcode').toBuffer(asset,{width:120,margin:0}));return;

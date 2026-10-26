@@ -15,7 +15,7 @@ These accounts use Supabase Auth and live database records. They are separate fr
    SUPABASE_SECRET_KEY=YOUR-PRIVATE-SERVER-KEY
    ```
 
-   `.env` is ignored by Git. Never paste this key into chat, frontend code, localStorage or committed files. Do not serve the repository root with an unrestricted file server: exclude `.env`, `scripts`, `.git` and other private files from hosting. The browser continues using its existing public key. Use the same project as the browser configuration in `js/equipment-tracking.js` and `js/movement-cloud.js`.
+   `.env` is ignored by Git. Never paste this key into chat, frontend code, localStorage or committed files. Do not serve the repository root with an unrestricted file server: exclude `.env`, `scripts`, `.git` and other private files from hosting. Set the same project's `SUPABASE_PUBLISHABLE_KEY` in `.env`, then run `npm.cmd run configure` from the repository root to update the browser. See [database setup](../DATABASE-SETUP.md).
 4. With Node 22+ installed, run:
 
    ```powershell

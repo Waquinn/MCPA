@@ -1,0 +1,1274 @@
+[
+  {
+    "file": "js/app.js",
+    "lines": 301,
+    "bytes": 14736,
+    "rpcNames": []
+  },
+  {
+    "file": "js/auth.js",
+    "lines": 184,
+    "bytes": 16804,
+    "rpcNames": [
+      "mcpa_my_profile"
+    ]
+  },
+  {
+    "file": "js/consumables-catalog.js",
+    "lines": 114,
+    "bytes": 5862,
+    "rpcNames": []
+  },
+  {
+    "file": "js/dashboard-view.js",
+    "lines": 190,
+    "bytes": 21748,
+    "rpcNames": []
+  },
+  {
+    "file": "js/data.js",
+    "lines": 25,
+    "bytes": 2911,
+    "rpcNames": []
+  },
+  {
+    "file": "js/display.js",
+    "lines": 136,
+    "bytes": 13078,
+    "rpcNames": []
+  },
+  {
+    "file": "js/equipment-import-core.js",
+    "lines": 124,
+    "bytes": 10257,
+    "rpcNames": []
+  },
+  {
+    "file": "js/equipment-import-worker.js",
+    "lines": 10,
+    "bytes": 550,
+    "rpcNames": []
+  },
+  {
+    "file": "js/equipment-import.js",
+    "lines": 222,
+    "bytes": 23556,
+    "rpcNames": [
+      "mcpa_equipment_imports",
+      "mcpa_import_equipment"
+    ]
+  },
+  {
+    "file": "js/equipment-photos.js",
+    "lines": 116,
+    "bytes": 7859,
+    "rpcNames": []
+  },
+  {
+    "file": "js/equipment-tracking.js",
+    "lines": 166,
+    "bytes": 11747,
+    "rpcNames": [
+      "mcpa_inventory_office"
+    ]
+  },
+  {
+    "file": "js/equipment-visual.js",
+    "lines": 43,
+    "bytes": 3045,
+    "rpcNames": []
+  },
+  {
+    "file": "js/global-search.js",
+    "lines": 161,
+    "bytes": 13391,
+    "rpcNames": [
+      "mcpa_personal_equipment_snapshot",
+      "mcpa_project_snapshot",
+      "mcpa_purchase_snapshot"
+    ]
+  },
+  {
+    "file": "js/integration.js",
+    "lines": 102,
+    "bytes": 8900,
+    "rpcNames": [
+      "mcpa_b_snapshot",
+      "mcpa_wa_"
+    ]
+  },
+  {
+    "file": "js/login-slideshow.js",
+    "lines": 172,
+    "bytes": 8608,
+    "rpcNames": []
+  },
+  {
+    "file": "js/mobile-navigation.js",
+    "lines": 44,
+    "bytes": 2990,
+    "rpcNames": []
+  },
+  {
+    "file": "js/monitoring.js",
+    "lines": 141,
+    "bytes": 13496,
+    "rpcNames": [
+      "mcpa_monitoring_mark_read",
+      "mcpa_monitoring_snapshot",
+      "mcpa_notifications"
+    ]
+  },
+  {
+    "file": "js/movement-cloud.js",
+    "lines": 159,
+    "bytes": 9674,
+    "rpcNames": [
+      "mcpa_movement_action",
+      "mcpa_movement_snapshot",
+      "mcpa_return_destination"
+    ]
+  },
+  {
+    "file": "js/movement-overview.js",
+    "lines": 219,
+    "bytes": 18475,
+    "rpcNames": [
+      "mcpa_notifications",
+      "mcpa_personal_equipment_snapshot"
+    ]
+  },
+  {
+    "file": "js/movement-store.js",
+    "lines": 479,
+    "bytes": 32705,
+    "rpcNames": []
+  },
+  {
+    "file": "js/movement-ui.js",
+    "lines": 915,
+    "bytes": 81509,
+    "rpcNames": [
+      "mcpa_create_receiving_qr",
+      "mcpa_notifications",
+      "mcpa_project_snapshot",
+      "mcpa_resolve_receiving_qr",
+      "mcpa_revoke_receiving_qr"
+    ]
+  },
+  {
+    "file": "js/navigation-history.js",
+    "lines": 177,
+    "bytes": 9301,
+    "rpcNames": []
+  },
+  {
+    "file": "js/navigation.js",
+    "lines": 176,
+    "bytes": 10101,
+    "rpcNames": []
+  },
+  {
+    "file": "js/pdf-reports.js",
+    "lines": 140,
+    "bytes": 8473,
+    "rpcNames": []
+  },
+  {
+    "file": "js/permissions.js",
+    "lines": 46,
+    "bytes": 3573,
+    "rpcNames": []
+  },
+  {
+    "file": "js/project-scope.js",
+    "lines": 17,
+    "bytes": 823,
+    "rpcNames": []
+  },
+  {
+    "file": "js/supabase-client.js",
+    "lines": 23,
+    "bytes": 1085,
+    "rpcNames": []
+  },
+  {
+    "file": "js/supabase-config.js",
+    "lines": 6,
+    "bytes": 250,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/consumables-requests/analytics.js",
+    "lines": 35,
+    "bytes": 3819,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/consumables-requests/core.js",
+    "lines": 107,
+    "bytes": 7853,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/custody-lifecycle/api.mjs",
+    "lines": 96,
+    "bytes": 5647,
+    "rpcNames": [
+      "mcpa_b_action",
+      "mcpa_b_lookup",
+      "mcpa_b_snapshot"
+    ]
+  },
+  {
+    "file": "js/upgrades/custody-lifecycle/composer.mjs",
+    "lines": 85,
+    "bytes": 8842,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/custody-lifecycle/ui.mjs",
+    "lines": 56,
+    "bytes": 4484,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/equipment-qr/scanner.mjs",
+    "lines": 63,
+    "bytes": 3793,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/equipment-retirement/retirement.mjs",
+    "lines": 55,
+    "bytes": 6672,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/individual-import-expansion/controller.js",
+    "lines": 132,
+    "bytes": 9961,
+    "rpcNames": [
+      "mcpa_import_equipment_v2",
+      "mcpa_import_equipment_v2_receipt"
+    ]
+  },
+  {
+    "file": "js/upgrades/individual-import-expansion/core.js",
+    "lines": 104,
+    "bytes": 8488,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/individual-import-expansion/preview.js",
+    "lines": 30,
+    "bytes": 3385,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/individual-import-expansion/worker.js",
+    "lines": 10,
+    "bytes": 536,
+    "rpcNames": []
+  },
+  {
+    "file": "js/upgrades/movement-evidence/evidence.mjs",
+    "lines": 50,
+    "bytes": 2852,
+    "rpcNames": [
+      "mcpa_b_evidence_action"
+    ]
+  },
+  {
+    "file": "js/upgrades/quantity-requests/client.js",
+    "lines": 170,
+    "bytes": 10417,
+    "rpcNames": [
+      "mcpa_wa_allocate_equipment",
+      "mcpa_wa_equipment_catalog",
+      "mcpa_wa_equipment_requests",
+      "mcpa_wa_reject_equipment",
+      "mcpa_wa_submit_equipment",
+      "mcpa_wa_suggest_equipment"
+    ]
+  },
+  {
+    "file": "js/upgrades/quantity-requests/view.js",
+    "lines": 43,
+    "bytes": 4660,
+    "rpcNames": []
+  },
+  {
+    "file": "js/utils.js",
+    "lines": 29,
+    "bytes": 3036,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/activity/activity.html",
+    "lines": 2,
+    "bytes": 82,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/activity/activity.js",
+    "lines": 2,
+    "bytes": 47,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/asset-retirement-v2/asset-retirement.mjs",
+    "lines": 3,
+    "bytes": 187,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/consumables/consumables.html",
+    "lines": 47,
+    "bytes": 3960,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/consumables/consumables.js",
+    "lines": 369,
+    "bytes": 31684,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/consumables/setup.sql",
+    "lines": 207,
+    "bytes": 15876,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/consumables-usage-v2/consumables-usage.html",
+    "lines": 3,
+    "bytes": 188,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/consumables-usage-v2/consumables-usage.js",
+    "lines": 88,
+    "bytes": 13957,
+    "rpcNames": [
+      "mcpa_wa_consumables_snapshot",
+      "mcpa_wa_issue_consumables",
+      "mcpa_wa_review_consumables"
+    ]
+  },
+  {
+    "file": "1-admin/modules/dashboard/dashboard.html",
+    "lines": 2,
+    "bytes": 84,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/dashboard/dashboard.js",
+    "lines": 2,
+    "bytes": 48,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/masterlist/masterlist.html",
+    "lines": 273,
+    "bytes": 19132,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/masterlist/masterlist.js",
+    "lines": 908,
+    "bytes": 47406,
+    "rpcNames": [
+      "mcpa_notifications"
+    ]
+  },
+  {
+    "file": "1-admin/modules/missing/missing.html",
+    "lines": 2,
+    "bytes": 80,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/missing/missing.js",
+    "lines": 2,
+    "bytes": 40,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/movements/setup.sql",
+    "lines": 357,
+    "bytes": 30714,
+    "rpcNames": [
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_assets_equipment",
+      "mcpa_movement_number",
+      "mcpa_movement_operations",
+      "mcpa_movement_reservations",
+      "mcpa_movement_set_status",
+      "mcpa_movement_sites",
+      "mcpa_movement_snapshot",
+      "mcpa_movements",
+      "mcpa_movements_kind"
+    ]
+  },
+  {
+    "file": "1-admin/modules/purchases/purchases.html",
+    "lines": 9,
+    "bytes": 1350,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/purchases/purchases.js",
+    "lines": 107,
+    "bytes": 14313,
+    "rpcNames": [
+      "mcpa_purchase_snapshot",
+      "mcpa_save_purchase"
+    ]
+  },
+  {
+    "file": "1-admin/modules/quantity-allocation-v2/index.js",
+    "lines": 117,
+    "bytes": 11838,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/repairs/repairs.html",
+    "lines": 2,
+    "bytes": 79,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/repairs/repairs.js",
+    "lines": 2,
+    "bytes": 39,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/reports/reports.html",
+    "lines": 8,
+    "bytes": 1265,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/reports/reports.js",
+    "lines": 88,
+    "bytes": 7605,
+    "rpcNames": [
+      "mcpa_monitoring_report"
+    ]
+  },
+  {
+    "file": "1-admin/modules/requests/requests.html",
+    "lines": 3,
+    "bytes": 219,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/requests/requests.js",
+    "lines": 2,
+    "bytes": 40,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/return-inspection-v2/return-inspection.mjs",
+    "lines": 38,
+    "bytes": 4687,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/returns/returns.html",
+    "lines": 2,
+    "bytes": 79,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/returns/returns.js",
+    "lines": 2,
+    "bytes": 39,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/settings/settings.html",
+    "lines": 2,
+    "bytes": 81,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/settings/settings.js",
+    "lines": 10,
+    "bytes": 1148,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/sites/prototype-access.sql",
+    "lines": 19,
+    "bytes": 1157,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/sites/realtime-archive.sql",
+    "lines": 48,
+    "bytes": 2019,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/sites/setup.sql",
+    "lines": 176,
+    "bytes": 9074,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/sites/sites.html",
+    "lines": 42,
+    "bytes": 2174,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/sites/sites.js",
+    "lines": 731,
+    "bytes": 57478,
+    "rpcNames": [
+      "mcpa_add_site_update",
+      "mcpa_project_snapshot",
+      "mcpa_save_project"
+    ]
+  },
+  {
+    "file": "1-admin/modules/transfers/transfers.html",
+    "lines": 2,
+    "bytes": 83,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/transfers/transfers.js",
+    "lines": 2,
+    "bytes": 41,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/users/users.html",
+    "lines": 2,
+    "bytes": 93,
+    "rpcNames": []
+  },
+  {
+    "file": "1-admin/modules/users/users.js",
+    "lines": 123,
+    "bytes": 20070,
+    "rpcNames": [
+      "mcpa_account_audit",
+      "mcpa_accounts",
+      "mcpa_save_account"
+    ]
+  },
+  {
+    "file": "2-engr/index.html",
+    "lines": 170,
+    "bytes": 9839,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/activity/activity.html",
+    "lines": 2,
+    "bytes": 82,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/activity/activity.js",
+    "lines": 2,
+    "bytes": 47,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/consumables-requests-v2/consumables-requests.html",
+    "lines": 3,
+    "bytes": 175,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/consumables-requests-v2/consumables-requests.js",
+    "lines": 88,
+    "bytes": 10981,
+    "rpcNames": [
+      "mcpa_wa_consumables_snapshot",
+      "mcpa_wa_submit_consumables"
+    ]
+  },
+  {
+    "file": "2-engr/modules/dashboard/dashboard.html",
+    "lines": 2,
+    "bytes": 84,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/dashboard/dashboard.js",
+    "lines": 2,
+    "bytes": 48,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/masterlist/masterlist.html",
+    "lines": 2,
+    "bytes": 86,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/masterlist/masterlist.js",
+    "lines": 2,
+    "bytes": 49,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/missing/missing.html",
+    "lines": 2,
+    "bytes": 80,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/missing/missing.js",
+    "lines": 2,
+    "bytes": 40,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/qr-movements-v2/qr-movements.mjs",
+    "lines": 28,
+    "bytes": 3325,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/quantity-requests-v2/index.js",
+    "lines": 109,
+    "bytes": 10550,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/repairs/repairs.html",
+    "lines": 2,
+    "bytes": 79,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/repairs/repairs.js",
+    "lines": 2,
+    "bytes": 39,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/reports/reports.html",
+    "lines": 57,
+    "bytes": 2747,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/reports/reports.js",
+    "lines": 4,
+    "bytes": 185,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/requests/requests.html",
+    "lines": 3,
+    "bytes": 219,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/requests/requests.js",
+    "lines": 2,
+    "bytes": 40,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/retired-equipment-v2/retired-equipment.mjs",
+    "lines": 2,
+    "bytes": 115,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/return-inspection-v2/return-submission.mjs",
+    "lines": 3,
+    "bytes": 200,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/returns/returns.html",
+    "lines": 2,
+    "bytes": 79,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/returns/returns.js",
+    "lines": 2,
+    "bytes": 39,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/settings/settings.html",
+    "lines": 40,
+    "bytes": 1979,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/settings/settings.js",
+    "lines": 4,
+    "bytes": 186,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/transfers/transfers.html",
+    "lines": 3,
+    "bytes": 277,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/transfers/transfers.js",
+    "lines": 2,
+    "bytes": 41,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/users/users.html",
+    "lines": 24,
+    "bytes": 1783,
+    "rpcNames": []
+  },
+  {
+    "file": "2-engr/modules/users/users.js",
+    "lines": 4,
+    "bytes": 183,
+    "rpcNames": []
+  },
+  {
+    "file": "supabase/functions/manage-accounts/handler.mjs",
+    "lines": 117,
+    "bytes": 9862,
+    "rpcNames": [
+      "mcpa_development_account",
+      "mcpa_development_account_step",
+      "mcpa_development_job_id",
+      "mcpa_invitation_id",
+      "mcpa_invitation_step"
+    ]
+  },
+  {
+    "file": "supabase/functions/manage-accounts/index.ts",
+    "lines": 14,
+    "bytes": 742,
+    "rpcNames": []
+  },
+  {
+    "file": "supabase/migrations/202610040001_authenticated_access.sql",
+    "lines": 275,
+    "bytes": 21244,
+    "rpcNames": [
+      "mcpa_account_role",
+      "mcpa_account_status",
+      "mcpa_accounts",
+      "mcpa_auth_private",
+      "mcpa_equipment_edit",
+      "mcpa_equipment_insert",
+      "mcpa_equipment_read",
+      "mcpa_has_role",
+      "mcpa_history_read",
+      "mcpa_materials_read",
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_operations",
+      "mcpa_movement_reservations",
+      "mcpa_movement_set_status",
+      "mcpa_movement_sites",
+      "mcpa_movement_snapshot",
+      "mcpa_movements",
+      "mcpa_my_profile",
+      "mcpa_profile_auth_user",
+      "mcpa_profiles_read",
+      "mcpa_save_account",
+      "mcpa_sites_insert",
+      "mcpa_sites_read",
+      "mcpa_sites_update"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610050001_legacy_handover_lockdown.sql",
+    "lines": 75,
+    "bytes": 3716,
+    "rpcNames": []
+  },
+  {
+    "file": "supabase/migrations/202610050002_independent_profile_identity.sql",
+    "lines": 114,
+    "bytes": 6543,
+    "rpcNames": []
+  },
+  {
+    "file": "supabase/migrations/202610060001_account_management.sql",
+    "lines": 243,
+    "bytes": 18006,
+    "rpcNames": [
+      "mcpa_account_audit",
+      "mcpa_account_audit_read",
+      "mcpa_account_invitations",
+      "mcpa_accounts",
+      "mcpa_auth_private",
+      "mcpa_has_role",
+      "mcpa_invitation_id",
+      "mcpa_invitation_step",
+      "mcpa_save_account"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610060002_recipient_identity.sql",
+    "lines": 374,
+    "bytes": 33612,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_number",
+      "mcpa_movement_operations",
+      "mcpa_movement_reservations",
+      "mcpa_movement_set_status",
+      "mcpa_movement_sites",
+      "mcpa_movement_snapshot",
+      "mcpa_movements"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610060003_development_accounts.sql",
+    "lines": 143,
+    "bytes": 10430,
+    "rpcNames": [
+      "mcpa_account_audit",
+      "mcpa_account_invitations",
+      "mcpa_accounts",
+      "mcpa_auth_private",
+      "mcpa_development_account",
+      "mcpa_development_account_step",
+      "mcpa_development_accounts",
+      "mcpa_development_job_id",
+      "mcpa_invitation_step"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610100001_engineer_portal.sql",
+    "lines": 167,
+    "bytes": 11335,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_create_receiving_qr",
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_operations",
+      "mcpa_movement_snapshot",
+      "mcpa_movements",
+      "mcpa_personal_equipment_snapshot",
+      "mcpa_project_snapshot",
+      "mcpa_resolve_receiving_qr",
+      "mcpa_revoke_receiving_qr"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610100002_project_history.sql",
+    "lines": 164,
+    "bytes": 10165,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_has_role",
+      "mcpa_history_read",
+      "mcpa_project_snapshot"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610100003_feature_storage.sql",
+    "lines": 153,
+    "bytes": 10638,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_can_access_purchase_receipt",
+      "mcpa_can_read_equipment_photo",
+      "mcpa_can_write_equipment_photo",
+      "mcpa_equipment_photo_guard",
+      "mcpa_equipment_photos_insert",
+      "mcpa_equipment_photos_read",
+      "mcpa_has_role",
+      "mcpa_purchase_receipts_insert",
+      "mcpa_purchase_receipts_read"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610100004_movement_cancellation.sql",
+    "lines": 293,
+    "bytes": 20422,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_cancellation_no_changes",
+      "mcpa_cancellation_no_truncate",
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_cancellations",
+      "mcpa_movement_operations",
+      "mcpa_movement_refusals",
+      "mcpa_movement_reservations",
+      "mcpa_movement_snapshot",
+      "mcpa_movements",
+      "mcpa_refusal_no_changes",
+      "mcpa_refusal_no_truncate"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610100005_purchase_ledger.sql",
+    "lines": 110,
+    "bytes": 10274,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_has_role",
+      "mcpa_purchase_date",
+      "mcpa_purchase_history",
+      "mcpa_purchase_history_immutable",
+      "mcpa_purchase_history_no_truncate",
+      "mcpa_purchase_history_read",
+      "mcpa_purchase_read",
+      "mcpa_purchase_reference",
+      "mcpa_purchase_request",
+      "mcpa_purchase_snapshot",
+      "mcpa_purchases",
+      "mcpa_save_purchase"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610100006_monitoring.sql",
+    "lines": 272,
+    "bytes": 18054,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_capture_inventory_snapshot",
+      "mcpa_future_movement_notifications",
+      "mcpa_generate_monitoring",
+      "mcpa_has_role",
+      "mcpa_inventory_snapshots",
+      "mcpa_inventory_snapshots_admin_read",
+      "mcpa_inventory_snapshots_capture",
+      "mcpa_monitoring_immutable_rows",
+      "mcpa_monitoring_immutable_truncate",
+      "mcpa_monitoring_mark_read",
+      "mcpa_monitoring_receipt_lookup",
+      "mcpa_monitoring_report",
+      "mcpa_monitoring_snapshot",
+      "mcpa_movement_assets",
+      "mcpa_movement_operations",
+      "mcpa_movements",
+      "mcpa_my_profile",
+      "mcpa_notifications",
+      "mcpa_notifications_own_read",
+      "mcpa_notifications_recipient_date"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610120001_request_turnover_notifications.sql",
+    "lines": 92,
+    "bytes": 5878,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_future_movement_notifications",
+      "mcpa_monitoring_snapshot",
+      "mcpa_movement_assets",
+      "mcpa_movement_operations",
+      "mcpa_movements",
+      "mcpa_notifications"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610120002_office_returns.sql",
+    "lines": 194,
+    "bytes": 11532,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_operations",
+      "mcpa_movements",
+      "mcpa_return_destination"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610120003_optional_request_purpose.sql",
+    "lines": 32,
+    "bytes": 1905,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_movement_action"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610120004_equipment_office_default.sql",
+    "lines": 85,
+    "bytes": 4971,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_equipment_insert",
+      "mcpa_has_role",
+      "mcpa_has_rolearray",
+      "mcpa_inventory_office",
+      "mcpa_new_equipment_office"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610150001_inventory_availability.sql",
+    "lines": 36,
+    "bytes": 2032,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_movement_reservations",
+      "mcpa_movement_snapshot",
+      "mcpa_movements"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610200001_verified_request_inventory.sql",
+    "lines": 91,
+    "bytes": 6094,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_reservations",
+      "mcpa_movement_snapshot",
+      "mcpa_movements"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610210001_equipment_photo_compatibility.sql",
+    "lines": 159,
+    "bytes": 11109,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_can_discard_equipment_photo",
+      "mcpa_can_read_equipment_photo",
+      "mcpa_can_write_equipment_photo",
+      "mcpa_equipment_photo_guard",
+      "mcpa_equipment_photos_discard",
+      "mcpa_equipment_photos_insert",
+      "mcpa_equipment_photos_read",
+      "mcpa_purchase_receipts_insert",
+      "mcpa_purchase_receipts_read"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610220000_consumable_categories.sql",
+    "lines": 23,
+    "bytes": 1125,
+    "rpcNames": [
+      "mcpa_has_role"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610220001_consumables_skus.sql",
+    "lines": 171,
+    "bytes": 12955,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_purchase_history",
+      "mcpa_purchase_snapshot",
+      "mcpa_purchases"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610220002_consumables_archive.sql",
+    "lines": 170,
+    "bytes": 11246,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_has_role",
+      "mcpa_purchase_history",
+      "mcpa_purchase_snapshot",
+      "mcpa_purchases"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610230001_purchase_receipts_compatibility.sql",
+    "lines": 148,
+    "bytes": 10748,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_can_access_purchase_receipt",
+      "mcpa_can_discard_equipment_photo",
+      "mcpa_can_read_equipment_photo",
+      "mcpa_can_write_equipment_photo",
+      "mcpa_equipment_photos_discard",
+      "mcpa_equipment_photos_insert",
+      "mcpa_equipment_photos_read",
+      "mcpa_has_role",
+      "mcpa_purchase_receipts_insert",
+      "mcpa_purchase_receipts_read"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610230002_project_construction.sql",
+    "lines": 234,
+    "bytes": 18509,
+    "rpcNames": [
+      "mcpa_add_site_update",
+      "mcpa_auth_private",
+      "mcpa_construction_completion",
+      "mcpa_has_role",
+      "mcpa_project_snapshot",
+      "mcpa_save_project"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610240001_equipment_import.sql",
+    "lines": 161,
+    "bytes": 10891,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_equipment_asset_id",
+      "mcpa_equipment_import_immutable",
+      "mcpa_equipment_imports",
+      "mcpa_equipment_imports_read",
+      "mcpa_equipment_insert",
+      "mcpa_has_role",
+      "mcpa_has_rolearray",
+      "mcpa_import_equipment",
+      "mcpa_inventory_office"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610250001_quantity_material_requests.sql",
+    "lines": 462,
+    "bytes": 41456,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_equipment_imports",
+      "mcpa_has_role",
+      "mcpa_import_equipment",
+      "mcpa_import_equipment_v2",
+      "mcpa_import_equipment_v2_receipt",
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_number",
+      "mcpa_movement_reservations",
+      "mcpa_movement_sites",
+      "mcpa_movements",
+      "mcpa_my_profile",
+      "mcpa_wa_",
+      "mcpa_wa_allocate_equipment",
+      "mcpa_wa_consumables_analytics",
+      "mcpa_wa_consumables_catalog",
+      "mcpa_wa_consumables_snapshot",
+      "mcpa_wa_equipment_catalog",
+      "mcpa_wa_equipment_read",
+      "mcpa_wa_equipment_requester",
+      "mcpa_wa_equipment_requests",
+      "mcpa_wa_import_immutable",
+      "mcpa_wa_import_operations",
+      "mcpa_wa_import_read",
+      "mcpa_wa_issue_consumables",
+      "mcpa_wa_issues_immutable",
+      "mcpa_wa_material_issues",
+      "mcpa_wa_material_issues_item",
+      "mcpa_wa_material_issues_read",
+      "mcpa_wa_material_items",
+      "mcpa_wa_material_items_read",
+      "mcpa_wa_material_items_request",
+      "mcpa_wa_material_read",
+      "mcpa_wa_material_requester",
+      "mcpa_wa_material_requests",
+      "mcpa_wa_operations",
+      "mcpa_wa_operations_immutable",
+      "mcpa_wa_operations_read",
+      "mcpa_wa_reject_equipment",
+      "mcpa_wa_review_consumables",
+      "mcpa_wa_submit_consumables",
+      "mcpa_wa_submit_equipment",
+      "mcpa_wa_suggest_equipment"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610250002_custody_lifecycle.sql",
+    "lines": 601,
+    "bytes": 47293,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_b_action",
+      "mcpa_b_asset_guard",
+      "mcpa_b_equipment_guard",
+      "mcpa_b_events",
+      "mcpa_b_events_entity",
+      "mcpa_b_events_immutable",
+      "mcpa_b_evidence",
+      "mcpa_b_evidence_action",
+      "mcpa_b_evidence_delete",
+      "mcpa_b_evidence_delete_fence",
+      "mcpa_b_evidence_insert",
+      "mcpa_b_evidence_insert_fence",
+      "mcpa_b_evidence_no_update",
+      "mcpa_b_evidence_read",
+      "mcpa_b_evidence_read_fence",
+      "mcpa_b_lookup",
+      "mcpa_b_new_return_guard",
+      "mcpa_b_open_returns",
+      "mcpa_b_operations",
+      "mcpa_b_operations_immutable",
+      "mcpa_b_repair_completed",
+      "mcpa_b_retirement_history",
+      "mcpa_b_retirement_no_truncate",
+      "mcpa_b_retirement_open",
+      "mcpa_b_retirements",
+      "mcpa_b_return_items",
+      "mcpa_b_snapshot",
+      "mcpa_b_storage_allowed",
+      "mcpa_movement_action",
+      "mcpa_movement_assets",
+      "mcpa_movement_number",
+      "mcpa_movement_operations",
+      "mcpa_movement_reservations",
+      "mcpa_movement_sites",
+      "mcpa_movements",
+      "mcpa_notifications"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610250003_quantity_custody_integration.sql",
+    "lines": 206,
+    "bytes": 13608,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_b_evidence",
+      "mcpa_b_retirements",
+      "mcpa_b_return_items",
+      "mcpa_integration_equipment_identity",
+      "mcpa_integration_evidence_no_delete",
+      "mcpa_integration_evidence_object",
+      "mcpa_integration_material_notice",
+      "mcpa_integration_outward_archive",
+      "mcpa_integration_physical_movement",
+      "mcpa_integration_quantity_notice",
+      "mcpa_integration_retirement_admins",
+      "mcpa_movement_assets",
+      "mcpa_movement_reservations",
+      "mcpa_movement_snapshot",
+      "mcpa_movements",
+      "mcpa_notifications",
+      "mcpa_wa_equipment_requests",
+      "mcpa_wa_material_items",
+      "mcpa_wa_material_requests"
+    ]
+  },
+  {
+    "file": "supabase/migrations/202610250004_read_rpc_authorization.sql",
+    "lines": 67,
+    "bytes": 3576,
+    "rpcNames": [
+      "mcpa_auth_private",
+      "mcpa_import_equipment_v2_receipt",
+      "mcpa_wa_consumables_analytics",
+      "mcpa_wa_consumables_catalog",
+      "mcpa_wa_consumables_snapshot",
+      "mcpa_wa_equipment_catalog",
+      "mcpa_wa_equipment_requests",
+      "mcpa_wa_suggest_equipment"
+    ]
+  }
+]

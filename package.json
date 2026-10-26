@@ -1,0 +1,11 @@
+{
+  "name": "mcpa",
+  "private": true,
+  "engines": {"node": ">=22"},
+  "scripts": {
+    "configure": "node scripts/configure-supabase.mjs",
+    "start": "node scripts/dev-server.mjs",
+    "check:database": "node scripts/check-database.mjs",
+    "test:database-config": "node --test tests/database-config.test.mjs"
+  }
+}
