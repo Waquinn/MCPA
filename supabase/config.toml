@@ -1,4 +1,5 @@
 [functions.manage-accounts]
-# The handler verifies every bearer token with Auth.getUser and checks the
-# active Admin profile. Keep the gateway JWT check as an additional boundary.
-verify_jwt = true
+# ES256 user sessions and publishable API keys use handler-side verification.
+# EVERY non-OPTIONS path verifies the bearer with Auth.getUser; Admin actions
+# also require the active linked Admin, rechecked by the service-only SQL RPC.
+verify_jwt = false

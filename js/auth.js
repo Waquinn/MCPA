@@ -1,7 +1,7 @@
 /* Supabase owns credentials and sessions. Profiles are fetched through an authenticated RPC. */
 (function () {
   'use strict';
-  let profile = null, demo = false, revision = 0, sessionUser = null, recovering = false, busy = false;
+  let profile = null, demo = false, revision = 0, sessionUser = null, recovering = false, registering = false, busy = false;
   const callbackParams = new URLSearchParams(location.hash.slice(1));
   let invitationCallback = callbackParams.get('type') === 'invite' || new URLSearchParams(location.search).get('account_setup') === 'invite';
   const callbackError = callbackParams.has('error') || new URLSearchParams(location.search).has('error');
@@ -11,7 +11,23 @@
     ++revision; recovering = true; profile = null; invitationCallback = false; demo = false;
     try { sessionStorage.removeItem('mcpa.demo.role'); sessionStorage.setItem('mcpa.password-setup', JSON.stringify({userId:session.user.id,kind})); } catch (_) {}
     history.replaceState(null,'',location.pathname);
+    registering = kind === 'invite';
     login(kind === 'invite' ? 'Welcome to MCPA. Set a password for your company account.' : '', 'recovery');
+    if(registering){
+      const setupRevision=revision;
+      const email=document.getElementById('auth-invited-email');if(email)email.value=session.user.email||'';
+      const button=document.querySelector('#auth-form button[type=submit]');if(button)button.disabled=true;
+      // Schedule outside Auth's callback to avoid waiting on its session lock.
+      setTimeout(async()=>{
+        try{
+          const {data,error}=await client().functions.invoke('manage-accounts',{body:{action:'invitationInfo'}});if(error)throw error;
+          if(!registering||setupRevision!==revision)return;
+          document.getElementById('auth-invited-email').value=data.email;
+          document.getElementById('auth-full-name').value=data.name;
+          if(button?.isConnected)button.disabled=false;
+        }catch(_){if(registering&&setupRevision===revision)feedback('This invitation is unavailable, expired or revoked. Ask Admin for a fresh invitation.');}
+      },0);
+    }
     return true;
   }
   function pendingSetup(session) {
@@ -37,7 +53,7 @@
     const host=document.getElementById('login-screen');
     host.classList.remove('hidden');
     window.MCPALoginSlideshow?.show();
-    document.getElementById('login-content').innerHTML=`<section class="login-card"><div class="login-mark">MCPA</div><h1 class="display">${kind==='recovery'?'Set your password':'Welcome back'}</h1><p class="sub">Construction Asset Management<br>and Accountability System</p><div id="auth-feedback" role="status">${esc(message)}</div>${kind==='loading'?'<p class="auth-loading" role="status">Checking your session…</p>':kind==='demo'?`<h2>Offline demonstration</h2><p class="auth-help">Sample identities and browser-only records. This workspace cannot access the live database.</p><div class="auth-demo-choices"><button class="btn btn-secondary" data-demo-role="admin">Admin demonstration</button><button class="btn btn-secondary" data-demo-role="engineer">Engineer demonstration</button><button class="btn btn-secondary" data-demo-role="architect">Architect demonstration</button></div><button class="link-btn" data-auth-back>Back to sign in</button>`:`<form id="auth-form">${kind==='recovery'?'':`<div class="field"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="username" required></div>`}<div class="field"><label for="auth-password">${kind==='recovery'?'New password':'Password'}</label><div class="auth-password-wrap"><input id="auth-password" type="password" autocomplete="${kind==='recovery'?'new-password':'current-password'}" ${kind==='recovery'?'minlength="12"':''} required><button class="auth-password-toggle" type="button" aria-controls="auth-password" aria-label="Show password" data-auth-toggle-password>Show</button></div></div><button class="btn btn-primary btn-block" type="submit">${kind==='recovery'?'Save password':'Sign In'}</button></form>${kind==='recovery'?'<button class="link-btn" data-auth-logout>Cancel and sign out</button>':'<button class="link-btn" data-auth-reset>Forgot password?</button><p class="auth-help">Company accounts are issued by your administrator.</p><button class="btn btn-secondary btn-block" data-auth-demo>Try offline demo</button>'}`}</section>`;
+    document.getElementById('login-content').innerHTML=`<section class="login-card"><div class="login-mark">MCPA</div><h1 class="display">${registering?'Complete your SiteTrace account':kind==='recovery'?'Set your password':'Welcome back'}</h1><p class="sub">Construction Asset Management<br>and Accountability System</p><div id="auth-feedback" role="status">${esc(message)}</div>${kind==='loading'?'<p class="auth-loading" role="status">Checking your session…</p>':kind==='demo'?`<h2>Offline demonstration</h2><p class="auth-help">Sample identities and browser-only records. This workspace cannot access the live database.</p><div class="auth-demo-choices"><button class="btn btn-secondary" data-demo-role="admin">Admin demonstration</button><button class="btn btn-secondary" data-demo-role="engineer">Engineer demonstration</button><button class="btn btn-secondary" data-demo-role="architect">Architect demonstration</button></div><button class="link-btn" data-auth-back>Back to sign in</button>`:`<form id="auth-form">${registering?'<div class="field"><label for="auth-full-name">Full name</label><input id="auth-full-name" autocomplete="name" required maxlength="120"></div><div class="field"><label for="auth-invited-email">Invited email</label><input id="auth-invited-email" type="email" readonly autocomplete="username" required></div>':''}${kind==='recovery'?'':`<div class="field"><label for="auth-email">Email</label><input id="auth-email" type="email" autocomplete="username" required></div>`}<div class="field"><label for="auth-password">${kind==='recovery'?'New password':'Password'}</label><div class="auth-password-wrap"><input id="auth-password" type="password" autocomplete="${kind==='recovery'?'new-password':'current-password'}" ${kind==='recovery'?'minlength="12"':''} required><button class="auth-password-toggle" type="button" aria-controls="auth-password" aria-label="Show password" data-auth-toggle-password>Show</button></div></div>${registering?'<div class="field"><label for="auth-confirm-password">Confirm password</label><input id="auth-confirm-password" type="password" autocomplete="new-password" required minlength="12" maxlength="128"></div>':''}<button class="btn btn-primary btn-block" type="submit">${registering?'Complete registration':kind==='recovery'?'Save password':'Sign In'}</button></form>${kind==='recovery'?'<button class="link-btn" data-auth-logout>Cancel and sign out</button>':'<button class="link-btn" data-auth-reset>Forgot password?</button><p class="auth-help">Company accounts are issued by your administrator.</p><button class="btn btn-secondary btn-block" data-auth-demo>Try offline demo</button>'}`}</section>`;
     // Native form submission handles Enter from either input, including mobile keyboards.
     host.querySelector('form')?.addEventListener('submit',signIn);
     host.querySelector('[data-auth-toggle-password]')?.addEventListener('click',event=>{
@@ -121,6 +137,12 @@
     const button=document.querySelector('#auth-form button[type=submit]');if(button)button.disabled=true;
     try {
       rejectCallback = false;
+      if(registering){
+        const password=document.getElementById('auth-password').value;
+        if(password!==document.getElementById('auth-confirm-password').value){feedback('Passwords do not match. Enter the same password in both fields.');return;}
+        const {error}=await client().functions.invoke('manage-accounts',{body:{action:'accept',name:document.getElementById('auth-full-name').value.trim(),password}});
+        if(error)throw error;await logout();feedback('Registration complete. Sign in with your new password.');return;
+      }
       if(recovering){const {error}=await client().auth.updateUser({password:document.getElementById('auth-password').value});if(error)throw error;await logout();feedback('Password saved. Sign in with your new password.');return;}
       const {data,error}=await client().auth.signInWithPassword({email:document.getElementById('auth-email').value.trim(),password:document.getElementById('auth-password').value});
       if(error)throw error;
@@ -141,7 +163,7 @@
   }
   async function logout() {
     window.MCPANavigation?.endSession();
-    const wasDemo=demo;++revision;profile=null;sessionUser=null;demo=false;recovering=false;invitationCallback=false;
+    const wasDemo=demo;++revision;profile=null;sessionUser=null;demo=false;recovering=false;registering=false;invitationCallback=false;
     sessionStorage.removeItem('mcpa.password-setup');
     sessionStorage.removeItem('mcpa.demo.role');clearApplication();history.replaceState(null,'',location.pathname);login(wasDemo?'Demo closed. Your sample records remain in this browser.':'Signing out…');
     if(wasDemo)return;
@@ -162,7 +184,7 @@
       client().auth.onAuthStateChange((event,session)=>{
         if(demo || rejectCallback)return;
         if(event==='PASSWORD_RECOVERY'){setupPassword(session,'recovery');return;}
-        if(event==='SIGNED_OUT'){window.MCPANavigation?.endSession();++revision;profile=null;sessionUser=null;recovering=false;sessionStorage.removeItem('mcpa.password-setup');login('Your session ended. Sign in again.');return;}
+        if(event==='SIGNED_OUT'){window.MCPANavigation?.endSession();++revision;profile=null;sessionUser=null;recovering=false;registering=false;sessionStorage.removeItem('mcpa.password-setup');login('Your session ended. Sign in again.');return;}
         if(recovering)return;
         if(session && (invitationCallback || pendingSetup(session))){setupPassword(session,invitationCallback?'invite':pendingSetup(session));return;}
         if(event==='INITIAL_SESSION'||event==='SIGNED_IN'||event==='TOKEN_REFRESHED'||event==='USER_UPDATED')setTimeout(()=>restore(session),0);

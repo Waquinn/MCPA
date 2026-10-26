@@ -44,7 +44,7 @@
         &&(Number(tool.qty)!==1||!['individual','individualasset','serialized'].includes(String(tool.trackingType||'').toLowerCase().replace(/[ _-]/g,''))))return false;
       if (locked.has(tool.id) || reserved.has(tool.id) || !(tool.qty > 0)) return false;
       const owns = mode() === 'live' ? tool.holderId === context().id : tool.holder === context().name;
-      if (kind === 'request') return window.EquipmentTracking.requestability(tool, data).eligible;
+      if (kind === 'request') return (mode() !== 'live' || tool.requestMode === 'specific') && window.EquipmentTracking.requestability(tool, data).eligible;
       if (kind === 'transfer') return (handler() && tool.status === 'available' && (!tool.holder || tool.holder === '?')) || (tool.status === 'inuse' && owns);
       if (kind === 'repair' || kind === 'missing') return (tool.status === 'inuse' && owns) || (admin() && tool.status === 'available');
       return tool.status === 'inuse' && owns;
@@ -730,7 +730,7 @@
       const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
       setTransferView(tabs[next].dataset.transferTab);tabs[next].focus();
     };root.addEventListener('keydown',active.keydown);
-    if (mode() === 'live') active.stopWatching = window.EquipmentTracking.watch(async () => {
+    if (mode() === 'live' && options.autoWatch !== false) active.stopWatching = window.EquipmentTracking.watch(async () => {
       await active.mounted;
       if (current !== active || active.busy) return;
       await store().refresh();

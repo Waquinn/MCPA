@@ -145,6 +145,7 @@
       });
       if (error) throw error;
       if (!data?.id) throw projectError('This project changed or is no longer editable. Close this form and retry after the next update.');
+      window.dispatchEvent(new CustomEvent('mcpa:data-change'));
       return data;
     },
     async history(siteId) {

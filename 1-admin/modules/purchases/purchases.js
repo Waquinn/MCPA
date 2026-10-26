@@ -6,7 +6,7 @@
  const $ = selector => root.querySelector(selector), esc = MovementOverview.escape;
  const client = () => EquipmentTracking.client(), dialog = $('#purchase-dialog'), body = $('#purchase-dialog-body');
  const controller = new AbortController();
- let state = {purchases: [], requests: [], history: []}, ready = false, busy = false, editing, focus, dirty = false, staged;
+ let state = {purchases: [], requests: [], history: []}, ready = false, busy = false, editing, focus, dirty = false, staged, loading=false, pendingRead=null;
  const money = value => Number(value).toLocaleString('en-PH', {style: 'currency', currency: 'PHP'});
  const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date());
  const status = p => window.MCPADisplay.status(p.delivery_status, 'delivery');
@@ -24,14 +24,14 @@
   $('#purchase-results').innerHTML = rows.length ? `<table><caption class="mv-sr">Purchase records</caption><thead><tr><th>Purchase / Reference</th><th>Supplier</th><th>Date</th><th>Material Request / Delivery</th><th>Total</th><th>Actions</th></tr></thead><tbody>${rows.map(p => `<tr><td>${esc(window.MCPADisplay.numberedReference('PUR',p.purchase_number))}<div class="cell-sub">${esc(p.reference)}</div></td><td>${esc(p.supplier)}</td><td>${esc(window.MCPADisplay.date(p.purchase_date))}</td><td>${p.request_number ? esc(window.MCPADisplay.numberedReference('CR',p.request_number)) : 'No linked request'}<div class="cell-sub">${esc(status(p))}</div></td><td>${money(p.total)}</td><td><button type="button" class="btn btn-secondary btn-sm" data-purchase-view="${esc(p.id)}">View</button> <button type="button" class="btn btn-secondary btn-sm" data-purchase-edit="${esc(p.id)}">Edit</button></td></tr>`).join('')}</tbody></table>` : '<div class="empty-state"><h3>No purchases to show</h3><p>Record a purchase or change the search and dates.</p></div>';
  }
  async function load() {
-  if (busy || !root.isConnected) return;
+  if (busy || loading || !root.isConnected) return;
   if (MCPAAuth.isDemo) { feedback('Sign in to the company workspace to manage purchases.'); $('#purchase-results').innerHTML = '<p class="empty-state">Live purchase records are not loaded in offline demo.</p>'; return; }
-  $('#purchase-results').setAttribute('aria-busy', 'true');
+  loading=true;$('#purchase-results').setAttribute('aria-busy', 'true');
   try {
-   MCPAAuth.requireLive(); const {data, error} = await client().rpc('mcpa_purchase_snapshot'); if (error) throw error;
-   if (!root.isConnected) return; state = data; ready = true; render(); $('[data-purchase-new]').disabled = false;
+   MCPAAuth.requireLive();pendingRead=Promise.resolve(client().rpc('mcpa_purchase_snapshot'));const {data, error} = await pendingRead;if (error) throw error;
+   if (!root.isConnected||busy) return; state = data; ready = true; render(); $('[data-purchase-new]').disabled = false;
   } catch (error) { feedback(explain(error), true); }
-  finally { $('#purchase-results')?.setAttribute('aria-busy', 'false'); }
+  finally { loading=false;pendingRead=null;$('#purchase-results')?.setAttribute('aria-busy', 'false'); }
  }
  function open(title) { focus = document.activeElement; $('#purchase-dialog-heading').textContent = title; dirty = false; dialog.showModal(); }
  function close(force = false) {
@@ -76,7 +76,8 @@
    const fingerprint = JSON.stringify(record); if (!editing.operations.has(fingerprint)) editing.operations.set(fingerprint, crypto.randomUUID());
    const {data, error} = await client().rpc('mcpa_save_purchase', {p_id: editing.id, p_version: editing.version, p_operation_id: editing.operations.get(fingerprint), p_record: record});
    if (error) throw error; if (!data?.id) throw new Error('No saved purchase returned');
-   busy = false; dirty = false; close(true); feedback('Purchase saved. Confirm deliveries in Material Requests.'); await load();
+   if(loading)await pendingRead;
+   busy = false; dirty = false; close(true); feedback('Purchase saved. Confirm deliveries in Material Requests.');window.dispatchEvent(new CustomEvent('mcpa:data-change'));await load();
   } catch (error) { errorBox.textContent = explain(error); errorBox.focus(); }
   finally { busy = false; controls.forEach(el => el.disabled = false); event.target.setAttribute('aria-busy', 'false'); }
  }
@@ -100,7 +101,8 @@
  root.addEventListener('input', event => { if (event.target.closest('#purchase-form')) { dirty = true; total(); } else if (event.target.id === 'purchase-search') render(); }, {signal: controller.signal});
  root.addEventListener('change', event => { if (event.target.closest('#purchase-form')) dirty = true; else render(); }, {signal: controller.signal});
  dialog.addEventListener('cancel', event => { event.preventDefault(); close(); }, {signal: controller.signal});
- window.MCPAPurchases = {clearRecord() { if (!dirty) close(true); }, async openRecord(id) { await mounted; if (!root.isConnected) return; const record=state.purchases.find(p=>p.id===id); if(record) detail(record); else feedback('This purchase is no longer available or access was denied.',true); }, dispose() { controller.abort(); dialog.close(); }};
+ const stopSync=MCPAAuth.isDemo?()=>{}:EquipmentTracking.watch(load,message=>{if(message&&root.isConnected)feedback(message,true);},{tables:['mcpa_purchases','consumable_requests','consumables']});
+ window.MCPAPurchases = {clearRecord() { if (!dirty) close(true); }, async openRecord(id) { await mounted; if (!root.isConnected) return; const record=state.purchases.find(p=>p.id===id); if(record) detail(record); else feedback('This purchase is no longer available or access was denied.',true); }, dispose() { stopSync();controller.abort(); dialog.close(); }};
  const mounted = load();
  window.MCPANavigation?.track(root, mounted);
 })();

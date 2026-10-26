@@ -12,11 +12,11 @@ export async function mount(root, {client, record = ''}) {
   const qClient = window.MCPAQuantityRequests.createClient(client);
   let destroyed = false, records = [], quantities = [], search = '', status = '', type = '', loading = false, selected = '', quantityMount, historyVersion = 0;
   root.classList.add('equipment-requests');
-  root.innerHTML = `<header class="page-head"><div><h1 class="display">Equipment Requests</h1><p class="sub">${admin ? 'Review both request types, reserve exact Asset IDs, then release a documented handover.' : 'Request equipment, follow its handover, then inspect before accepting custody.'}</p></div><div class="equipment-header-actions"><button type="button" class="btn btn-secondary" data-jump-history>${admin ? "Request queue" : "My Requests"}</button><button type="button" class="btn btn-secondary" data-equipment-refresh>Refresh requests</button></div></header><p role="status" aria-live="polite" data-equipment-notice></p>
+  root.innerHTML = `<header class="page-head"><div><h1 class="display">Equipment Requests</h1><p class="sub">${admin ? 'Review both request types, reserve exact Asset IDs, then release a documented handover.' : 'Request equipment, follow its handover, then inspect before accepting custody.'}</p></div><div class="equipment-header-actions"><button type="button" class="btn btn-secondary" data-jump-history>${admin ? "Request queue" : "My Requests"}</button><button type="button" class="btn btn-secondary" data-equipment-refresh hidden>Retry requests</button></div></header><p role="status" aria-live="polite" data-equipment-notice></p>
     ${admin ? '' : '<div class="equipment-methods" role="group" aria-label="Request method"><button class="btn btn-accent" type="button" data-method="quantity" aria-pressed="true">Request by Quantity</button><button class="btn btn-secondary" type="button" data-method="specific" aria-pressed="false">Request Specific Asset</button></div>'}
     <div data-quantity-pane ${admin ? 'hidden' : ''}></div><div class="equipment-specific" data-specific-pane></div>
     <section class="card card-pad equipment-history" aria-labelledby="equipment-history-title"><h2 id="equipment-history-title">${admin ? 'Request queue' : 'My Requests'}</h2><div class="equipment-filters"><label>Search requests<input class="mv-input" type="search" data-equipment-search placeholder="ID, equipment, Asset ID, person or project"></label><label>Stage<select class="mv-input" data-equipment-stage><option value="">All stages</option><option value="pending">Awaiting review</option><option value="approved">Awaiting Admin release</option><option value="inspection">Awaiting inspection</option><option value="received">Inspected / Received</option><option value="follow-up">Needs follow-up</option><option value="rejected">Rejected</option><option value="cancelled">Cancelled</option><option value="withdrawn">Withdrawn</option><option value="unverified">Needs verification</option></select></label><label>Request type<select class="mv-input" data-equipment-type><option value="">Both types</option><option value="quantity">By quantity</option><option value="specific">Specific assets</option></select></label></div><div data-equipment-list></div></section><section data-equipment-review hidden aria-label="Quantity request review"><button class="btn btn-secondary" type="button" data-close-review>Close request review</button><div data-review-stage></div><div data-quantity-review></div></section>`;
-  const notice = (message, error = false) => {if (destroyed) return; const node = root.querySelector('[data-equipment-notice]'); node.textContent = message; node.setAttribute('role', error ? 'alert' : 'status');};
+  const notice = (message, error = false) => {if (destroyed) return; const node = root.querySelector('[data-equipment-notice]'); node.textContent = message; node.setAttribute('role', error ? 'alert' : 'status');root.querySelector('[data-equipment-refresh]').hidden=!error;};
   const intro = r => `<p class="equipment-stage"><strong>${escape(admin && r.stage.key === 'inspection' ? 'Awaiting Recipient Inspection' : r.stage.label)}</strong></p><p>${escape(admin && r.stage.key === 'inspection' ? 'The named recipient must inspect and confirm the handover in Accept Equipment.' : r.stage.next)}</p>${timeline(r)}${!admin && r.stage.key === 'inspection' && r.transfer?.receiverId === window.MCPAAuth.profile.id ? `<a class="btn btn-accent" href="#transfer-inbox?record=${encodeURIComponent(r.transfer.id)}" data-movement-link>Inspect &amp; Accept Equipment</a>` : ''}`;
   function render() {
     if (destroyed) return;
@@ -50,7 +50,7 @@ export async function mount(root, {client, record = ''}) {
     });
   }
   if (!admin && specificDraft) setMethod(false);
-  await window.MovementUI.mount('request', {root:specific, requestIntro: movement => {
+  await window.MovementUI.mount('request', {root:specific, autoWatch:false, requestIntro: movement => {
     const r = requests(window.MovementStore.getState(), quantities).find(r => r.movement?.id === movement.id);
     return r ? intro(r) : '';
   }});
@@ -85,5 +85,5 @@ export async function mount(root, {client, record = ''}) {
   // Movement refreshes update labels without replacing a draft or inspection form.
   window.addEventListener('mcpa:movement-change',() => {if(!destroyed && !loading) {records = requests(window.MovementStore.getState(), quantities);render();void readHistory().catch(error => notice(error.message,true));}},{signal:abort.signal});
   if(record) await open(record);
-  return {refresh: async () => {await refresh();}, destroy() {destroyed = true;abort.abort();quantityMount?.destroy();window.MovementUI.dispose();}};
+  return {refresh: async () => {await refresh();await quantityMount?.refresh();}, destroy() {destroyed = true;abort.abort();quantityMount?.destroy();window.MovementUI.dispose();}};
 }

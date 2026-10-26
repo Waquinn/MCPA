@@ -4,7 +4,7 @@
 .equipment-requests .equipment-methods{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px}
 .equipment-requests .equipment-header-actions{display:flex;gap:12px;flex-wrap:wrap}
 .equipment-requests .tool-id-chip{white-space:normal;overflow-wrap:anywhere;max-width:100%}
-.equipment-requests .equipment-quantity-create .wa-q-catalog{max-height:440px;overflow:auto;padding-right:8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.equipment-requests .equipment-quantity-create .wa-q-catalog{max-height:none;overflow:visible;padding-right:0;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 .equipment-requests .equipment-specific>.movement-ui>.page-head,
 .equipment-requests .equipment-specific [data-summary],
 .equipment-requests .equipment-specific .mv-record-area,

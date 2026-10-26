@@ -6,10 +6,26 @@ export async function mountMovementComposer(root,options={}){
   const intent=options.intent==='transfer'?'transfer':'return';
   const ctx=setup(root,options),batch=new AssetBatch({resolve:ctx.api.lookup,intent});
   let snapshot,camera,busy=false;
+  function updateDestinations() {
+    if(intent!=='transfer')return;
+    const receiver=root.querySelector('[name=recipient]'), destination=root.querySelector('[name=destination]');
+    if(!receiver||!destination)return;
+    const recipient=receiver.value, prior=destination.value;
+    const eligible=snapshot.sites.filter(s=>s.assignedEngineerId===recipient);
+    destination.innerHTML=`<option value="">${!recipient?'Select a receiving custodian first':eligible.length?'Select their authorized project':'No active project assigned to this recipient'}</option>${eligible.map(s=>`<option value="${escape(s.id)}">${escape(s.name)}</option>`).join('')}`;
+    destination.value=eligible.some(s=>s.id===prior)?prior:'';
+    destination.disabled=!eligible.length;
+    const help=root.querySelector('[data-destination-help]');
+    if(help)help.textContent=!recipient?'Choose a receiving custodian to see their authorized projects.':!eligible.length?'This custodian has no active project assigned. Choose another custodian or ask Admin to assign a project.':'';
+    const action=root.querySelector('[data-composer] button[type=submit]');if(action)action.disabled=!eligible.length;
+  }
   const refresh=async()=>{snapshot=await ctx.api.snapshot();if(ctx.disposed)return;
     if(!['engineer','architect'].includes(snapshot.profile.role))throw new Error('Engineer or Architect custody access required.');
     const suggestions=root.querySelector('[data-suggestions]');
     if(suggestions)suggestions.innerHTML=snapshot.assets.filter(availableForBatch).map(a=>`<option value="${escape(a.id)}">${escape(a.name)}</option>`).join('');
+    const recipient=root.querySelector('[name=recipient]');
+    if(recipient){const prior=recipient.value;recipient.innerHTML='<option value="">Select Engineer or Architect</option>'+snapshot.recipients.filter(r=>r.id!==snapshot.profile.id).map(r=>`<option value="${escape(r.id)}">${escape(r.name)}</option>`).join('');recipient.value=prior;}
+    updateDestinations();
     const history=root.querySelector('[data-history]');if(history)history.innerHTML=renderHistory(snapshot,intent);
   };
   const render=()=>{
@@ -19,13 +35,13 @@ export async function mountMovementComposer(root,options={}){
       <div class="b-camera" hidden><video playsinline muted aria-label="Equipment QR camera preview"></video></div>
       <p class="b-empty" data-no-assets>No assets selected. Scan a code or select an Asset ID.</p><ul class="b-list" data-selected></ul></fieldset>
       ${returning?`<label>Intended return destination<select name="destination" required>${snapshot.returnDestination?`<option value="${escape(snapshot.returnDestination.id)}">${escape(snapshot.returnDestination.name)} · Office</option>`:'<option value="">Office unavailable · contact Admin</option>'}</select></label>`:
-        `<div class="b-row"><label>Receiving custodian<select name="recipient" required><option value="">Select Engineer or Architect</option>${snapshot.recipients.filter(r=>r.id!==snapshot.profile.id).map(r=>`<option value="${escape(r.id)}">${escape(r.name)}</option>`).join('')}</select></label><label>Destination site / project<select name="destination" required><option value="">Select a destination</option>${snapshot.sites.map(s=>`<option value="${escape(s.id)}" data-recipient="${escape(s.assignedEngineerId)}">${escape(s.name)}</option>`).join('')}</select></label></div>`}
+        `<div class="b-row"><label>Receiving custodian<select name="recipient" required><option value="">Select Engineer or Architect</option>${snapshot.recipients.filter(r=>r.id!==snapshot.profile.id).map(r=>`<option value="${escape(r.id)}">${escape(r.name)}</option>`).join('')}</select></label><label>Destination site / project<select name="destination" required aria-describedby="transfer-destination-help"><option value="">Select a destination</option></select></label></div><p id="transfer-destination-help" data-destination-help class="b-empty" role="status" aria-live="polite"></p>`}
       <label>${returning?'Return':'Transfer'} notes <span>Optional</span><textarea name="notes" maxlength="2000"></textarea></label>
       <button class="b-primary" type="submit">${returning?'Submit for Admin inspection':'Submit transfer for recipient acceptance'}</button></form>
       <section class="b-history" data-history aria-label="${returning?'Return inspection status':'Transfer status'}"></section>`;
+    updateDestinations();
     if(!returning)root.querySelector('[name=recipient]').addEventListener('change',()=>{
-      const recipient=root.querySelector('[name=recipient]').value,dest=root.querySelector('[name=destination]');dest.value='';
-      for(const option of dest.options)if(option.value)option.disabled=option.dataset.recipient!==recipient;
+      root.querySelector('[name=destination]').value='';updateDestinations();
     },{signal:ctx.signal});
     const input=root.querySelector('[data-reference]');
     const add=async raw=>{if(busy)return;const result=await batch.add(raw);if(ctx.disposed||result.cancelled)return;
@@ -55,6 +71,7 @@ export async function mountMovementComposer(root,options={}){
         const form=event.target;
         const data=new FormData(form),assetIds=batch.items.map(a=>a.id);
         const payload={assetIds,destinationId:data.get('destination'),notes:data.get('notes')};
+        if(!returning&&!snapshot.sites.some(s=>s.id===payload.destinationId&&s.assignedEngineerId===data.get('recipient')))throw new Error('Choose an active project assigned to the receiving custodian.');
         if(!returning)payload.receiverId=data.get('recipient');
         busy=true;stop();for(const control of form.elements)control.disabled=true;
         try{

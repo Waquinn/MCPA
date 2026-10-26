@@ -12,9 +12,9 @@
     if(!window.MCPAAuth.canRoute(screen))throw Error('This screen is not available to your account.');
     const session=current={root,mounts:[],abort:new AbortController(),api:null,dirty:false,draftVersion:0,refreshVersion:0};let returnSnapshot=null;
     const alive=()=>current===session&&version===revision&&window.MCPAAuth?.profile?.id===person.id&&root.isConnected;
-    const changed=()=>{if(!alive())return;session.dirty=false;++session.draftVersion;void window.MovementStore.refresh().catch(()=>{}).finally(()=>{if(alive())window.dispatchEvent(new CustomEvent('mcpa:movement-change'));});window.dispatchEvent(new CustomEvent('mcpa:materials-change'));};
+    const changed=()=>{if(!alive())return;window.dispatchEvent(new CustomEvent('mcpa:data-change'));session.dirty=false;++session.draftVersion;void window.MovementStore.refresh().catch(()=>{}).finally(()=>{if(alive())window.dispatchEvent(new CustomEvent('mcpa:movement-change'));});window.dispatchEvent(new CustomEvent('mcpa:materials-change'));};
     const client=window.EquipmentTracking.client();
-    root.innerHTML='<div class="integration-toolbar"><button type="button" class="btn btn-secondary" data-integration-refresh>Refresh records</button><span role="status" data-integration-status></span><button type="button" class="btn btn-secondary" data-integration-recover hidden>Recover interrupted action</button></div><div data-integration-mount></div><div data-integration-history></div>';
+    root.innerHTML='<div class="integration-toolbar"><button type="button" class="btn btn-secondary" data-integration-refresh>Retry synchronization</button><span role="status" data-integration-status></span><button type="button" class="btn btn-secondary" data-integration-recover hidden>Recover interrupted action</button></div><div data-integration-mount></div><div data-integration-history></div>';
     const host=root.querySelector('[data-integration-mount]');
     const status=root.querySelector('[data-integration-status]');
     const add=async promise=>{const mounted=await promise;if(!alive()){mounted.destroy();return;}session.mounts.push(mounted);if(mounted.ready)await mounted.ready;};
@@ -63,16 +63,19 @@
     root.querySelector('.integration-toolbar').hidden=!session.api;
     const recover=root.querySelector('[data-integration-recover]');
     const pending=()=>{recover.hidden=!session.api?.pending().length;};pending();
+    let refreshing=false;
     async function refresh(){
       if(!alive())return;
-      if(session.dirty&&!window.confirm('Discard unsaved changes and refresh these records?'))return;
-      session.dirty=false;const refreshVersion=++session.refreshVersion;
+      if(refreshing)return;
+      if(session.dirty&&!['request','quantity-request','asset-transfer'].includes(screen)){status.textContent='Your unsaved form is kept. Records will synchronize after you finish.';return;}
+      refreshing=true;
+      const refreshVersion=++session.refreshVersion;
       try{
         for(const mounted of session.mounts){
           const applied=await mounted.refresh();
           if(!alive()||refreshVersion!==session.refreshVersion||applied===false)return;
         }
-      }catch(error){if(!alive()||refreshVersion!==session.refreshVersion||error.code==='MCPA_STALE_REFRESH')return;throw error;}
+      }catch(error){if(!alive()||refreshVersion!==session.refreshVersion||error.code==='MCPA_STALE_REFRESH')return;throw error;}finally{refreshing=false;}
       if(!alive()||refreshVersion!==session.refreshVersion)return;
       pending();status.textContent='Records refreshed.';
     }
@@ -80,12 +83,13 @@
     const update=()=>{
       clearTimeout(scheduled);scheduled=setTimeout(()=>{
         if(!alive()||document.hidden)return;
-        if(session.dirty||root.querySelector('[aria-busy="true"]')){status.textContent='Records may have changed. Refresh when your form is ready.';return;}
+        if((session.dirty&&!['request','quantity-request','asset-transfer'].includes(screen))||root.querySelector('[aria-busy="true"]')){status.textContent='Records may have changed. Refresh when your form is ready.';return;}
         void refresh().catch(error=>{if(alive())status.textContent=error.message;});
       },180);
     };
     for(const event of ['focus','online','mcpa:movement-change','mcpa:materials-change'])window.addEventListener(event,update,{signal:session.abort.signal});
-    const polling=setInterval(update,30000);session.abort.signal.addEventListener('abort',()=>{clearInterval(polling);clearTimeout(scheduled);},{once:true});
+    const stopSync=window.EquipmentTracking.watch(()=>refresh(),message=>{if(alive()){status.textContent=message;root.querySelector('[data-integration-refresh]').hidden=!message;}},{tables:['equipment','sites','profiles','mcpa_notifications','mcpa_wa_equipment_requests','mcpa_wa_material_requests','mcpa_wa_material_issues','mcpa_b_retirements']});session.abort.signal.addEventListener('abort',()=>{stopSync();clearTimeout(scheduled);},{once:true});
+    root.querySelector('[data-integration-refresh]').hidden=true;
     root.querySelector('[data-integration-refresh]').addEventListener('click',()=>void refresh().catch(error=>{status.textContent=error.message;}),{signal:session.abort.signal});
     recover.addEventListener('click',async()=>{recover.disabled=true;try{await session.api.retryPending();changed();await refresh();}catch(error){status.textContent=error.message;}finally{if(alive()){recover.disabled=false;pending();}}},{signal:session.abort.signal});
     root.addEventListener('submit',()=>{setTimeout(()=>{if(alive())pending();},0);},{signal:session.abort.signal});

@@ -49,7 +49,6 @@ const ENGR_NAV = [
   {id:"missing", label:"Missing", icon:"alert"},
   {sec:"Materials"},
   {id:"outward-materials", label:"Consumables", icon:"box"},
-  {id:"retired-equipment-v2", label:"Sold & disposed history", icon:"list"},
   {sec:"Records"},
   {id:"activity", label:"Activity Logs", icon:"clock"},
   {id:"settings", label:"Settings", icon:"cog"},

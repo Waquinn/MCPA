@@ -41,7 +41,7 @@ test('missing availability fails closed instead of counting reserved/deployed as
   const result = Q.normalizedCatalog(data);
   assert.equal(result.groups[0].available_quantity, null);
   assert.equal(result.groups[0].requestable, false);
-  assert.throws(() => Q.validateRequest(input(), result), /eligible individual/);
+  assert.throws(() => Q.validateRequest(input(), result), /standard equipment/);
   assert.throws(() => Q.validateRequest({ ...input(), quantity: 4 }, Q.normalizedCatalog(catalog())), /Only 3/);
   const large = catalog(); large.groups[0].available_quantity = 300;
   assert.throws(() => Q.validateRequest({ ...input(), quantity: 101 }, Q.normalizedCatalog(large)), /up to 100/);
@@ -129,4 +129,9 @@ test('rejection requires a meaningful bounded reason and carries stable request 
   await client.reject({ requestId, reason: ' No compatible stock ' });
   const write = calls.find(call => call.name === Q.RPC.reject);
   assert.equal(write.args.p_reason, 'No compatible stock'); assert.equal(write.args.p_request_id, requestId);
+});
+
+test('designated specific equipment cannot be submitted through the quantity client',()=>{
+ const data=catalog();data.groups[0].request_mode='specific';
+ assert.throws(()=>Q.validateRequest(input(),Q.normalizedCatalog(data)),/Request by Quantity/);
 });

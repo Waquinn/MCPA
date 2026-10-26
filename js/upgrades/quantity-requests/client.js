@@ -57,7 +57,7 @@
   }
   function validateRequest(input, catalog) {
     const group = catalog.groups.find(item => item.type_id === input.typeId);
-    if (!group?.requestable) throw new Error('Choose an eligible individual equipment type. Grouped Bulk is unavailable in this quantity workflow.');
+    if (!group?.requestable || (group.request_mode || 'quantity') !== 'quantity') throw new Error('Choose a standard equipment type from Request by Quantity.');
     const requested = quantity(input.quantity);
     if (requested > MAX_REQUEST_QUANTITY) throw new Error('Request up to 100 individual assets per submission.');
     if (requested > group.available_quantity) throw new Error(`Only ${group.available_quantity} are currently available. Refresh stock or reduce the quantity.`);

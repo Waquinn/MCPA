@@ -44,15 +44,15 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login
   await fill('[name=assetId]','TOOL-002');await fill('[name=effectiveDate]','2026-10-01');await fill('[name=reason]','Fixture retirement');await submit('[data-proposal]');
   await wait('document.querySelector("[data-retirement]")');const proposal=(await f.snapshot(f.actors.admin)).retirements[0];
   assert.ok(await evaluate('!document.querySelector("[value=approveRetirement]")'));
-  await f.action(f.actors.admin2,'approveRetirement',{id:proposal.id});await click('[data-integration-refresh]');
+  await f.action(f.actors.admin2,'approveRetirement',{id:proposal.id});await evaluate('window.__tickSync()');
   await wait('document.querySelector("[data-retirement-list]").textContent.includes("Approved")');await shot('combined-admin-retirement');
   await logout();await login('sky');await wait('MCPAAuth.profile?.role==="engineer"');await go('transfer-inbox');
   await wait('document.querySelector("[data-transfer]")');await fill('[name=condition]','good');await click('[name=received]');await submit('[data-transfer]');
   await wait('document.querySelector(".b-feedback").textContent.includes("accepted")');
   assert.equal((await f.tool(imported.assets.find(v=>v.id===allocated.assets[0].id).asset_id)).current_holder_id,f.actors.sky.id);
   await go('asset-transfer');await wait('document.querySelector("[data-camera]")');
-  await go('retired-equipment-v2');await wait('document.querySelector("[data-retirement-list]")');
-  await go('dashboard');await evaluate('history.back()');await wait('document.querySelector("#screen-retired-equipment-v2.active")');
+  assert.equal(await evaluate('MCPAAuth.canRoute("retired-equipment-v2")'),false);
+  await go('dashboard');await evaluate('history.back()');await wait('document.querySelector("#screen-asset-transfer.active")');
   await evaluate('showScreen("return"); MCPAAuth.logout()');await wait('document.querySelector("#auth-email")');
   assert.equal(await evaluate('document.querySelector("#content").children.length'),0);
   console.log('PASS Combined real application shells: project-relative routes, quantity request/allocation/release/receipt, materials issuance, inspected return, retirement, permissions, history, mobile layout and logout cleanup');

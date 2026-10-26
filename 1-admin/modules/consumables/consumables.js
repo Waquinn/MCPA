@@ -293,7 +293,7 @@
       const { data, error } = await client().rpc(rpc, parameters);
       if (error) throw error;
       if (!data) throw new Error('The server did not confirm the save. Retry this form or refresh to check the result.');
-      committed = true;
+      committed = true;window.dispatchEvent(new CustomEvent('mcpa:data-change'));
       await loadData();
       if (!root.isConnected) return;
       render(); feedback(success);
@@ -351,11 +351,11 @@
   });
   dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
   // Do not accumulate timers when the application replaces this module's markup.
-  const timer = setInterval(() => {
-    if (root.isConnected && root.classList.contains('active') && !document.hidden) refresh(true);
-  }, 30000);
+  const stopSync = EquipmentTracking.watch(() => {
+    if (root.isConnected && root.classList.contains('active') && !document.hidden) return refresh(true);
+  },message=>{if(message&&root.isConnected)feedback(message,true);},{tables:['consumables','consumable_requests','consumable_stock_movements','mcpa_wa_material_requests','mcpa_wa_material_issues']});
   const observer = new MutationObserver(() => {
-    if (!root.isConnected) { clearInterval(timer); observer.disconnect(); dialogRevision++; }
+    if (!root.isConnected) { stopSync(); observer.disconnect(); dialogRevision++; }
   });
   observer.observe(document.getElementById('content'), { childList: true });
   window.MCPAConsumables = {clearRecord() { dialog.close(); }, async openRecord(id) {

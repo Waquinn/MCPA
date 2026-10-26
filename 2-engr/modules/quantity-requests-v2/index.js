@@ -15,7 +15,7 @@
       const host = root.querySelector('[data-q-catalog]');
       if (!host) return;
       const query = state.search.trim().toLowerCase();
-      const groups = state.catalog.groups.filter(group => [V.title(group), V.variant(group), group.tracking_type].join(' ').toLowerCase().includes(query));
+      const groups = state.catalog.groups.filter(group => group.requestable && group.available_quantity > 0 && (group.request_mode || "quantity") === "quantity").filter(group => [V.title(group), V.variant(group), group.tracking_type].join(' ').toLowerCase().includes(query));
       host.innerHTML = groups.length ? groups.map(group => {
         const eligible = group.requestable && group.available_quantity > 0;
         return `<li class="wa-q-type${state.typeId === group.type_id ? ' wa-q-selected' : ''}"><div class="wa-q-type-heading"><div><strong>${V.escape(V.title(group))}</strong><p>${V.escape(V.variant(group))}</p></div><span class="wa-q-tracking">${V.escape(group.tracking_type)}</span></div>${V.stock(group)}${!group.requestable ? '<p class="wa-q-muted">Grouped Bulk, empty or ineligible records cannot be requested here. Admin can review these records in the existing equipment workflow.</p>' : ''}<button class="wa-q-button" type="button" data-q-type="${V.escape(group.type_id)}" aria-pressed="${state.typeId === group.type_id}" ${!eligible || state.busy ? 'disabled' : ''}>${!group.requestable ? 'Unavailable in this workflow' : group.available_quantity === 0 ? 'No available stock' : state.typeId === group.type_id ? 'Selected type' : 'Choose type'}</button></li>`;
@@ -28,9 +28,9 @@
     function renderForm() {
       const group = selected(), host = root.querySelector('[data-q-form-host]');
       if (!host) return;
-      if (!group) { host.innerHTML = '<section class="wa-q-request"><h3>Request details</h3><p class="wa-q-empty">Choose an available individual equipment type to enter the quantity and project.</p></section>'; return; }
+      if (!group) { host.innerHTML = '<section class="wa-q-request"><h3>Request Details</h3><p class="wa-q-empty">Choose a standard tool, then enter its quantity and destination here.</p></section>'; return; }
       const noSites = state.catalog.sites.length === 0, maxQuantity = Math.min(group.available_quantity, Q.MAX_REQUEST_QUANTITY);
-      host.innerHTML = `<section class="wa-q-request"><h3>Request details</h3><p class="wa-q-chosen"><strong>${V.escape(V.title(group))}</strong><span>${V.escape(V.variant(group))}</span></p>${V.stock(group)}<form data-q-form><fieldset ${state.busy ? 'disabled' : ''}><legend class="wa-q-sr-only">Equipment request details</legend><label for="${prefix}-quantity">Quantity <span>(individual assets)</span></label><input id="${prefix}-quantity" name="quantity" type="number" min="1" max="${V.escape(maxQuantity)}" step="1" inputmode="numeric" required value="${V.escape(state.quantity)}" aria-describedby="${prefix}-availability"><p class="wa-q-help" id="${prefix}-availability">${V.escape(V.count(group.available_quantity))} currently available. Request up to 100 at once. Reserved and deployed equipment cannot be requested.</p><label for="${prefix}-site">Project / site</label><select id="${prefix}-site" name="siteId" required ${noSites ? 'disabled' : ''}><option value="">Choose an assigned project / site</option>${state.catalog.sites.map(site => `<option value="${V.escape(site.id)}"${state.siteId === site.id ? ' selected' : ''}>${V.escape(site.name)}</option>`).join('')}</select>${noSites ? '<p class="wa-q-error">No active project is assigned to your account. Ask Admin to assign a project before requesting.</p>' : ''}<label for="${prefix}-purpose">Purpose <span>(optional)</span></label><textarea id="${prefix}-purpose" name="purpose" rows="3" maxlength="2000" placeholder="Describe the work these tools will support.">${V.escape(state.purpose)}</textarea><p class="wa-q-review" data-q-review></p><button class="wa-q-button wa-q-primary" type="submit" ${noSites || !group.requestable || group.available_quantity < 1 || state.busy ? 'disabled' : ''}>${state.busy ? 'Submitting…' : 'Submit quantity request'}</button></fieldset></form></section>`;
+      host.innerHTML = `<section class="wa-q-request"><h3>Request Details</h3><p class="wa-q-chosen"><strong>${V.escape(V.title(group))}</strong><span>${V.escape(V.variant(group))}</span></p>${V.stock(group)}<form data-q-form><fieldset ${state.busy ? 'disabled' : ''}><legend class="wa-q-sr-only">Equipment request details</legend><label for="${prefix}-quantity">Quantity <span>(individual assets)</span></label><input id="${prefix}-quantity" name="quantity" type="number" min="1" max="${V.escape(maxQuantity)}" step="1" inputmode="numeric" required value="${V.escape(state.quantity)}" aria-describedby="${prefix}-availability"><p class="wa-q-help" id="${prefix}-availability">${V.escape(V.count(group.available_quantity))} currently available. Request up to 100 at once. Reserved and deployed equipment cannot be requested.</p><label for="${prefix}-site">Project / site</label><select id="${prefix}-site" name="siteId" required ${noSites ? 'disabled' : ''}><option value="">Choose an assigned project / site</option>${state.catalog.sites.map(site => `<option value="${V.escape(site.id)}"${state.siteId === site.id ? ' selected' : ''}>${V.escape(site.name)}</option>`).join('')}</select>${noSites ? '<p class="wa-q-error">No active project is assigned to your account. Ask Admin to assign a project before requesting.</p>' : ''}<label for="${prefix}-purpose">Purpose <span>(optional)</span></label><textarea id="${prefix}-purpose" name="purpose" rows="3" maxlength="2000" placeholder="Describe the work these tools will support.">${V.escape(state.purpose)}</textarea><p class="wa-q-review" data-q-review></p><button class="wa-q-button wa-q-primary" type="submit" ${noSites || !group.requestable || group.available_quantity < Number(state.quantity) || group.request_mode === 'specific' || state.busy ? 'disabled' : ''}>${state.busy ? 'Submitting…' : 'Submit quantity request'}</button></fieldset></form></section>`;
       updateReview();
     }
     function updateReview() {
@@ -38,12 +38,15 @@
       if (!host) return;
       const site = state.catalog.sites.find(item => item.id === state.siteId);
       host.textContent = `${state.quantity || '0'} individual assets${site ? ' for ' + site.name : ''}. Admin will review availability and reserve the exact quantity.`;
+      const group=selected(),submit=root.querySelector('[data-q-form] button[type=submit]'),requested=Number(state.quantity);
+      if(submit)submit.disabled=state.busy||!group?.requestable||group.request_mode==='specific'||!/^\d+$/.test(state.quantity)||requested<1||requested>Math.min(group.available_quantity,Q.MAX_REQUEST_QUANTITY)||!state.catalog.sites.length;
     }
     function render() {
       if (state.destroyed) return;
-      body().innerHTML = `<div class="wa-q-workspace"><section class="wa-q-browse"><h3>Compatible equipment types</h3><p class="wa-q-muted">Variants stay separate. Similar names do not mean tools are interchangeable.</p><label for="${prefix}-search">Find a type or variant</label><input type="search" id="${prefix}-search" data-q-search value="${V.escape(state.search)}" placeholder="Search name, category or variant"><ul class="wa-q-catalog" data-q-catalog></ul></section><div data-q-form-host></div></div><section class="wa-q-history-section"><div class="wa-q-section-heading"><h3>Request history</h3><label class="wa-q-inline-label" for="${prefix}-filter">Status <select id="${prefix}-filter" data-q-filter><option value="all">All statuses</option>${['pending', 'approved', 'rejected', 'released', 'cancelled'].map(status => `<option value="${status}"${state.filter === status ? ' selected' : ''}>${V.escape(({ approved: 'Approved / reserved' })[status] || status[0].toUpperCase() + status.slice(1))}</option>`).join('')}</select></label></div><div data-q-history></div></section>`;
+      body().innerHTML = `<div class="wa-q-workspace"><section class="wa-q-browse"><h3>Available Equipment</h3><p class="wa-q-muted">Variants stay separate. Similar names do not mean tools are interchangeable.</p><label for="${prefix}-search">Find a type or variant</label><input type="search" id="${prefix}-search" data-q-search value="${V.escape(state.search)}" placeholder="Search name, category or variant"><ul class="wa-q-catalog" data-q-catalog></ul></section><div data-q-form-host></div></div><section class="wa-q-history-section"><div class="wa-q-section-heading"><h3>Request history</h3><label class="wa-q-inline-label" for="${prefix}-filter">Status <select id="${prefix}-filter" data-q-filter><option value="all">All statuses</option>${['pending', 'approved', 'rejected', 'released', 'cancelled'].map(status => `<option value="${status}"${state.filter === status ? ' selected' : ''}>${V.escape(({ approved: 'Approved / reserved' })[status] || status[0].toUpperCase() + status.slice(1))}</option>`).join('')}</select></label></div><div data-q-history></div></section>`;
       renderCatalog(); renderForm(); renderHistory();
     }
+    let lastSuccess='';
     async function refresh(message = '') {
       if (state.busy || state.destroyed) return;
       state.busy = true; root.setAttribute('aria-busy', 'true');
@@ -60,7 +63,15 @@
         state.catalog = catalog; state.history = records;
         if (!catalog.groups.some(group => group.type_id === state.typeId)) state.typeId = '';
         if (!catalog.sites.some(site => site.id === state.siteId)) state.siteId = catalog.sites.length === 1 ? catalog.sites[0].id : '';
-        state.busy = false; render(); V.notice(root, message);
+        state.busy = false;
+        const active = document.activeElement, controlName = active?.name, controlId = active?.id;
+        const selection = active?.tagName === 'TEXTAREA' ? [active.selectionStart, active.selectionEnd] : null;
+        render();
+        const restore = controlName ? root.querySelector('[name="' + controlName + '"]') : controlId ? document.getElementById(controlId) : null;
+        if (restore && root.contains(restore)) { restore.focus({preventScroll:true}); if(selection)restore.setSelectionRange(...selection); }
+        const group = selected(), invalid = group && (!group.requestable || group.available_quantity < Number(state.quantity) || group.request_mode === 'specific');
+        if(message)lastSuccess=message;
+        V.notice(root, invalid ? 'Stock or request classification changed. Your draft is kept; choose available standard equipment or reduce the quantity.' : lastSuccess, !!invalid);
       } catch (error) {
         if (!state.destroyed) {
           if (!state.catalog) body().innerHTML = '<p class="wa-q-empty">Verified inventory is unavailable. Use Refresh to try again.</p>';
@@ -76,9 +87,10 @@
       if (!target || !root.contains(target) || state.busy) return;
       if (target.dataset.qAction === 'refresh') { await refresh(); return; }
       if (target.dataset.qType) {
+        lastSuccess='';
         state.typeId = target.dataset.qType; state.quantity = '1';
         renderCatalog(); renderForm();
-        root.querySelector('[name="quantity"]')?.focus();
+        const details = root.querySelector('[name="quantity"]'); details?.focus({preventScroll:true}); if (scope.matchMedia('(max-width:900px)').matches) details?.closest('.wa-q-request').scrollIntoView({block:'start'});
       }
     }
     function onInput(event) {
@@ -94,9 +106,10 @@
       state.busy = true; root.setAttribute('aria-busy', 'true');
       const fieldset = event.target.querySelector('fieldset'); fieldset.disabled = true;
       try {
+        await client.catalog();
         await client.submit({ typeId: state.typeId, siteId: state.siteId, quantity: state.quantity, purpose: state.purpose });
         if (state.destroyed) return;
-        state.quantity = '1'; state.purpose = ''; state.busy = false;
+        state.quantity = '1'; state.purpose = ''; state.typeId = ''; state.busy = false;
         await refresh('Quantity request submitted. Admin will review and allocate individual Asset IDs.');
       } catch (error) { if (!state.destroyed) V.notice(root, error.message, true); }
       finally { state.busy = false; if (!state.destroyed) { root.removeAttribute('aria-busy'); fieldset.disabled = false; } }

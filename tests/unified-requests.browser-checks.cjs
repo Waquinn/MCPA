@@ -1,5 +1,8 @@
 const assert=require('node:assert/strict'),{randomUUID:id}=require('node:crypto');
 exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot})=>{
+  // This fixture intentionally exercises a designated specific asset.
+  const initialCatalog=await f.call(f.actors.admin,'mcpa_wa_equipment_catalog');
+  await f.query(f.actors.admin,"select mcpa_set_equipment_request_mode($1,'specific')",[initialCatalog.groups.find(g=>g.type_name==='Tool TOOL-001').type_id]);
   const imported=await f.call(f.actors.admin,'mcpa_import_equipment_v2',{p_operation_id:id(),p_rows:[{source_row:2,name:'Unified receipt drill',category:'Power Tools',condition:'Good',tracking_type:'Individual',quantity:2}]});
   await command('Page.navigate',{url:base+'/MCPA/2-engr/index.html'});await login('sky');await wait('MCPAAuth.profile?.role==="engineer"');
   await go('request');await wait('document.querySelector("[data-q-type]:not(:disabled)") && document.querySelector("[data-equipment-list]")');
