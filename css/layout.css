@@ -157,3 +157,14 @@
   .mobile-back:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
   #topbar:has(.search-wrap.is-open) + .mobile-history{visibility:hidden;}
 }
+
+/* A single expanded group keeps all operational routes within reach. */
+#nav-list .nav-item{width:100%;text-align:left;min-height:44px}
+#nav-list .nav-parent span{flex:1}
+#nav-list .nav-chevron{width:14px;height:14px;transition:transform 160ms ease-out}
+#nav-list [aria-expanded="true"] .nav-chevron{transform:rotate(90deg)}
+#nav-list .nav-children{padding-left:12px;margin-bottom:8px}
+#nav-list .nav-children[hidden]{display:none}
+#nav-list .nav-children .nav-item{font-size:13px}
+#nav-list .nav-item:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+@media(prefers-reduced-motion:reduce){#nav-list .nav-chevron{transition:none}}

@@ -7,6 +7,8 @@ const source = fs.readFileSync(path.join(__dirname, '../js/equipment-tracking.js
 function harness(db = {}) {
   const window = new EventTarget(), document = new EventTarget();
   window.supabaseClient = db;
+  // Explicit unit-test adapter; production validation is exercised separately.
+  window.MCPAEnvironment = {client:()=>db};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../js/display.js'),'utf8'), {window});
   const timers = new Map(), intervals = new Map(); let id = 0;
   vm.runInNewContext(source, {window, document,

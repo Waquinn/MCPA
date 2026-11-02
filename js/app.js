@@ -8,12 +8,14 @@
 const SCREEN_MODULE = {
   "dashboard":    "dashboard",
   "masterlist":   "masterlist",
+  "register-equipment": "masterlist",
   "tool-profile": "masterlist",
   "sites":        "sites",
   "site-detail":  "sites",
   "consumables":  "consumables",
   "request":      "requests",
   "transfer":     "transfers",
+  "transfer-tools": "transfers",
   "return":       "returns",
   "repair":       "repairs",
   "missing":      "missing",
@@ -294,7 +296,7 @@ document.addEventListener('click', function(e) {
 
 // Close sidebar on mobile when a navigation item is clicked
 document.getElementById('sidebar').addEventListener('click', function(e) {
-  if (e.target.closest('.nav-item')) {
+  if (e.target.closest('.nav-item[data-target]')) {
     this.classList.remove('open');
   }
 });

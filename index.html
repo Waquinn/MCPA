@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://blqlwfoserguserzmggo.supabase.co wss://blqlwfoserguserzmggo.supabase.co; img-src 'self' data: blob: https://blqlwfoserguserzmggo.supabase.co; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'">
+<script src="js/environment-policy.js"></script>
+<script src="js/environment.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MCPA — Construction Asset &amp; Accountability System</title>
 <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
@@ -126,7 +129,9 @@
   </div>
 </div>
 
-<script src="js/display.js"></script>
+<script src="vendor/equipment-qr/encoder.js"></script>
+  <script src="js/equipment-qr.js"></script>
+  <script src="js/display.js"></script>
 <script src="js/permissions.js"></script>
 <script src="js/data.js"></script>
 <script src="js/equipment-visual.js"></script>
@@ -161,6 +166,7 @@
 <script src="js/global-search.js"></script>
 <script src="js/monitoring.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-bootstrap.js"></script>
 <script src="js/auth.js"></script>
 </body>
 </html>

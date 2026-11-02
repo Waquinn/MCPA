@@ -1,8 +1,4 @@
-if (typeof supabaseClient === 'undefined') {
-  const supabaseUrl = 'https://zpqxlmiqwevhlstjirei.supabase.co';
-  const supabaseKey = 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58';
-  window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-}
+if(!window.MCPAAuth?.isDemo)window.EquipmentTracking.client();
 
 var equipmentList = [];
 var currentEditId = null; 
@@ -323,11 +319,13 @@ function renderTable() {
       <td style="padding:12px; border-bottom:1px solid var(--line);">${formatDate(item.createdAt)}</td>
       <td style="padding:12px; border-bottom:1px solid var(--line); text-align:right;">
         <div style="display:flex; justify-content:flex-end; gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="showToolProfile('${item.assetId}')" style="padding:4px 8px; border:none; background:none; color:var(--gold); font-weight:600; cursor:pointer;">View</button>
-          <button class="btn btn-secondary btn-sm" onclick="editTool('${item.assetId}')" style="padding:4px 8px; border:none; background:none; color:var(--gray); cursor:pointer;">Edit</button>
+          <button class="btn btn-secondary btn-sm" data-equipment-action="view" style="padding:4px 8px; border:none; background:none; color:var(--gold); font-weight:600; cursor:pointer;">View</button>
+          <button class="btn btn-secondary btn-sm" data-equipment-action="edit" style="padding:4px 8px; border:none; background:none; color:var(--gray); cursor:pointer;">Edit</button>
         </div>
       </td>
     `;
+    row.querySelector('[data-equipment-action="view"]').addEventListener('click',()=>showToolProfile(item.assetId));
+    row.querySelector('[data-equipment-action="edit"]').addEventListener('click',()=>editTool(item.assetId));
     tbody.appendChild(row);
   });
 
@@ -449,14 +447,16 @@ function showToolProfile(assetId, restoring = false) {
           <div style="font-weight:700; font-size:13px; margin-bottom:14px;">${escapeHTML(item.assetId)}</div>
           
           <div style="display:flex; flex-direction:column; gap:8px;">
-            <button class="btn btn-secondary btn-block btn-sm" onclick="editTool('${item.assetId}')" style="padding:8px; cursor:pointer;">Edit Tool</button>
-            <button class="btn btn-secondary btn-block btn-sm" onclick="printQRTag('${item.assetId}')" style="padding:8px; cursor:pointer;">Print Tag</button>
+            <button class="btn btn-secondary btn-block btn-sm" data-equipment-action="edit" style="padding:8px; cursor:pointer;">Edit Tool</button>
+            <button class="btn btn-secondary btn-block btn-sm" data-equipment-action="print" style="padding:8px; cursor:pointer;">Print Tag</button>
           </div>
         </div>
       </div>
     </div>
   `;
 
+  content.querySelector('[data-equipment-action="edit"]').addEventListener('click',()=>editTool(item.assetId));
+  content.querySelector('[data-equipment-action="print"]').addEventListener('click',()=>printQRTag(item.assetId));
   showMasterlistView('tool-profile');
 
   const timeline = content.querySelector('.timeline');
@@ -467,13 +467,9 @@ function showToolProfile(assetId, restoring = false) {
     timeline.innerHTML = events.length ? events.map(event => `<div class="tl-item"><div class="tl-date">${escapeHTML(window.MCPADisplay.dateTime(event.createdAt))}</div><div class="tl-title">${escapeHTML(window.MCPADisplay.activity(event,state).title)}</div><div class="tl-detail">${escapeHTML(window.MCPADisplay.activity(event,state).description)}</div><div class="tl-meta">${escapeHTML(window.MCPADisplay.activity(event).actor)} · ${escapeHTML(window.MCPADisplay.activity(event).reference)}</div></div>`).join('') : '<p>No movement has been recorded for this tool.</p>';
   }).catch(error => { if (timeline.isConnected) timeline.textContent = window.MCPADisplay.errorText(error); });
 
-  setTimeout(() => {
-    const qrEl = document.getElementById("qrContainerProfile");
-    if (qrEl) {
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(item.assetId)}`;
-      qrEl.innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width:96px; height:96px; border-radius:4px; display:block; margin:0 auto;">`;
-    }
-  }, 50);
+  const qrEl=content.querySelector('#qrContainerProfile');
+  try{qrEl.replaceChildren(window.MCPAEquipmentQR.image(item.assetId,120));}
+  catch{qrEl.textContent='QR unavailable. Reopen this equipment profile to retry.';}
 }
 
 function editTool(assetId) {
@@ -739,40 +735,7 @@ function setupMasterlistListeners() {
 }
 
 function printQRTag(assetId) {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(assetId)}`;
-  const printWin = window.open('', '_blank', 'width=400,height=400');
-  
-  printWin.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Print Tag - ${assetId}</title>
-      <style>
-        @page { margin: 2mm; }
-        body { 
-          font-family: 'Inter', system-ui, sans-serif; 
-          display: flex; align-items: center; justify-content: center; 
-          height: 100vh; margin: 0; background: #fff;
-        }
-        .label-container { text-align: center; padding: 8px; }
-        .company-name {
-          font-size: 8px; font-weight: 700; letter-spacing: 0.05em;
-          text-transform: uppercase; color: #111; margin-bottom: 4px;
-        }
-        img { width: 30mm; height: 30mm; margin-bottom: 4px; }
-        .asset-id { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; color: #111; }
-      </style>
-    </head>
-    <body>
-      <div class="label-container">
-        <div class="company-name">BuildRight Corp.</div>
-        <img src="${qrUrl}" alt="QR Code" onload="window.print(); window.close();" />
-        <div class="asset-id">${assetId}</div>
-      </div>
-    </body>
-    </html>
-  `);
-  printWin.document.close();
+  return window.MCPAEquipmentQR.print(assetId);
 }
 
 function exportMasterlist() {

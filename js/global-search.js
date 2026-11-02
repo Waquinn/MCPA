@@ -30,7 +30,7 @@
       if (!allowed(module)) return;
       visibleIds.add(r.id);
       const equipment = (r.toolIds || [r.toolId]).filter(Boolean).map(id => join([id,names.get(id)]));
-      add(module,r.id,join(equipment) || r.id,join([display.status(r.status || (module === 'return' ? 'returned' : ''), module),r.destination,r.requester,r.sender,r.receiver,r.returnedBy,r.reportedBy]),module+'?record='+encodeURIComponent(r.id));
+      add(module,r.id,join(equipment) || r.id,join([display.status(r.status || (module === 'return' ? 'returned' : ''), module,r),r.destination,r.requester,r.sender,r.receiver,r.returnedBy,r.reportedBy]),module+'?record='+encodeURIComponent(r.id));
     }));
     (data.activity || []).forEach(r => {
       if (demo && personal && r.actor !== user.name && !visibleIds.has(r.entityId)) return;

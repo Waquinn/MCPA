@@ -44,14 +44,7 @@
   function button(action, label, id = '', style = 'secondary') {
     return `<button type="button" class="btn btn-${style} btn-sm" data-action="${action}" data-id="${escape(id)}">${label}</button>`;
   }
-  function client() {
-    if (!window.supabaseClient) {
-      if (!window.supabase?.createClient) throw new Error('The database connection could not load. Check your connection and refresh.');
-      // Reuse the same public project and client as Projects and Masterlist.
-      window.supabaseClient = window.supabase.createClient('https://zpqxlmiqwevhlstjirei.supabase.co', 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58');
-    }
-    return window.supabaseClient;
-  }
+  function client() { return window.EquipmentTracking.client(); }
   function errorMessage(error) {
     if (['PGRST205', 'PGRST202', '42P01', '42703', '42883'].includes(error.code)) return 'Consumables setup is incomplete. Ask your administrator to complete setup, then refresh.';
     if (error.code === '42501') return 'Your account cannot access consumables. Ask your administrator to review access, then retry.';

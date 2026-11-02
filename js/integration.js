@@ -5,9 +5,9 @@
   const routes=new Set(['quantity-request','outward-materials','asset-transfer','transfer-inbox','asset-retirement-v2','retired-equipment-v2']);
   let current=null,revision=0;
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function handles(screen){return routes.has(screen)||(!window.MCPAAuth?.isDemo&&['request','return'].includes(screen)&&['admin','engineer','architect'].includes(window.MCPAAuth?.profile?.role));}
+  function handles(screen){if(screen==='return'&&window.MCPAAuth?.profile?.role==='tool_handler')return false;return routes.has(screen)||(!window.MCPAAuth?.isDemo&&['request','return','transfer'].includes(screen)&&['admin','engineer','architect','tool_handler'].includes(window.MCPAAuth?.profile?.role));}
   function dispose(){++revision;const old=current;current=null;if(!old)return;old.abort.abort();for(const mounted of old.mounts)mounted.destroy();old.api?.dispose();}
-  async function mount(screen,root,{record=''}={}){
+  async function mount(screen,root,{record='',view=''}={}){
     dispose();const person=window.MCPAAuth.requireLive(),version=revision;
     if(!window.MCPAAuth.canRoute(screen))throw Error('This screen is not available to your account.');
     const session=current={root,mounts:[],abort:new AbortController(),api:null,dirty:false,draftVersion:0,refreshVersion:0};let returnSnapshot=null;
@@ -20,7 +20,7 @@
     const add=async promise=>{const mounted=await promise;if(!alive()){mounted.destroy();return;}session.mounts.push(mounted);if(mounted.ready)await mounted.ready;};
     const readVersions=new Map();
     const wrapper={storage:client.storage,rpc:async(name,args)=>{
-      const read=name==='mcpa_b_snapshot'||/^mcpa_wa_(equipment_catalog|equipment_requests|suggest_equipment|consumables_catalog|consumables_snapshot|consumables_analytics)$/.test(name);
+      const read=['mcpa_b_snapshot','mcpa_transfer_snapshot'].includes(name)||/^mcpa_wa_(equipment_catalog|equipment_requests|suggest_equipment|consumables_catalog|consumables_snapshot|consumables_analytics)$/.test(name);
       const readVersion=(readVersions.get(name)||0)+1;if(read)readVersions.set(name,readVersion);
       const draftVersion=session.draftVersion,result=await client.rpc(name,args);
       if(read&&(!alive()||readVersions.get(name)!==readVersion))
@@ -31,7 +31,14 @@
       if(!result.error&&/^(mcpa_wa_(submit|allocate|reject|review|issue)_)/.test(name))changed();return result;
     }};
     for(const event of ['input','change'])root.addEventListener(event,()=>{session.dirty=true;++session.draftVersion;},{signal:session.abort.signal});
-    if(screen==='request'||screen==='quantity-request'){
+    if(screen==='transfer'||screen==='transfer-inbox'){
+      const {createCustodyApi}=await import(new URL('js/upgrades/custody-lifecycle/api.mjs',base));
+      const module=await import(new URL('js/upgrades/transfer-review/transfer.mjs',base));
+      if(!alive())return;
+      ensureModuleCSS('transfer-review',new URL('js/upgrades/transfer-review/transfer.css',base).href);
+      session.api=createCustodyApi(wrapper,{rpcName:'mcpa_movement_action',snapshotName:'mcpa_transfer_snapshot'});
+      await add(module.mount(host,{api:session.api,record,view:screen==='transfer-inbox'?'receive':view,onChanged:changed}));
+    }else if(screen==='request'||screen==='quantity-request'){
       const module=await import(new URL('js/upgrades/equipment-requests/unified.mjs',base));
       if(!alive())return;
       ensureModuleCSS('requests',new URL('1-admin/modules/requests/requests.css',base).href);

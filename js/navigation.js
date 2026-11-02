@@ -55,21 +55,49 @@ const ENGR_NAV = [
   // Notice that Records, Purchases, Reports, and System sections are removed here
 ];
 
-function buildNav(){
-  const el = document.getElementById('nav-list');
-  
-  const role = window.MCPAAuth?.profile?.role;
-  const source = MCPAPermissions.operational(role) ? ENGR_NAV : ADMIN_NAV;
-  const liveOnly=['quantity-request','outward-materials','asset-transfer','transfer-inbox','asset-retirement-v2','retired-equipment-v2'];
-  const currentNav = source.filter(n => !n.id || window.MCPAAuth.canRoute(n.id)).filter(n=>!window.MCPAAuth.isDemo||!liveOnly.includes(n.id)).filter((n,index,list) => n.id || list[index+1]?.id);
-  el.innerHTML = currentNav.map(n=>{
-    if(n.sec) return `<div class="nav-section-label">${n.sec}</div>`;
-    return `<button type="button" class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.label}</span></button>`;
-  }).join('');
+let expandedNav = '';
+const NAV_GROUPS = [
+  {id:'equipment',label:'Equipment Management',icon:'list',children:['masterlist','register-equipment','asset-retirement-v2']},
+  {id:'movements',label:'Movements',icon:'swap',children:['request','transfer','return','repair','missing']},
+  {id:'materials',label:'Materials',icon:'box',children:['consumables','outward-materials']},
+  {id:'records',label:'Records',icon:'clock',children:['purchase','reports','activity']},
+  {id:'system',label:'System',icon:'cog',children:['users','settings']}
+];
+function toggleNavGroup(id){
+  expandedNav=expandedNav===id?'':id;
+  document.querySelectorAll('[data-nav-group]').forEach(button=>{
+    const open=button.dataset.navGroup===expandedNav;
+    button.setAttribute('aria-expanded',String(open));
+    const panel=document.getElementById(button.getAttribute('aria-controls'));
+    if(panel)panel.hidden=!open;
+  });
 }
-
+function buildNav(){
+  const el=document.getElementById('nav-list');
+  const role=window.MCPAAuth?.profile?.role;
+  const source=MCPAPermissions.operational(role)?ENGR_NAV:ADMIN_NAV;
+  const liveOnly=['outward-materials','asset-retirement-v2'];
+  const items=source.filter(n=>n.id&&window.MCPAAuth.canRoute(n.id)&&(!window.MCPAAuth.isDemo||!liveOnly.includes(n.id)));
+  if(role==='admin'&&window.MCPAAuth.canRoute('register-equipment'))items.push({id:'register-equipment',label:'Register Equipment',icon:'list'});
+  const item=id=>items.find(n=>n.id===id);
+  const link=n=>`<button type="button" class="nav-item" data-target="${n.id}" onclick="showScreen('${n.id}')">${icon(n.icon)}<span>${n.id==='masterlist'?'Equipment Inventory':n.id==='asset-retirement-v2'?'Retire Equipment':n.label}</span></button>`;
+  const group=g=>{
+    const children=g.children.map(item).filter(Boolean);if(!children.length)return '';
+    return `<div class="nav-group"><button type="button" class="nav-item nav-parent" data-nav-group="${g.id}" aria-expanded="false" aria-controls="nav-panel-${g.id}" onclick="toggleNavGroup('${g.id}')">${icon(g.icon)}<span>${g.label}</span><svg class="nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg></button><div id="nav-panel-${g.id}" class="nav-children" hidden>${children.map(link).join('')}</div></div>`;
+  };
+  expandedNav='';
+  el.innerHTML=(item('dashboard')?link(item('dashboard')):'')+group(NAV_GROUPS[0])+(item('sites')?link(item('sites')):'')+NAV_GROUPS.slice(1).map(group).join('');
+}
 function setActiveNav(id){
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.target===id));
+  const alias={'site-detail':'sites','tool-profile':'masterlist','quantity-request':'request','asset-transfer':'transfer','transfer-inbox':'transfer','transfer-tools':'transfer'};
+  id=alias[id]||id;
+  document.querySelectorAll('.nav-item[data-target]').forEach(n=>{
+    const active=n.dataset.target===id;n.classList.toggle('active',active);
+    if(active)n.setAttribute('aria-current','page');else n.removeAttribute('aria-current');
+  });
+  const group=NAV_GROUPS.find(g=>g.children.includes(id));
+  if(group){expandedNav='';toggleNavGroup(group.id);}
+  else{expandedNav='';document.querySelectorAll('[data-nav-group]').forEach(n=>{n.setAttribute('aria-expanded','false');const panel=document.getElementById(n.getAttribute('aria-controls'));if(panel)panel.hidden=true;});}
 }
 
 /* ============================================================
@@ -87,7 +115,7 @@ window.MCPAMovementLinks = {
     const actions = {
       createRequest:'request', approveRequest:'request', rejectRequest:'request',
       withdrawRequest:'request', cancelReservation:'request', cancelTransfer:'transfer', refuseTransfer:'transfer', reopenTransfer:'transfer',
-      releaseRequest:'transfer', createTransfer:'transfer', receiveTransfer:'transfer',
+      releaseRequest:'transfer', createTransfer:'transfer', receiveTransfer:'transfer', rejectTransfer:'transfer',
       createReturn:'return', reportRepair:'repair', startRepair:'repair', completeRepair:'repair',
       reportMissing:'missing', recoverMissing:'missing',
       request_created:'request', request_approved:'request', request_rejected:'request',
@@ -133,12 +161,13 @@ function showScreen(route, afterActivate, options){
   loadModule(id, function(){
     if (ticket && !navigation.isCurrent(ticket)) return;
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-    const target = document.getElementById('screen-'+id) || (id === 'tool-profile' ? document.getElementById('screen-masterlist') : null);
+    const target = document.getElementById('screen-'+id) || (id==='transfer-tools'?document.getElementById('screen-transfer'):null) || (['tool-profile','register-equipment'].includes(id) ? document.getElementById('screen-masterlist') : null);
     if(target) target.classList.add('active');
     document.getElementById('sidebar')?.classList.remove('open');
     setActiveNav(id === 'site-detail' ? 'sites' : id === 'tool-profile' ? 'masterlist' : id === 'quantity-request' ? 'request' : id);
     const open = async () => {
       if(afterActivate) await afterActivate();
+      if(id==='register-equipment')document.getElementById('openAddEquipment')?.click();
       if (ticket && !navigation.isCurrent(ticket)) return;
       if (view) await window.MovementUI?.showTransferView(view);
       // activate waits for the module's registered data-loading promise.

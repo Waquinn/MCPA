@@ -1,3 +1,5 @@
+import {recipientLabel} from './recipients.mjs';
+import '../../display.js';
 import {AssetBatch,CameraScanner} from '../equipment-qr/scanner.mjs';
 import {setup,escape,label,photoPicker,uploadSelected,evidenceButtons,wireEvidence} from './ui.mjs';
 import {availableForBatch} from './api.mjs';
@@ -16,7 +18,7 @@ export async function mountMovementComposer(root,options={}){
     destination.value=eligible.some(s=>s.id===prior)?prior:'';
     destination.disabled=!eligible.length;
     const help=root.querySelector('[data-destination-help]');
-    if(help)help.textContent=!recipient?'Choose a receiving custodian to see their authorized projects.':!eligible.length?'This custodian has no active project assigned. Choose another custodian or ask Admin to assign a project.':'';
+    if(help)help.textContent=!recipient?'Choose a receiving custodian to see their authorized projects.':!eligible.length?'This custodian has no active project assigned. Choose another custodian or ask Admin to assign a project.':'Recipient: '+recipientLabel(snapshot.recipients.find(r=>r.id===recipient),snapshot)+'; Destination: '+(eligible.find(s=>s.id===destination.value)?.name||'choose project');
     const action=root.querySelector('[data-composer] button[type=submit]');if(action)action.disabled=!eligible.length;
   }
   const refresh=async()=>{snapshot=await ctx.api.snapshot();if(ctx.disposed)return;
@@ -24,7 +26,7 @@ export async function mountMovementComposer(root,options={}){
     const suggestions=root.querySelector('[data-suggestions]');
     if(suggestions)suggestions.innerHTML=snapshot.assets.filter(availableForBatch).map(a=>`<option value="${escape(a.id)}">${escape(a.name)}</option>`).join('');
     const recipient=root.querySelector('[name=recipient]');
-    if(recipient){const prior=recipient.value;recipient.innerHTML='<option value="">Select Engineer or Architect</option>'+snapshot.recipients.filter(r=>r.id!==snapshot.profile.id).map(r=>`<option value="${escape(r.id)}">${escape(r.name)}</option>`).join('');recipient.value=prior;}
+    if(recipient){const prior=recipient.value;recipient.innerHTML='<option value="">Select Engineer or Architect</option>'+snapshot.recipients.filter(r=>r.id!==snapshot.profile.id).map(r=>`<option value="${escape(r.id)}">${escape(recipientLabel(r,snapshot))}</option>`).join('');recipient.value=prior;}
     updateDestinations();
     const history=root.querySelector('[data-history]');if(history)history.innerHTML=renderHistory(snapshot,intent);
   };
@@ -35,7 +37,7 @@ export async function mountMovementComposer(root,options={}){
       <div class="b-camera" hidden><video playsinline muted aria-label="Equipment QR camera preview"></video></div>
       <p class="b-empty" data-no-assets>No assets selected. Scan a code or select an Asset ID.</p><ul class="b-list" data-selected></ul></fieldset>
       ${returning?`<label>Intended return destination<select name="destination" required>${snapshot.returnDestination?`<option value="${escape(snapshot.returnDestination.id)}">${escape(snapshot.returnDestination.name)} · Office</option>`:'<option value="">Office unavailable · contact Admin</option>'}</select></label>`:
-        `<div class="b-row"><label>Receiving custodian<select name="recipient" required><option value="">Select Engineer or Architect</option>${snapshot.recipients.filter(r=>r.id!==snapshot.profile.id).map(r=>`<option value="${escape(r.id)}">${escape(r.name)}</option>`).join('')}</select></label><label>Destination site / project<select name="destination" required aria-describedby="transfer-destination-help"><option value="">Select a destination</option></select></label></div><p id="transfer-destination-help" data-destination-help class="b-empty" role="status" aria-live="polite"></p>`}
+        `<div class="b-row"><label>Receiving custodian<select name="recipient" required><option value="">Select Engineer or Architect</option>${snapshot.recipients.filter(r=>r.id!==snapshot.profile.id).map(r=>`<option value="${escape(r.id)}">${escape(recipientLabel(r,snapshot))}</option>`).join('')}</select></label><label>Destination site / project<select name="destination" required aria-describedby="transfer-destination-help"><option value="">Select a destination</option></select></label></div><p id="transfer-destination-help" data-destination-help class="b-empty" role="status" aria-live="polite"></p>`}
       <label>${returning?'Return':'Transfer'} notes <span>Optional</span><textarea name="notes" maxlength="2000"></textarea></label>
       <button class="b-primary" type="submit">${returning?'Submit for Admin inspection':'Submit transfer for recipient acceptance'}</button></form>
       <section class="b-history" data-history aria-label="${returning?'Return inspection status':'Transfer status'}"></section>`;
@@ -43,6 +45,7 @@ export async function mountMovementComposer(root,options={}){
     if(!returning)root.querySelector('[name=recipient]').addEventListener('change',()=>{
       root.querySelector('[name=destination]').value='';updateDestinations();
     },{signal:ctx.signal});
+    if(!returning)root.querySelector('[name=destination]').addEventListener('change',updateDestinations,{signal:ctx.signal});
     const input=root.querySelector('[data-reference]');
     const add=async raw=>{if(busy)return;const result=await batch.add(raw);if(ctx.disposed||result.cancelled)return;
       if(result.duplicate){ctx.say(`${result.id} is already in this batch.`);return;}
@@ -94,7 +97,7 @@ export async function mountMovementComposer(root,options={}){
 }
 function renderHistory(snapshot,intent){
   const records=intent==='return'?snapshot.returns:snapshot.transfers.filter(t=>t.actorId===snapshot.profile.id);
-  return `<h3>${intent==='return'?'Your return inspections':'Your outgoing transfers'}</h3>${records.length?records.map(record=>`<details><summary>${escape(record.id)} · ${escape(label(record.status))}</summary>
+  return `<h3>${intent==='return'?'Your return inspections':'Your outgoing transfers'}</h3>${records.length?records.map(record=>`<details><summary>${escape(record.id)} · ${escape(intent==='transfer'?globalThis.MCPADisplay.receiptState(record):label(record.status))}</summary>
     ${record.items?`<ul class="b-list">${record.items.map(i=>`<li><strong>${escape(i.asset_id)}</strong> · ${escape(label(i.outcome))}${i.notes?`<p>${escape(i.notes)}</p>`:''}${i.inspected_at?`<small>Inspected ${escape(new Date(i.inspected_at).toLocaleString())}</small>`:''}</li>`).join('')}</ul>`:
       `<p>${escape(record.toolIds.join(', '))} → ${escape(record.receiver)} · ${escape(record.destination)}</p>`}
     ${evidenceButtons(snapshot.evidence,record.id)}</details>`).join(''):'<p class="b-empty">No submissions yet.</p>'}`;

@@ -8,13 +8,7 @@
   const clone = value => JSON.parse(JSON.stringify(value));
   let revision = 0;
   const notify = () => window.dispatchEvent(new CustomEvent('mcpa:movement-change'));
-  function client() {
-    if (!window.supabaseClient) {
-      if (!window.supabase?.createClient) throw new Error('The database connection could not load. Check your connection and refresh, or explicitly open demo data.');
-      window.supabaseClient = window.supabase.createClient('https://zpqxlmiqwevhlstjirei.supabase.co', 'sb_publishable_RgF8h8rkushKhKIm6iGJ4g_HH02YW58');
-    }
-    return window.supabaseClient;
-  }
+  function client() { return window.EquipmentTracking.client(); }
   function explain(error) {
     if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(error?.code)) return new Error('Movement storage is not configured. Ask your administrator to follow supabase/AUTH-DEPLOYMENT.md, then refresh.');
     if (error?.code === '42501') return new Error('Your account is not permitted to perform this operation. Sign in again or contact your administrator.');

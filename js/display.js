@@ -8,8 +8,9 @@
     approveRequest: ['Equipment Request Approved', 'Approved the equipment request and reserved its equipment.'],
     rejectRequest: ['Equipment Request Rejected', 'Rejected the equipment request.'],
     releaseRequest: ['Equipment Released for Transfer', 'Released the approved equipment for transfer. Receipt confirmation is still required.'],
-    createTransfer: ['Equipment Transfer Dispatched', 'Dispatched equipment to the named receiver. Receipt confirmation is still required.'],
-    receiveTransfer: ['Transfer Received', 'Recorded the transfer inspection and receipt outcome.'],
+    createTransfer: ['Transfer Pending Acceptance', 'Requested transfer to the named recipient. Custody is unchanged.'],
+    receiveTransfer: ['Transfer Receipt Recorded', 'Recorded a transfer receipt. Review the item inspections for the outcome.'],
+    rejectTransfer: ['Transfer Rejected', 'Recipient rejected the transfer. Custody is unchanged.'],
     createReturn: ['Equipment Return Recorded', 'Recorded the equipment return and its inspected condition.'],
     reportRepair: ['Equipment Damage Reported', 'Reported equipment damage for repair.'],
     startRepair: ['Equipment Repair Started', 'Started the equipment repair.'],
@@ -42,7 +43,7 @@
     equipment: freeze({available:'Available', inuse:'In Use', inoffice:'In Office', repair:'For Repair', underrepair:'Under Repair', missing:'Missing', disposed:'Retired'}),
     availability: freeze({available:'Available', deployed:'In Use', unavailable:'Unavailable'}),
     request: freeze({pending:'Pending Review', approved:'Approved', rejected:'Rejected', released:'Released / Awaiting Receipt', received:'Received / Completed', discrepancy:'Receipt Discrepancy', withdrawn:'Withdrawn', canceled:'Canceled', cancelled:'Canceled'}),
-    transfer: freeze({pending:'Awaiting Receipt', received:'Received / Completed', refused:'Damage Refused / Awaiting Sender', canceled:'Canceled', cancelled:'Canceled'}),
+    transfer: freeze({pending:'Pending Acceptance', received:'Receipt recorded', rejected:'Rejected', refused:'Damage Refused / Awaiting Sender', canceled:'Canceled', cancelled:'Canceled'}),
     return: freeze({returned:'Returned',pendinginspection:'Awaiting Admin Inspection',partialinspection:'Inspection Follow-up',completed:'Inspection Complete'}),
     repair: freeze({reported:'Reported', underrepair:'Under Repair', completed:'Completed'}),
     missing: freeze({missing:'Missing', recovered:'Recovered'}),
@@ -62,7 +63,19 @@
   const opaque = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value) || /^[0-9a-f]{32,}$/i.test(value);
   const timestampFormat = new Intl.DateTimeFormat('en-PH', {timeZone:'Asia/Manila', dateStyle:'medium', timeStyle:'medium'});
   const calendarFormat = new Intl.DateTimeFormat('en-PH', {timeZone:'Asia/Manila', dateStyle:'medium'});
-  function status(value, domain = 'equipment') {
+  function receiptState(t={}) {
+    t=t||{};
+    if(t.status!=='received')return ({pending:'Pending Acceptance',rejected:'Rejected',refused:'Damage Refused - Sender Follow-up',canceled:'Canceled',cancelled:'Canceled'})[t.status]||'Status Unavailable';
+    const raw=Array.isArray(t.inspections)?t.inspections:[],rows=raw.filter(i=>i&&typeof i==='object'&&!Array.isArray(i)),ids=Array.isArray(t.toolIds)?t.toolIds:[];
+    if(rows.some(i=>['lost','missing'].includes(i.condition)))return 'Receipt recorded - Missing equipment';
+    if(rows.some(i=>i.condition==='disputed'||['declined','disputed','rejected'].includes(i.disposition)))return 'Receipt recorded - Disputed';
+    if(rows.some(i=>i.physicallyReceived===false))return 'Receipt recorded - Partial';
+    const complete=ids.length>0&&ids.every(id=>typeof id==='string'&&id.length>0)&&new Set(ids).size===ids.length&&rows.length===raw.length&&rows.length===ids.length&&new Set(rows.map(i=>i.toolId)).size===ids.length
+      &&ids.every(id=>rows.some(i=>i.toolId===id&&['good','damaged'].includes(i.condition)&&i.tested===true&&i.physicallyReceived===true&&(i.condition!=='damaged'||i.disposition==='accepted')));
+    return complete?'Accepted':rows.length&&rows.length<ids.length?'Receipt recorded - Partial':'Receipt recorded';
+  }
+  function status(value, domain = 'equipment', record) {
+    if(domain==='transfer')return receiptState(record||{status:value});
     const key = normal(value);
     const equipmentAlias = own({forrepair:'repair', lost:'missing', retired:'disposed'}, key);
     return own(own(statuses, domain) || {}, domain === 'equipment' && equipmentAlias ? equipmentAlias : key) || (value == null || value === '' ? 'Status Not Recorded' : 'Status Unavailable');
@@ -92,7 +105,12 @@
     // Older demo events share a dispatch identifier. Only use the release
     // wording if an already-authorized related transfer records the request.
     if (record.action === 'transfer_created' && data?.transfers?.some(r => r.id === record.entityId && r.requestId)) key = 'releaseRequest';
-    const entry = actions[key];
+    let entry = actions[key];
+    if(key==='receiveTransfer'){
+      const transfer=data?.transfers?.find(t=>t.id===record.entityId)||record.transfer;
+      const outcome=receiptState(transfer?.status==='received'?transfer:{status:'received'});
+      entry=outcome==='Accepted'?['Transfer Accepted','Recorded recipient acceptance and inspection of every asset.']:['Transfer '+outcome,'Recorded a transfer receipt. Review the item inspections for the outcome.'];
+    }
     const title = entry?.[0] || 'Activity Recorded';
     const summary = safeText(record.summary);
     const detail = boilerplate.has(summary) || summary === record.action ? '' : summary;
@@ -117,9 +135,9 @@
     const entry = own(domain === 'account' ? accountEvents : stockEvents, value);
     return entry ? {title:entry[0], description:entry[1]} : {title:'Activity Recorded', description:'An activity was recorded. Further details are unavailable.'};
   }
-  function notification(notice) {
+  function notification(notice, data) {
     if (notice.kind === 'movement' && notice.title !== 'Equipment Pending Turnover') {
-      const entry = activity({action:notice.data?.action, summary:notice.message});
+      const entry = activity({action:notice.data?.action, summary:notice.message,entityId:notice.data?.entityId||notice.data?.movementId},data);
       return {title:entry.title, message:entry.description};
     }
     return {title:safeText(notice.title, 'Notification'), message:safeText(notice.message, 'Open the related record for details.')};
@@ -128,7 +146,7 @@
     const text = typeof value === 'string' ? value : value?.message;
     return !text || /\b(?:PGRST\d+|mcpa_[a-z_]+|uuid|sqlstate|constraint|schema|column|rpc)\b|\.sql\b|supabase\//i.test(text) ? fallback : safeText(text, fallback);
   }
-  window.MCPADisplay = freeze({actions, aliases, statuses, roles, projectEvents, actionKey, activity, status, person, reference, numberedReference, safeText, dateTime, date, event, notification, errorText,
+  (typeof window!=='undefined'?window:globalThis).MCPADisplay = freeze({receiptState,actions, aliases, statuses, roles, projectEvents, actionKey, activity, status, person, reference, numberedReference, safeText, dateTime, date, event, notification, errorText,
     condition:value => own(conditions, normal(value)) || 'Condition Not Recorded',
     tracking:value => own({individual:'Individual Asset',bulk:'Bulk Stock'}, normal(value)) || 'Tracking Method Not Recorded',
     projectEvent:value => own(projectEvents, value) || 'Project Activity Recorded'});

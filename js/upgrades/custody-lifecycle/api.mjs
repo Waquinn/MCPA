@@ -6,7 +6,7 @@ export function createCustodyApi(client,options={}){
   let storage;try{storage=options.storage??globalThis.sessionStorage;}catch{ /* Recovery remains in memory if browser storage is disabled. */ }
   const operations=new Map(),inFlight=new Map();let actor=null,disposed=false,recoveryError=false;
   let storageReady=!!(storage?.getItem&&storage?.setItem);
-  const storageKey=()=>actor?'mcpa.custody.pending.v3.'+actor:null;
+  const storageKey=()=>actor?(options.rpcName?'mcpa.transfer.pending.v1.':'mcpa.custody.pending.v3.')+actor:null;
   const unreadable=()=>{recoveryError=true;return new Error('Interrupted-action recovery data could not be read. Preserve this browser tab and contact Admin.');};
   function storedOperations(){
     if(!actor||!storageReady)return null;
@@ -63,7 +63,7 @@ export function createCustodyApi(client,options={}){
     saveOperation(op);
     const promise=(async()=>{
       try{
-        const result=await rpc('mcpa_b_action',{p_action:action,p_payload:op.payload,p_operation_id:op.id});
+        const result=await rpc(options.rpcName||'mcpa_b_action',{p_action:action,p_payload:op.payload,p_operation_id:op.id});
         if(!result||typeof result!=='object'||typeof result.id!=='string')throw new Error('The saved result could not be verified. Recover this interrupted action before starting another.');
         // Only unresolved outcomes retain a retry token. A later deliberate
         // action with the same values must receive a fresh operation UUID.
@@ -77,7 +77,7 @@ export function createCustodyApi(client,options={}){
   return {
     client,rpc,
     async snapshot(){
-      const value=await rpc('mcpa_b_snapshot');
+      const value=await rpc(options.snapshotName||'mcpa_b_snapshot');
       if(disposed)throw new Error('This account session has ended.');
       if(actor&&actor!==value.profile.id)throw new Error('Your account changed. Reopen this screen.');
       if(!actor)actor=value.profile.id;

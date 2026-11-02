@@ -10,7 +10,7 @@ const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpd
 let fixture,chrome,socket,accountHandler,passwordLogged=false;const errors=[],calls=[];
 const storedFiles=new Map(),signedFiles=new Map();
 const turnoverRun=process.argv.includes('--turnover-sync'),fixtureStreams=new Map(),fixtureEvents=new Set();
-const sdk=`window.__syncTimers=new Map();const realInterval=window.setInterval,realClear=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=realInterval(fn,ms,...args);if(ms===30000)__syncTimers.set(id,fn);return id;};window.clearInterval=id=>{__syncTimers.delete(id);realClear(id);};window.__tickSync=()=>__syncTimers.forEach(fn=>fn());window.__channels=new Set();
+const sdk=`window.MCPA_SUPABASE_CONFIG={url:location.origin,anonKey:'local-fixture-only'};window.__syncTimers=new Map();const realInterval=window.setInterval,realClear=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=realInterval(fn,ms,...args);if(ms===30000)__syncTimers.set(id,fn);return id;};window.clearInterval=id=>{__syncTimers.delete(id);realClear(id);};window.__tickSync=()=>__syncTimers.forEach(fn=>fn());window.__channels=new Set();
 window.supabase={createClient(){let listener;const session=()=>{const key=localStorage.getItem('fixture.account');return key?{user:{id:key},access_token:key}:null};const request=q=>window.__failReads&&q.rpc==='mcpa_movement_snapshot'?Promise.resolve({error:{code:'TEST'}}):fetch('/__db',{method:'POST',headers:{'Authorization':session()?.access_token||''},body:JSON.stringify(q)}).then(r=>r.json()).then(result=>{if(window.__legacyAvailability&&q.rpc==='mcpa_movement_snapshot'&&result.data){delete result.data.inventoryAvailabilityVersion;delete result.data.inventoryVerificationRevision;for(const tool of result.data.tools){delete tool.movementLock;delete tool.recordedStatus;}}return result;});window.__authEvent=event=>listener?.(event,session());window.__expire=()=>{localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null)};return {
  channel(){const c={tables:[],on(_type,filter,fn){this.tables.push(filter.table);this.notify=fn;return this},subscribe(){return this}};__channels.add(c);return c;},removeChannel(c){__channels.delete(c);return Promise.resolve();},
  auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange(fn){listener=fn;return {data:{subscription:{unsubscribe(){}}}}},async signInWithPassword({email,password}){const key=email.split('@')[0];if(!['admin','sky','pau','architect','secretary','handler','inactive','missing'].includes(key)||password!=='test-password')return {error:{code:'invalid_credentials'}};localStorage.setItem('fixture.account',key);listener?.('SIGNED_IN',session());return {data:{session:session()}}},async signOut(){localStorage.removeItem('fixture.account');listener?.('SIGNED_OUT',null);return {error:null}},resetPasswordForEmail:async()=>({error:null}),updateUser:async values=>{window.__savedPassword=values.password;return {error:null}} },
@@ -19,15 +19,20 @@ window.supabase={createClient(){let listener;const session=()=>{const key=localS
  rpc(name,args){return request({rpc:name,args})},from(table){const q={table,columns:'*',filters:[]};return {select(cols='*'){q.columns=cols;return this},insert(values){q.write='insert';q.values=values;return this},update(values){q.write='update';q.values=values;return this},single(){q.single=true;return this},order(){return this},limit(n){q.end=n-1;return this},range(start,end){q.start=start;q.end=end;return this},eq(key,value){q.filters.push([key,value]);return this},then(resolve,reject){return request(q).then(resolve,reject)}}}
 }}};`;
 const server=http.createServer(async(req,res)=>{
+ if(req.url==='/__isolation.html'){
+  const policy=fs.readFileSync(path.join(root,'index.html'),'utf8').match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
+  res.setHeader('Content-Type','text/html');res.end('<!doctype html><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="'+policy+'"><script src="/js/environment-policy.js"></script><script src="/__review_environment.js"></script><script src="/vendor/equipment-qr/encoder.js"></script><script src="/js/equipment-qr.js"></script><body><script src="/tests/audit-remediation/isolation-browser.js"></script>');return;
+ }
+ if(req.url==='/__review_environment.js'){res.setHeader('Content-Type','text/javascript');res.end(fs.readFileSync(path.join(root,'js/environment.js'),'utf8'));return;}
+
  if(process.argv.includes('--engineer-upgrade')&&req.url==='/__accounts'){
   let body='';for await(const part of req)body+=part;
   const reply=await accountHandler(new Request('https://edge.example',{method:'POST',headers:{authorization:'Bearer '+(req.headers.authorization||'')},body}));
   res.writeHead(reply.status,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(await reply.text());return;
  }
 
- if(process.argv.includes('--equipment-fixes')&&req.url.startsWith('/__qr?')){
-  const asset=new URL(req.url,'http://localhost').searchParams.get('data');
-  res.setHeader('Content-Type','image/png');res.end(await require('qrcode').toBuffer(asset,{width:120,margin:0}));return;
+ if(req.url==='/js/environment.js'){
+  res.setHeader('Content-Type','text/javascript');res.end(fs.readFileSync(path.join(root,'tests/audit-remediation/offline-environment.js'),'utf8'));return;
  }
  if(req.url==='/__sdk.js'){res.setHeader('Content-Type','text/javascript');res.end(sdk+(process.argv.includes('--engineer-upgrade') ? `
  const original=window.supabase.createClient;window.supabase.createClient=(...args)=>{const c=original(...args);c.functions.invoke=async(name,{body})=>{const r=await fetch('/__accounts',{method:'POST',headers:{authorization:localStorage.getItem('fixture.account')||''},body:JSON.stringify(body)});const data=await r.json();return r.ok?{data}:{error:{context:{json:async()=>data}}};};return c;};
@@ -90,6 +95,7 @@ const server=http.createServer(async(req,res)=>{
     if(!['equipment','sites','profiles','consumables','consumable_requests','consumable_stock_movements','project_history','mcpa_account_audit','mcpa_equipment_imports'].includes(q.table))throw new Error('Unsupported test table');
     const cols=q.columns==='*'?'*':q.columns.split(',').map(c=>{if(!/^[a-z_]+$/.test(c))throw new Error('Bad column');return '"'+c+'"'}).join(',');
     let rows=(await fixture.query(actor,`select ${cols} from public.${q.table}`)).rows;
+    rows=rows.filter(r=>q.table!=='profiles'||r.id!==fixture.hiddenProfile);
     rows=rows.filter(r=>q.filters.every(([key,value])=>r[key]===value));count=rows.length;data=rows.slice(q.start||0,(q.end??999)+1);
    }
   }catch(e){error={code:e.code||'TEST',message:e.message};}
@@ -99,12 +105,14 @@ const server=http.createServer(async(req,res)=>{
  const pathname=new URL(req.url,'http://localhost').pathname.replace(/^\/MCPA\//,'/');
  const file=path.resolve(root,'.'+pathname);
  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||fs.statSync(file).isDirectory()){res.writeHead(404);res.end();return;}
- let content=fs.readFileSync(file);if(file.endsWith('index.html'))content=content.toString().replace(/<script src="https:[^"]+"[^>]*><\/script>/g,'').replace('</head>','<script src="/__sdk.js"></script></head>');
- if(process.argv.includes('--equipment-fixes')&&file.endsWith('masterlist.js'))content=content.toString().replaceAll('https://api.qrserver.com/v1/create-qr-code/','/__qr');
+ let content=fs.readFileSync(file);if(file.endsWith('index.html'))content=content.toString().replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/g,`<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">`);if(file.endsWith('index.html'))content=content.toString().replace(/<script src="https:[^"]+"[^>]*><\/script>/g,'').replace('</head>','<script src="/__sdk.js"></script></head>');
  res.setHeader('Content-Type',({'.mjs':'text/javascript','.js':'text/javascript','.html':'text/html','.css':'text/css','.png':'image/png','.webp':'image/webp'})[path.extname(file)]||'text/plain');res.end(content);
 });
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
+ if(process.argv.includes('--seven-finding-remediation'))process.argv.push('--audit-remediation');
+if(process.argv.includes('--audit-remediation'))process.argv.push('--ui-transfer-review');
+ if(process.argv.includes('--ui-transfer-review'))process.argv.push('--combined-integration');
  fixture=process.argv.includes('--combined-integration')?await require('./integration-quantity-custody-v2/fixture.cjs').fixture():await authDatabase({engineerPortal:true,missingProjectHistory:process.argv.includes('--projects-errors')});fixture.actors.missing={authId:require('node:crypto').randomUUID()};
  if(process.argv.includes('--combined-integration'))await require('./engineer-upgrade/fixture.cjs').upgrade(fixture);
  if(process.argv.includes('--engineer-upgrade')){
@@ -149,9 +157,14 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  if(process.argv.includes('--equipment-import'))await require('./equipment-import-fixture.cjs').upgrade(fixture);
  }
  if(process.argv.includes('--combined-integration')){const original=fixture.rpc;fixture.rpc=(actor,name,args)=>/^(mcpa_(wa_|b_|import_equipment_v2))/.test(name)?fixture.call(actor,name,args):original(actor,name,args);}
- server.listen(0,'127.0.0.1');await once(server,'listening');
+ if(process.argv.includes('--ui-transfer-review')){
+  await require('./project-construction-fixture.cjs').upgrade(fixture);
+  await fixture.db.exec(fs.readFileSync(path.join(root,'supabase/migrations/202611020001_transfer_acceptance.sql'),'utf8'));
+  const original=fixture.rpc;fixture.rpc=(actor,name,args)=>name==='mcpa_transfer_snapshot'?fixture.query(actor,'select public.mcpa_transfer_snapshot() value').then(r=>r.rows[0].value):original(actor,name,args);
+ }
+ server.listen(0,'127.0.0.1');await once(server,'listening');assert.notEqual(server.address().port,4179,'Preserve existing preview port');
  chrome=spawn(process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',['--headless=new',...(process.env.MCPA_CHROME_NO_SANDBOX==='1'?['--no-sandbox','--disable-gpu','--disable-gpu-sandbox']:[]),'--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{windowsHide:true,stdio:'ignore'});
- let port;for(let i=0;i<100;i++){const p=path.join(profile,'DevToolsActivePort');if(fs.existsSync(p)){port=fs.readFileSync(p,'utf8').split('\n')[0];break;}await pause(100);}assert.ok(port);
+ let port;for(let i=0;i<100;i++){const p=path.join(profile,'DevToolsActivePort');if(fs.existsSync(p)){try{port=fs.readFileSync(p,'utf8').split('\n')[0];if(port)break;}catch(error){if(!['EBUSY','ENOENT','EACCES'].includes(error.code))throw error;}}await pause(100);}assert.ok(port);
  const targets=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();socket=new WebSocket(targets.find(t=>t.type==='page').webSocketDebuggerUrl);await once(socket,'open');
  let next=0;const pending=new Map();socket.addEventListener('message',event=>{const m=JSON.parse(event.data);if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails);if(m.method==='Runtime.consoleAPICalled'&&JSON.stringify(m.params.args).includes('Local-browser-fixture'))passwordLogged=true;const p=pending.get(m.id);if(p){pending.delete(m.id);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);}});
  const command=(method,params={})=>new Promise((resolve,reject)=>{const id=++next,timer=setTimeout(()=>reject(new Error('CDP timeout '+method)),10000);pending.set(id,{resolve:r=>{clearTimeout(timer);resolve(r)},reject});socket.send(JSON.stringify({id,method,params}));});
@@ -160,13 +173,19 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
  const click=selector=>evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
  const fill=(selector,value)=>evaluate(`(()=>{const el=document.querySelector(${JSON.stringify(selector)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));})()`);
  const submit=selector=>evaluate(`document.querySelector(${JSON.stringify(selector)}).requestSubmit()`);
- const go=async route=>{await evaluate(`showScreen(${JSON.stringify(route)})`);await wait(`document.querySelector('#screen-${route.split('?')[0]}.active') && !window.MCPANavigation?.restoring`);};
+ const go=async route=>{await evaluate(`showScreen(${JSON.stringify(route)})`);await wait(`document.querySelector('#screen-${({'register-equipment':'masterlist','transfer-tools':'transfer'}[route.split('?')[0]]||route.split('?')[0])}.active') && !window.MCPANavigation?.restoring`);};
  const login=async(key,password='test-password')=>{await wait("document.querySelector('#auth-email')");await fill('#auth-email',key+'@example.test');await fill('#auth-password',password);await submit('#auth-form');};
  const logout=async()=>{await evaluate('MCPAAuth.logout()');await wait("document.querySelector('#auth-email')");};
  const shot=async (name,viewport=false)=>{if(process.env.MCPA_SKIP_SCREENSHOTS==='1')return;await pause(300);const {data}=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:!viewport});fs.writeFileSync(path.join(profile,name+'.png'),Buffer.from(data,'base64'));console.log('SCREENSHOT '+path.join(profile,name+'.png'));};
  await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  console.log('Local Chrome ready; external HTTPS blocked');
+ await command('Fetch.enable',{patterns:[{urlPattern:'*'}]});
+ socket.addEventListener('message',event=>{const message=JSON.parse(event.data);if(message.method!=='Fetch.requestPaused')return;const r=message.params;const url=new URL(r.request.url);const local=url.protocol==='http:'&&url.hostname==='127.0.0.1'&&url.port===String(server.address().port);void command(local?'Fetch.continueRequest':'Fetch.failRequest',local?{requestId:r.requestId}:{requestId:r.requestId,errorReason:'BlockedByClient'}).catch(()=>{});});
  const base=`http://127.0.0.1:${server.address().port}`;
+ if(process.argv.includes('--ui-transfer-review')){
+  await require(process.argv.includes('--seven-finding-remediation')?'./seven-finding-remediation/browser-checks.cjs':process.argv.includes('--audit-remediation')?'./audit-remediation/browser-checks.cjs':'./ui-transfer-review/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot,artifactDirectory:profile});
+  assert.deepEqual(errors,[],'No uncaught browser errors');return;
+ }
  if(process.argv.includes('--combined-integration')){
   await require(process.argv.includes('--engineer-upgrade')?'./engineer-upgrade/browser-checks.cjs':process.argv.includes('--unified-requests')?'./unified-requests.browser-checks.cjs':process.argv.includes('--final-races')?'./integration-quantity-custody-v2/final-races.browser-checks.cjs':process.argv.includes('--review-fixes')?'./integration-quantity-custody-v2/review-fixes.browser-checks.cjs':'./integration-quantity-custody-v2/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;
