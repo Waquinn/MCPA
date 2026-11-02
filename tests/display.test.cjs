@@ -25,11 +25,11 @@ test('action descriptions preserve approval, receipt discrepancies and custody f
 
 test('historical dispatch only implies request release when an authorized transfer records the request',()=>{
   assert.equal(display.activity({action:'request_created'}).title,display.activity({action:'createRequest'}).title);
-  assert.equal(display.activity({action:'transfer_received'}).title,'Transfer Received');
-  assert.equal(display.activity({action:'transfer_created',entityId:'TRF-1'}).title,'Equipment Transfer Dispatched');
+  assert.equal(display.activity({action:'transfer_received'}).title,'Transfer Receipt recorded');
+  assert.equal(display.activity({action:'transfer_created',entityId:'TRF-1'}).title,'Transfer Pending Acceptance');
   const data={transfers:[{id:'TRF-1',requestId:'REQ-1'}]};
   assert.equal(display.activity({action:'transfer_created',entityId:'TRF-1'},data).title,'Equipment Released for Transfer');
-  assert.equal(display.activity({action:'transfer_created',entityId:'TRF-2'},data).title,'Equipment Transfer Dispatched');
+  assert.equal(display.activity({action:'transfer_created',entityId:'TRF-2'},data).title,'Transfer Pending Acceptance');
 });
 
 test('unknown, null and prototype-like values have neutral readable fallbacks',()=>{
@@ -51,7 +51,7 @@ test('unknown, null and prototype-like values have neutral readable fallbacks',(
 
 test('status labels distinguish review, receipt and delivery and support historical spellings',()=>{
   assert.equal(display.status('pending','request'),'Pending Review');
-  assert.equal(display.status('pending','transfer'),'Awaiting Receipt');
+  assert.equal(display.status('pending','transfer'),'Pending Acceptance');
   assert.equal(display.status('pending','materialRequest'),'Awaiting Delivery');
   assert.equal(display.status('IN_USE'),'In Use');assert.equal(display.status('For Repair'),'For Repair');
   assert.equal(display.status('disposed'),'Retired');assert.equal(display.status('retired'),'Retired');
@@ -85,7 +85,7 @@ test('notifications preserve recipient turnover instructions and normalize other
   const message='Inspect and test each received tool before confirming receipt.';
   assert.equal(display.notification({kind:'movement',title:'Equipment Pending Turnover',message,data:{action:'releaseRequest'}}).message,message);
   const notice=display.notification({kind:'movement',title:'receiveTransfer',message:'Received and inspected transfer',data:{action:'receiveTransfer'}});
-  assert.equal(notice.title,'Transfer Received');assert.match(notice.message,/inspection and receipt outcome/);
+  assert.equal(notice.title,'Transfer Receipt recorded');assert.match(notice.message,/transfer receipt/);
   assert.equal(display.event('account_deactivated','account').title,'Account Deactivated');
   assert.equal(display.event('receipt','stock').title,'Requested Stock Received');
 });

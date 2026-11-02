@@ -21,6 +21,7 @@ test('a save waits for an older background read and then fetches the committed s
   if(reads===2)return new Promise(resolve=>{release=()=>resolve({data:original});});
   return Promise.resolve({data:reads===1?original:saved});
  }};
+ window.EquipmentTracking={client:()=>window.supabaseClient}; // Isolated transport injected through the shared client boundary.
  vm.runInNewContext(source,{window,TOOLS:[],crypto:webcrypto,CustomEvent});
  const store=window.MovementStore;
  await store.initialize();assert.equal(reads,1);
@@ -42,6 +43,7 @@ test('failed inventory refresh invalidates cached availability and recovery publ
  let failed=false,changes=0;
  window.supabaseClient={async rpc(){return failed?{error:{code:'42501'}}:{data:{tools:[{id:'STOCK',status:'available',movementLock:null}],requests:[],inventoryAvailabilityVersion:1}};}};
  window.addEventListener('mcpa:movement-change',()=>changes++);
+ window.EquipmentTracking={client:()=>window.supabaseClient}; // Isolated transport injected through the shared client boundary.
  vm.runInNewContext(source,{window,TOOLS:[],crypto:webcrypto,CustomEvent});
  const store=window.MovementStore;await store.refresh();assert.equal(store.getState().availabilityError,undefined);
  failed=true;await assert.rejects(store.refresh(),/not permitted/);

@@ -33,10 +33,10 @@ exports.verify=async({fixture:f,evaluate,command,wait,click,fill,submit,go,shot,
  await wait('document.querySelector(".equipment-profile-photo img")?.naturalWidth===240&&!MCPANavigation.restoring');
  await wait('document.querySelector(".timeline .tl-item")');
  ok(await evaluate('document.querySelector("#profileContent h1").getBoundingClientRect().top>=document.querySelector("#topbar").getBoundingClientRect().bottom'),'Fresh detail navigation clears sticky-header overlap');
- // A local QR provider replaces only the external service in this test server.
+ // The shipped local encoder generates the QR; no provider substitution.
  // Decode actual pixels at the displayed size; no live equipment is transmitted.
  await wait('document.querySelector("#qrContainerProfile img")?.naturalWidth===120');
- ok(await evaluate('new URL(document.querySelector("#qrContainerProfile img").src).searchParams.get("data")==='+JSON.stringify(photo.asset_id)),'QR encodes exact Asset ID');
+ ok(await evaluate('document.querySelector("#qrContainerProfile img").src.startsWith("data:image/png;base64,")'),'QR is generated locally; exact payload checked by pixel decoding below');
  for(const width of [1440,393])for(const dark of [true,false]){
   await viewport(width);await evaluate('applyTheme('+dark+',false)');
   ok(await evaluate('document.documentElement.scrollWidth<=innerWidth'),'Details fit viewport '+width);

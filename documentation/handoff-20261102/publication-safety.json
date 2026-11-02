@@ -1,0 +1,34 @@
+{
+  "repository": "Waquinn/MCPA",
+  "developmentBranch": "feature/ui-transfer-handoff-20261102",
+  "sourceCommit": "70d9c4668f4851248327c7e1fff09a7c4ae0602b",
+  "pullRequest4": {
+    "state": "open",
+    "draft": true,
+    "head": "feature/engineer-ux-and-admin-invitations",
+    "headSha": "70d9c4668f4851248327c7e1fff09a7c4ae0602b",
+    "base": "Updated-MCPARole",
+    "baseSha": "5ad129fbb7d46acf842e0ad68b02d5689f21b40e"
+  },
+  "pages": {
+    "buildType": "legacy branch publishing",
+    "branch": "Updated-MCPARole",
+    "path": "/",
+    "lastDeploymentId": 7333075266
+  },
+  "actions": [
+    "pages-build-deployment"
+  ],
+  "repositoryWebhooks": 0,
+  "rootWorkflowsOnMain": "not found",
+  "userVerifiedExternalServices": {
+    "vercelProjects": [
+      "Waquinn/my-portfolio",
+      "Waquinn/taskify"
+    ],
+    "renderServices": 0,
+    "mcpaDeploymentIdentified": false,
+    "appAccess": "Render and Vercel apps have all-repository access; inspected workspace findings are user-provided."
+  },
+  "scope": "Push new development branch and create stacked Draft PR only. No deployment, settings changes, Auth changes or connected SQL."
+}

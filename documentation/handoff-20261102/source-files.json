@@ -1,0 +1,222 @@
+{
+  "format": "SHA-256 of Git index blobs, after Git line-ending normalization",
+  "sourceBaseline": "70d9c4668f4851248327c7e1fff09a7c4ae0602b",
+  "files": [
+    {
+      "path": "1-admin/modules/consumables/consumables.js",
+      "sha256": "fd85aa5b879c1d57ed635896d3f8e2ffbe1c7e7a31aabccd3a7779715854e20c"
+    },
+    {
+      "path": "1-admin/modules/masterlist/masterlist.html",
+      "sha256": "0646e77026e1f0ac510d496203418f95872a4561b4f0143269832ddff5224680"
+    },
+    {
+      "path": "1-admin/modules/masterlist/masterlist.js",
+      "sha256": "177585b4a0d75e549f96a84e3ab35c630b0952cf01d492281de58a283b4caa2a"
+    },
+    {
+      "path": "1-admin/modules/sites/sites.html",
+      "sha256": "4abf28608fb11232dc835a89df4f3643b2d219ab959929c666e3d96782009844"
+    },
+    {
+      "path": "1-admin/modules/sites/sites.js",
+      "sha256": "5b555ce9d717e93a134068543bfe0ed48608c4aebb90885b1e715e9fb3c02c57"
+    },
+    {
+      "path": "2-engr/index.html",
+      "sha256": "13b35b7930c1937833d97372ccc9dee222b81417dde0173e3828c33906097922"
+    },
+    {
+      "path": "css/layout.css",
+      "sha256": "009714d24bcd4c65eba99fa6798f63090103a3ca2dbcad3b68ef9df1a198a09e"
+    },
+    {
+      "path": "index.html",
+      "sha256": "769b3213ab91f2c83358fc57b025cb45a7be9fac7b9c3fd04fb32eb4f8eb898b"
+    },
+    {
+      "path": "js/app.js",
+      "sha256": "0e2b011152ae766d1b44e97c44cea37796d8f15fce155c1bfb1d9bca683b82af"
+    },
+    {
+      "path": "js/display.js",
+      "sha256": "1972a4acccbb8a1df82a4da3e583d94fc6071a551777f28fdbd78eae8c5b772f"
+    },
+    {
+      "path": "js/equipment-tracking.js",
+      "sha256": "534245bfd4d326e8cf3c5ff87f96f5dffa430ba5556753e9d9129542bb1fa2fc"
+    },
+    {
+      "path": "js/global-search.js",
+      "sha256": "ae58230e1d2bc068c57b1e38fbc2fbb2d584ccab967caf5358e264bf7b1a2216"
+    },
+    {
+      "path": "js/integration.js",
+      "sha256": "bbc6a7b9576db945b44c62a56c59827fdbafe30c0c836095be192a3fc9c60d27"
+    },
+    {
+      "path": "js/movement-cloud.js",
+      "sha256": "589558f80cd13809dbf6afd90f73fddab0a7bbaf7c395445c5a7d5f58f8b1bd4"
+    },
+    {
+      "path": "js/movement-ui.js",
+      "sha256": "0de0454e5b7b5229d0668cf7dc793c403339dbe240ba59290e0edf344959037f"
+    },
+    {
+      "path": "js/navigation.js",
+      "sha256": "9c29922b2396ef0f786aa9beead25c0231a3f7d2104721cfb6524cc0e1e821d7"
+    },
+    {
+      "path": "js/permissions.js",
+      "sha256": "f49ea842dd1e466ec818b16cecbe28806a4d29d0fcae9731d47a449906a007a4"
+    },
+    {
+      "path": "js/upgrades/custody-lifecycle/api.mjs",
+      "sha256": "54482044d6ec717eb2595626f64863e117a6b885b9aa0cba1b6975646da68197"
+    },
+    {
+      "path": "js/upgrades/custody-lifecycle/composer.mjs",
+      "sha256": "705ab5e8a60183877699b8dfadd6b2c3dc28dd385281f1fa8c5e90b16b277cd8"
+    },
+    {
+      "path": "tests/auth.browser.cjs",
+      "sha256": "43556affa5157426d165325507a28ca8bf263f31674624780316f2008ee9671e"
+    },
+    {
+      "path": "tests/display.test.cjs",
+      "sha256": "7995c0f1ed666082282b120694a75586e368a1494f7d29c404ed773bfc1ab54b"
+    },
+    {
+      "path": "tests/equipment-fixes.browser-checks.cjs",
+      "sha256": "e197f680357a45d7266149b4529e8fa3f11f5bfb6ea375c6a5dc24f4d1f94ed0"
+    },
+    {
+      "path": "tests/inventory.test.cjs",
+      "sha256": "28b0d42948701bebcbf678e01b604cf1a9cd075787c1bed60bfba98dc6bfa134"
+    },
+    {
+      "path": "tests/movement-sync.test.cjs",
+      "sha256": "00b1d8ac47fe9c1f6f7b01746b6728e34244bb5cabd9b6411255a986a3b429e6"
+    },
+    {
+      "path": "js/environment-policy.js",
+      "sha256": "1c5b586b1e58767993dddfa0a1817aa2ecb219378f44475ed915d88ae2d5ff8f"
+    },
+    {
+      "path": "js/environment.js",
+      "sha256": "33e9aa5aa321d390bfe0dcdfc8823be74480dd4dd3890d1bf0fbc9d8c36a2976"
+    },
+    {
+      "path": "js/equipment-qr.js",
+      "sha256": "1029418dbb40076720ee308edae46b3145f62cef1cf42686f74c25532e1eafa7"
+    },
+    {
+      "path": "js/supabase-bootstrap.js",
+      "sha256": "f70e5d5bf4d48cf949579b62d67afc793be1e35d83d07f937f56c1c6b681b65e"
+    },
+    {
+      "path": "js/upgrades/custody-lifecycle/recipients.mjs",
+      "sha256": "d2408bc57032b563b88e1338546e33c87c1203b941374b523cb1b03d5fd1cf38"
+    },
+    {
+      "path": "js/upgrades/transfer-review/transfer.css",
+      "sha256": "a22e2af9bc10c1bbaadd72eed97b0f996a17a4a897a2c3589dbf8cfe6a16f92d"
+    },
+    {
+      "path": "js/upgrades/transfer-review/transfer.mjs",
+      "sha256": "c0c668517008995c290476f8c199c1efb953d389f5626bdeccea03b246202130"
+    },
+    {
+      "path": "scripts/prepare-frontend-artifact.cjs",
+      "sha256": "122b8f463c7ac19e7fad1e5839f26d4350b06517abc0cd4ab0bc03ff82511c52"
+    },
+    {
+      "path": "supabase/migrations/202611020001_transfer_acceptance.sql",
+      "sha256": "28af50e7d718f299bd5bf27aa1281da9e1168b1dc4bac49acbaa306137d0c556"
+    },
+    {
+      "path": "supabase/transfer-acceptance-preflight.sql",
+      "sha256": "1faad53dac1e4026b6b1bdaf39817d65fa7c5cf04d70691cef4b5c4f6f82ba61"
+    },
+    {
+      "path": "tests/audit-remediation/blocked.test.cjs",
+      "sha256": "78726b2f33cc420b526f7e9bdf1f1cfcfb5fe79a12379be0b03bb3df90633f10"
+    },
+    {
+      "path": "tests/audit-remediation/browser-checks.cjs",
+      "sha256": "621fa1fdf0df962cc78dba916e4dde12d8a89937ee84cfbf50025717037c9cf8"
+    },
+    {
+      "path": "tests/audit-remediation/database.test.cjs",
+      "sha256": "714732403bab2d09d10ac5c8a8c042a9e04f42cb3509c140214e8054a20848ab"
+    },
+    {
+      "path": "tests/audit-remediation/frontend.test.cjs",
+      "sha256": "fa4bc1ac6711b63b7ad72e633187f1f5997e94934918d306e758466b368cd4d3"
+    },
+    {
+      "path": "tests/audit-remediation/isolation-browser.js",
+      "sha256": "63b1be9a4f0d7902949ac16b5c2a3742b01ee643279136b044867fa8b31425b1"
+    },
+    {
+      "path": "tests/audit-remediation/offline-environment.js",
+      "sha256": "505d6b1a3929ed4812c02718385cb6eb41f1d107474387430062fb942a23413d"
+    },
+    {
+      "path": "tests/seven-finding-remediation/browser-checks.cjs",
+      "sha256": "8c5e2a8ebc0baba4ca7f3ae15989d56600e7e12217d34f8b84a94f0988b8090f"
+    },
+    {
+      "path": "tests/seven-finding-remediation/bundle-qr.cjs",
+      "sha256": "de3aa4508e8c1b9e919889bebf47988f3973217d51cf7919d79a2e53bda0e32b"
+    },
+    {
+      "path": "tests/seven-finding-remediation/database.test.cjs",
+      "sha256": "526ce288e02e474b0c5a069308267904a8006a06e66771d1e4fed6a0f1d2fcdb"
+    },
+    {
+      "path": "tests/seven-finding-remediation/frontend.test.cjs",
+      "sha256": "aaddbadd763b6a326464e0c603e7f37de274a9b6c43029085045d6613ff48760"
+    },
+    {
+      "path": "tests/seven-finding-remediation/prepare-preflight.cjs",
+      "sha256": "ad9bb540a47c904457f344bf95ce66e5dbbe79721f20efc3b9747171b4c1ad0b"
+    },
+    {
+      "path": "tests/seven-finding-remediation/security-browser.cjs",
+      "sha256": "1b269d8c20d5b12c099934d303f34540bfa4c76ae138de43d3d4517d77571c79"
+    },
+    {
+      "path": "tests/ui-transfer-review/browser-checks.cjs",
+      "sha256": "e09b9411b9c4103ecfea92082ccafd6dda9f95e42e39e66c0beb1a8598bc4174"
+    },
+    {
+      "path": "tests/ui-transfer-review/database.test.cjs",
+      "sha256": "27dbad4902ff9ec1237dc1f99d924db60a64060aa0b3a0e6319a5f080f72047b"
+    },
+    {
+      "path": "tests/ui-transfer-review/isolation.test.cjs",
+      "sha256": "908568e2aec1745fda7610f762202275e17379f9c7c3b8d81493f793f63b3b24"
+    },
+    {
+      "path": "vendor/equipment-qr/LICENSE-dijkstrajs",
+      "sha256": "c46324e45a005413535a6fb7a97e9eacd3cc6bf30335b7d5c10b8ee3af9e60c2"
+    },
+    {
+      "path": "vendor/equipment-qr/LICENSE-qrcode",
+      "sha256": "a060a98ea20666c5ce36c08c58fcffd9bbf0562f7de525449bbe1b7cdf4911a8"
+    },
+    {
+      "path": "vendor/equipment-qr/encoder.js",
+      "sha256": "f6dfc33f58c8fc2b032d0a9b72bba1ce20e38381cd011b0b65e7c8bbf77fd846"
+    },
+    {
+      "path": "vendor/equipment-qr/provenance.json",
+      "sha256": "80c34293bf78ae727bed01d307984ac4c7dcc1d0c0f8797d17ce9795899f6dd8"
+    },
+    {
+      "path": "scripts/test-ui-transfer-handoff.cjs",
+      "sha256": "d8e02a675913fe260202cae13b3fa129e01962580c36b82dee31b84db806d199"
+    }
+  ]
+}
