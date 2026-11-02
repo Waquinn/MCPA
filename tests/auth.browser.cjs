@@ -8,6 +8,7 @@ if(process.argv.includes('--engineer-upgrade')||process.argv.includes('--review-
 const {spawn}=require('node:child_process'),{once}=require('node:events'),{authDatabase}=require('./auth-test-db.cjs');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(os.tmpdir(),'mcpa-auth-'));
 let fixture,chrome,socket,accountHandler,passwordLogged=false;const errors=[],calls=[];
+const networkAudit={localRequestsAllowed:0,nonlocalHttpResponses:0,nonlocalRequestsBlocked:0};
 const storedFiles=new Map(),signedFiles=new Map();
 const turnoverRun=process.argv.includes('--turnover-sync'),fixtureStreams=new Map(),fixtureEvents=new Set();
 const sdk=`window.MCPA_SUPABASE_CONFIG={url:location.origin,anonKey:'local-fixture-only'};window.__syncTimers=new Map();const realInterval=window.setInterval,realClear=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=realInterval(fn,ms,...args);if(ms===30000)__syncTimers.set(id,fn);return id;};window.clearInterval=id=>{__syncTimers.delete(id);realClear(id);};window.__tickSync=()=>__syncTimers.forEach(fn=>fn());window.__channels=new Set();
@@ -180,10 +181,19 @@ if(process.argv.includes('--audit-remediation'))process.argv.push('--ui-transfer
  await command('Runtime.enable');await command('Network.enable');await command('Network.setBlockedURLs',{urls:['https://*']});await command('Page.enable');await command('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
  console.log('Local Chrome ready; external HTTPS blocked');
  await command('Fetch.enable',{patterns:[{urlPattern:'*'}]});
- socket.addEventListener('message',event=>{const message=JSON.parse(event.data);if(message.method!=='Fetch.requestPaused')return;const r=message.params;const url=new URL(r.request.url);const local=url.protocol==='http:'&&url.hostname==='127.0.0.1'&&url.port===String(server.address().port);void command(local?'Fetch.continueRequest':'Fetch.failRequest',local?{requestId:r.requestId}:{requestId:r.requestId,errorReason:'BlockedByClient'}).catch(()=>{});});
+ socket.addEventListener('message',event=>{
+  const message=JSON.parse(event.data);
+  const local=url=>url.protocol==='http:'&&url.hostname==='127.0.0.1'&&url.port===String(server.address().port);
+  if(message.method==='Network.responseReceived'){
+   const url=new URL(message.params.response.url);if(/^https?:$/.test(url.protocol)&&!local(url))networkAudit.nonlocalHttpResponses++;return;
+  }
+  if(message.method!=='Fetch.requestPaused')return;
+  const r=message.params,allowed=local(new URL(r.request.url));if(allowed)networkAudit.localRequestsAllowed++;else networkAudit.nonlocalRequestsBlocked++;
+  void command(allowed?'Fetch.continueRequest':'Fetch.failRequest',allowed?{requestId:r.requestId}:{requestId:r.requestId,errorReason:'BlockedByClient'}).catch(()=>{});
+ });
  const base=`http://127.0.0.1:${server.address().port}`;
  if(process.argv.includes('--ui-transfer-review')){
-  await require(process.argv.includes('--seven-finding-remediation')?'./seven-finding-remediation/browser-checks.cjs':process.argv.includes('--audit-remediation')?'./audit-remediation/browser-checks.cjs':'./ui-transfer-review/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot,artifactDirectory:profile});
+  await require(process.argv.includes('--frontend-qa')?'./frontend-qa/browser-checks.cjs':process.argv.includes('--seven-finding-remediation')?'./seven-finding-remediation/browser-checks.cjs':process.argv.includes('--audit-remediation')?'./audit-remediation/browser-checks.cjs':'./ui-transfer-review/browser-checks.cjs').verify({fixture,evaluate,command,wait,click,fill,submit,go,login,logout,base,calls,shot,networkAudit,artifactDirectory:profile});
   assert.deepEqual(errors,[],'No uncaught browser errors');return;
  }
  if(process.argv.includes('--combined-integration')){

@@ -20,7 +20,7 @@ export async function mount(root,options){
   function record(t){
     const incoming=t.receiverId===data.profile.id,canDecide=incoming&&t.status==='pending';
     return `<details data-transfer-record="${esc(t.id)}" data-status="${esc(t.status)}" ${options.record===t.id?'open':''}><summary><strong>${esc(t.id)}</strong><span class="badge ${t.status==='received'?'badge-verified':t.status==='rejected'?'badge-discrepancy':'badge-pending'}">${esc(status(t))}</span><span>${esc(t.sender)} → ${esc(t.receiver)}</span></summary>
-      <dl class="transfer-facts"><div><dt>Recipient</dt><dd>${esc(t.receiver)}</dd></div><div><dt>Destination / project</dt><dd>${esc(t.destination||'Not recorded')}</dd></div><div><dt>Initiated</dt><dd>${esc(date(t.createdAt))}</dd></div><div><dt>Remarks</dt><dd>${esc(t.notes||'None recorded')}</dd></div></dl>
+      <dl class="transfer-facts"><div><dt>Recipient</dt><dd>${esc(t.receiver)}${t.receiverId?`<small class="transfer-recipient-id">Profile ${esc(t.receiverId)}</small>`:''}</dd></div><div><dt>Destination / project</dt><dd>${esc(t.destination||'Not recorded')}</dd></div><div><dt>Initiated</dt><dd>${esc(date(t.createdAt))}</dd></div><div><dt>Remarks</dt><dd>${esc(t.notes||'None recorded')}</dd></div></dl>
       <ul class="transfer-assets">${(t.toolIds||[]).map(id=>{
         const source=t.source?.find(s=>s.toolId===id),asset=t.equipment?.find(a=>a.id===id);
         return `<li><strong>${esc(source?.name||asset?.name||id)}</strong> <span class="tool-id-chip">${esc(id)}</span><dl class="transfer-facts"><div><dt>Custodian at initiation</dt><dd>${esc(source?.holder||'Unassigned')}</dd></div><div><dt>Origin</dt><dd>${esc(source?.site||'Not recorded')}</dd></div><div><dt>Recorded condition</dt><dd>${esc(source?.condition||asset?.condition||'Not recorded')}</dd></div><div><dt>Current custodian</dt><dd>${esc(asset?.holder||'Unassigned')}</dd></div></dl></li>`;
@@ -59,8 +59,25 @@ export async function mount(root,options){
     let count=0;root.querySelectorAll('[data-transfer-record]').forEach(element=>{const t=data.transfers.find(t=>t.id===element.dataset.transferRecord);const text=[t.id,t.sender,t.receiver,t.destination,t.notes,...(t.toolIds||[]),...(t.equipment||[]).map(a=>a.name)].join(' ').toLowerCase();element.hidden=Boolean((search&&!text.includes(search.toLowerCase()))||(statusFilter&&element.dataset.status!==statusFilter));if(!element.hidden)count++;});
     const empty=root.querySelector('[data-history-empty]');if(empty)empty.hidden=count>0;
   }
-  const refresh=async()=>{if(busy)return false;data=await ctx.api.snapshot();if(ctx.disposed)return false;render();return true;};
-  root.addEventListener('click',event=>{const button=event.target.closest('[data-view]');if(!button||busy)return;view=button.dataset.view;options.record='';render();root.querySelector(`[data-view="${view}"]`).focus();},{signal:ctx.signal});
+  const refresh=async({invalidate=false}={})=>{
+    if(busy||ctx.disposed)return false;
+    busy=true;
+    // A confirmed mutation invalidates the old actions even if the next read fails.
+    // Ordinary synchronization retains the current form until a new snapshot wins.
+    const replace=!data||invalidate;
+    if(replace)ctx.content.innerHTML='<p role="status">Loading transfer records…</p>';
+    ctx.content.setAttribute('aria-busy','true');
+    try{const next=await ctx.api.snapshot();if(ctx.disposed)return false;data=next;render();return true;}
+    catch(error){
+      if(!ctx.disposed&&replace)ctx.content.innerHTML='<p>Transfer records could not be loaded. Reload the records before taking another action.</p><button type="button" class="btn btn-secondary" data-retry-transfers>Retry loading transfers</button>';
+      throw error;
+    }finally{busy=false;if(!ctx.disposed)ctx.content.setAttribute('aria-busy','false');}
+  };
+  root.addEventListener('click',event=>{
+    const button=event.target.closest('[data-view],[data-retry-transfers]');if(!button||busy)return;
+    if(button.hasAttribute('data-retry-transfers')){void ctx.task(async()=>{ctx.say('');await refresh({invalidate:true});root.querySelector(`[data-view="${view}"]`)?.focus();},button);return;}
+    view=button.dataset.view;options.record='';render();root.querySelector(`[data-view="${view}"]`).focus();
+  },{signal:ctx.signal});
   root.addEventListener('change',event=>{
     if(event.target.matches('[name=condition],[name=notes]'))validateDamage(event.target.closest('[data-inspect]'));
     if(event.target.matches('[data-history-status]')){statusFilter=event.target.value;filterHistory();return;}
@@ -82,7 +99,8 @@ export async function mount(root,options){
       busy=true;
       try{if(action==='receiveTransfer')payload.evidenceIds=await uploadSelected(form,ctx,'accept_transfer',payload.id);const saved=await ctx.api.mutate(action,payload,'transfer:'+ (payload.id||'new'));options.record=saved.id;view=action==='createTransfer'?'send':'history';ctx.say(action==='createTransfer'?'Transfer requested. Custody is unchanged.':action==='receiveTransfer'?'Transfer accepted. Custody updated.':action==='rejectTransfer'?'Transfer rejected. Custody is unchanged.':'Transfer updated. Custody is unchanged.');options.onChanged?.(saved);}
       finally{busy=false;}
-      await refresh();
+      await refresh({invalidate:true});
+      [...root.querySelectorAll('[data-transfer-record]')].find(element=>element.dataset.transferRecord===options.record)?.querySelector('summary')?.focus();
     },event.submitter);
   },{signal:ctx.signal});
   await ctx.task(refresh);

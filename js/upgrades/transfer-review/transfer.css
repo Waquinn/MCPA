@@ -1,4 +1,4 @@
-.transfer-review.mcpa-custody-v2{padding:0}
+.transfer-review.mcpa-custody-v2{padding:0;overflow-wrap:anywhere}
 .transfer-review .b-shell{max-width:1100px;margin:auto}
 .transfer-review.mcpa-custody-v2 .btn-primary{background:var(--gold);color:var(--black-deep);border-color:transparent}
 .transfer-review.mcpa-custody-v2 .btn-primary:hover{background:var(--gold-light);color:var(--black-deep)}
@@ -11,6 +11,7 @@
 .transfer-review .transfer-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 24px;margin:16px 0}
 .transfer-review dt{font-size:12px;color:var(--gray);margin-bottom:4px}
 .transfer-review dd{margin:0;overflow-wrap:anywhere}
+.transfer-review .transfer-recipient-id{display:block;color:var(--gray);font-size:12px;margin-top:4px}
 .transfer-review .transfer-assets{list-style:none;padding:0}
 .transfer-review .transfer-assets>li{padding:16px 0}
 .transfer-review .transfer-accountability{max-width:70ch;margin:16px 0;color:var(--gray)}
@@ -30,7 +31,7 @@
 .transfer-review .transfer-tools-link{margin:12px 0 20px}
 .transfer-review input[type=search]{border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:44px;font:inherit}
 .transfer-review .transfer-reject>summary{cursor:pointer;min-height:44px;display:list-item}
-.transfer-review :is(button,select,textarea,a,summary):focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.transfer-review :is(button,input,select,textarea,a,summary):focus-visible{outline:2px solid var(--gold-dim);outline-offset:3px}
 .transfer-review .b-feedback:empty{display:none}
 .transfer-review .b-feedback{padding:12px 0;overflow-wrap:anywhere}
 .transfer-review .b-error{color:var(--red,#b73532)}
