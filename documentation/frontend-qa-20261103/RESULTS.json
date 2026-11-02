@@ -1,0 +1,1163 @@
+{
+  "date": "2026-11-03",
+  "timezone": "Asia/Manila",
+  "branch": "feature/frontend-qa-polish-20261103",
+  "baseCommit": "d23618ed951704b33d374faa518214645283a6a2",
+  "runtime": "Node v26.13.0; handoff recommends v24",
+  "final": {
+    "unitClientStatic": {
+      "passed": 89,
+      "failed": 0,
+      "blocked": 0
+    },
+    "disposablePGlite": {
+      "passed": 71,
+      "failed": 0,
+      "blocked": 0
+    },
+    "handoffBrowser": {
+      "passed": 15,
+      "failed": 0,
+      "blocked": 0
+    },
+    "focusedBrowser": {
+      "passed": 19,
+      "failed": 0,
+      "blocked": 0
+    },
+    "connectedAndPhysicalGates": {
+      "passed": 0,
+      "failed": 0,
+      "blocked": 8
+    },
+    "total": {
+      "passed": 194,
+      "failed": 0,
+      "blocked": 8
+    }
+  },
+  "initialFocused": {
+    "passed": 12,
+    "failed": 4
+  },
+  "intermediateFocused": {
+    "passed": 18,
+    "failed": 1,
+    "reason": "New test used top-level await in a classic-script expression; corrected without product changes."
+  },
+  "networkAudit": {
+    "localRequestsAllowed": 371,
+    "nonlocalHttpResponses": 0,
+    "nonlocalRequestsBlocked": 0
+  },
+  "detector": {
+    "primaryFindings": 0,
+    "advisories": 37,
+    "note": "Existing workspace styles compared with login-only DESIGN.md. No detector suppressions or design metadata changes."
+  },
+  "nodeCases": [
+    {
+      "name": "Live Staging schema compatibility and migration provenance",
+      "file": "tests/audit-remediation/blocked.test.cjs",
+      "group": "blocked",
+      "result": "BLOCKED"
+    },
+    {
+      "name": "Real public Staging key validation",
+      "file": "tests/audit-remediation/blocked.test.cjs",
+      "group": "blocked",
+      "result": "BLOCKED"
+    },
+    {
+      "name": "Runtime Supabase SDK/Auth/RLS/Storage/Realtime integration",
+      "file": "tests/audit-remediation/blocked.test.cjs",
+      "group": "blocked",
+      "result": "BLOCKED"
+    },
+    {
+      "name": "Independent PostgreSQL session condition-change/cancellation/acceptance concurrency",
+      "file": "tests/audit-remediation/blocked.test.cjs",
+      "group": "blocked",
+      "result": "BLOCKED"
+    },
+    {
+      "name": "Migration approval and connected-environment application",
+      "file": "tests/audit-remediation/blocked.test.cjs",
+      "group": "blocked",
+      "result": "BLOCKED"
+    },
+    {
+      "name": "Full authenticated Staging end-to-end transfer workflows",
+      "file": "tests/audit-remediation/blocked.test.cjs",
+      "group": "blocked",
+      "result": "BLOCKED"
+    },
+    {
+      "name": "Deployed CSP response headers and redirect-chain enforcement",
+      "file": "tests/audit-remediation/blocked.test.cjs",
+      "group": "blocked",
+      "result": "BLOCKED"
+    },
+    {
+      "name": "Physical receiving QR camera/device validation",
+      "file": "tests/audit-remediation/blocked.test.cjs",
+      "group": "blocked",
+      "result": "BLOCKED"
+    },
+    {
+      "name": "H1 Admin owner cancels after recipient deactivation; reservations and custody stay consistent; retry audited once",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H1 Engineer and Architect cancellation still use their authorized incumbent recovery path",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H1 terminal accepted/rejected transfers cannot be canceled by Admin sender",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H1 cancellation rollback preserves reservation, custody and both audit streams on failure",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H1 queued cancellation/acceptance produces one terminal result (serialized fixture, NOT independent concurrency)",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 normalized Under Repair conditions blocked in direct, QR lookup, QR action and focused snapshot",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 eligible own In Use and unheld Available preserved; conflicting holder and reservation blocked",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 identical name and role profiles remain distinct recipients; UUID controls decision authorization",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "transfer role matrix: Admin to Admin/Architect, Architect to Engineer, Engineer to Admin",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 retirement and unresolved movement restrictions survive the corrected migration",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "migration forbids blind replay and keeps private recovery/engine permissions closed",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "prepared read-only preflight SQL parses and finds required baseline objects in disposable local fixture",
+      "file": "tests/audit-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 exact staging configuration creates a verified client once; legacy anon JWT accepted structurally",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 missing configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 missing key configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 malformed configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 production configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 arbitrary configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 loopback configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 suffix configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 path configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 privileged key configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 service role JWT configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 wrong JWT project configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 expired JWT configuration rejected before SDK construction",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 wrong-project, unverifiable and secondary-service clients rejected without use",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 SDK factory and exported constructor cannot bypass approved config or inject alternate transports",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 offline adapter refuses real origins and is absent from application imports",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "M1 Tool Handler Returns bypasses integration while Engineer and Admin keep their own routes",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "M3 historical complete, incomplete, missing and disputed receipts keep accurate terminology",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 duplicate name and role labels include permitted projects and distinct UUIDs without email",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 separate production artifact policy requires explicit project and never accepts it in staging source",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H3 offline artifact preparation emits environment-specific policy, public configuration and response headers without overwriting source",
+      "file": "tests/audit-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "migration preserves existing custody, histories, RPC definitions and grants",
+      "file": "tests/custody-lifecycle-v2/returns.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Engineer batch retains custody and stock exclusion; Admin receives notification",
+      "file": "tests/custody-lifecycle-v2/returns.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Good, Damaged, Missing and Disputed decisions support partial acceptance and later recovery",
+      "file": "tests/custody-lifecycle-v2/returns.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "malformed inspection rolls back every decision",
+      "file": "tests/custody-lifecycle-v2/returns.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "legacy return bypass and direct table writes are denied",
+      "file": "tests/custody-lifecycle-v2/returns.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "conflicting submissions and repeated acceptance admit one winner",
+      "file": "tests/custody-lifecycle-v2/returns.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "migration fails closed on unreviewed custody engine and preserves unsafe-state evidence",
+      "file": "tests/custody-lifecycle-v2/security.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "new function grants exclude anonymous and private execution, with immutable history",
+      "file": "tests/custody-lifecycle-v2/security.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "cancelled transfer keeps original movement/audit records and permits later authorized work",
+      "file": "tests/custody-lifecycle-v2/security.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "frontend and SQL source remain inside the reserved paths and share movement locking",
+      "file": "tests/custody-lifecycle-v2/security.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "action descriptions preserve approval, receipt discrepancies and custody facts",
+      "file": "tests/display.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "historical dispatch only implies request release when an authorized transfer records the request",
+      "file": "tests/display.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "unknown, null and prototype-like values have neutral readable fallbacks",
+      "file": "tests/display.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "status labels distinguish review, receipt and delivery and support historical spellings",
+      "file": "tests/display.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "Manila timestamps include seconds; date-only and invalid dates remain accurate",
+      "file": "tests/display.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "human notes survive while technical summaries and infrastructure errors receive safe wording",
+      "file": "tests/display.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "notifications preserve recipient turnover instructions and normalize other movement actions",
+      "file": "tests/display.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "classification, pending demand, exact allocation, stale stock and history retain their boundaries",
+      "file": "tests/engineer-upgrade/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "transfer destinations use receiving membership and keep legitimate cross-project custody",
+      "file": "tests/engineer-upgrade/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "competing quantity submissions cannot promise the same remaining unit",
+      "file": "tests/engineer-upgrade/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "retirement records, evidence and authorizations are Admin-only; distinct approval remains mandatory",
+      "file": "tests/engineer-upgrade/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "invitations enforce server roles, inactive provisioning, acceptance, expiry, revocation and replay",
+      "file": "tests/engineer-upgrade/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "private links require active Admin; the server fixes redirect, role set and cache policy",
+      "file": "tests/engineer-upgrade/edge.test.mjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "recipient acceptance uses verified bearer identity and ignores submitted role/email/UUID",
+      "file": "tests/engineer-upgrade/edge.test.mjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "expired/revoked invitations and invalid passwords cannot activate accounts",
+      "file": "tests/engineer-upgrade/edge.test.mjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "runtime uses injected server keys and fails closed outside the configured app",
+      "file": "tests/engineer-upgrade/edge.test.mjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "custody operations coalesce concurrent clicks, retain uncertain UUIDs across remount, and renew successful UUIDs",
+      "file": "tests/integration-quantity-custody-v2/client.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "an empty response or later rejection cannot discard an earlier uncertain operation",
+      "file": "tests/integration-quantity-custody-v2/client.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "late success after disposal removes only its own operation and preserves another uncertain UUID",
+      "file": "tests/integration-quantity-custody-v2/client.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "a disposed instance cannot erase operations added by a remounted instance",
+      "file": "tests/integration-quantity-custody-v2/client.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "a late replay response cannot delete a newer deliberate operation with the same payload",
+      "file": "tests/integration-quantity-custody-v2/client.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "an old definitive rejection cannot erase a newer uncertain retry of the same UUID",
+      "file": "tests/integration-quantity-custody-v2/client.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "request availability follows condition and custody, never location alone",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "tallies sum eligible quantities and preserve deployed custody counts",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "asset presentation counts positive records without changing quantities or availability",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "Office metadata uses the authenticated RPC on every call and fails closed",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "stock requests exclude hidden reservations, pending/refused transfers, damage and holders",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "paged reads respect the actual response cap and active-project query",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "realtime watches both tables, coalesces bursts, and removes its channel on disposal",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "changes arriving during an in-flight reload trigger a follow-up read",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "30-second fallback pauses when hidden, retries on return/online, and clears errors after recovery",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "account watcher subscribes only to its readable audit table and deduplicates table names",
+      "file": "tests/inventory.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "legacy lockdown preserves constrained identities/history and current receipt workflow; repeatable",
+      "file": "tests/legacy-handover-lockdown.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "unexpected inherited legacy access aborts the whole lockdown",
+      "file": "tests/legacy-handover-lockdown.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "equipment shortcuts apply only the latest status after a pending module script loads and retain it on retry",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "same pending module fetch serves the latest requested record after its script is ready",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "requesting another target while a module script loads replaces its activation callback",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "returning to a loaded module cancels an intervening load without disposing its working controls",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "retrying a failed notification module load preserves the complete stable record route",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "plain navigation to the same module cancels an outstanding record focus",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "a failed module script retries the latest target without activating incomplete markup",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "an obsolete module script callback cannot activate its record after another module wins",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "a failed replacement disposes the previous screen before displaying the error",
+      "file": "tests/module-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "activity links resolve each saved entity type by exact ID, never summary text",
+      "file": "tests/movement-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "live and demo actions provide safe missing-record routes, including releases to transfers",
+      "file": "tests/movement-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "target identifiers round-trip without introducing another route or query field",
+      "file": "tests/movement-navigation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "demo activation is explicit, seeds independent of later live inventory, and restores live tools on exit",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "request approval, allocation, release and inspected receipt persist custody across reload",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "active transfers and approved allocations prevent double release and competing movements",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "rejection requires administrator and a reason, then releases the approved allocation",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "receipt requires named receiver and complete inspections and cannot run twice",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "Office returns release good/damaged custody; missing items retain accountability and open reports",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "damaged receipt transfers physical custody; lost receipt retains the dispatch custodian",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "repair and missing resolution obey admin role and state transitions",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "engineer cannot move or report another holder equipment and unavailable records cannot move",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "failed storage write changes no in-memory tools, records, revision or notifications",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "stale custody rejects receipt atomically even when a preceding item inspection succeeded",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "separate tabs read current storage before writes and storage events update visible tools",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "unknown manual codes or serialized payloads cannot create transfers or alter state",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "validation rejects malformed selection, nonexistent destinations, receivers and dates",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "tracked bulk sets move in full and returned snapshots cannot mutate saved state",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "damaged or cleared browser storage is not silently replaced by sample data",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "identifiers stay unique through reload and all successful transactions emit change events",
+      "file": "tests/movement-store.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "a save waits for an older background read and then fetches the committed snapshot",
+      "file": "tests/movement-sync.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "failed inventory refresh invalidates cached availability and recovery publishes a fresh verification",
+      "file": "tests/movement-sync.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "Project creation rejects is_active=true without persisting data or consuming the retry key",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Project creation rejects is_active=false without persisting data or consuming the retry key",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Additive migration preserves legacy rows, history, policies, assignments and equipment; rerun fails safely",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Weighted formula, two-decimal rounding, N/A redistribution and per-project weights",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Invalid progress, names, stages and untrusted fields rejected atomically",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Project creation, all meaningful changes, actors, notes, archive/restore and ordered immutable history",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Retries deduplicate creates, updates, site notes and corrections; stale competing edits cannot overwrite",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Role boundaries, RLS, direct audit writes and privileged mutations/truncation denied",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Read-only deployment scripts compare unchanged legacy fingerprints and verify effective security",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Every stage/work area persists independently; legacy writers remain audited; no-op saves produce no duplicate audit",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Projects coexists with deployed consumable SKU/archive and receipt/purchase upgrades without touching stock, policy or custody",
+      "file": "tests/project-construction.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Read-only dependency review distinguishes missing history from missing RPC and finds renamed history",
+      "file": "tests/project-history-dependency.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "QR server resolves only actual current individual custody",
+      "file": "tests/qr-movement-v2/qr-transfer.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "exact assets transfer only after named recipient physically accepts",
+      "file": "tests/qr-movement-v2/qr-transfer.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "transfer refuses self, unavailable assets and recipients outside project assignment",
+      "file": "tests/qr-movement-v2/qr-transfer.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "batch deduplicates scans, supports manual IDs and cancels pending resolution",
+      "file": "tests/qr-movement-v2/qr-transfer.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 pending condition drift rejects acceptance atomically, preserves repair and permits rejection",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 sender cancellation releases reservation after pending condition drift",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 valid good receipt and explicitly accepted inspected damage preserve incumbent repair workflow",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 recorded ineligible conditions block initiation and never overwrite existing condition",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 multi-asset failure rolls back all receipt/history/evidence updates after recorded drift",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "H2 another unresolved repair and source/reservation drift block acceptance without blocking rejection",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M3 QR snapshot adds permitted recipient roles only and preserves authorization",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 expected baseline has no FAIL; preflight is read only and exposes review limits",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 preflight detects missing PR4 helper",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 preflight detects changed definition",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 preflight detects unsafe inherited effective grant",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 preflight detects missing reservation uniqueness",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 preflight detects disabled guard",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 preflight detects wrong function owner",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 preflight detects missing column",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 preflight detects disabled RLS",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M5 pending inconsistency, unknown conditions and installed markers are explicit",
+      "file": "tests/seven-finding-remediation/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "M1 facade has null prototype, no original exports or prototype factory, frozen UMD compatible",
+      "file": "tests/seven-finding-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "M1 facade refuses destination and transport bypass before constructing any client",
+      "file": "tests/seven-finding-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "M1 endpoint-shaped reused client is unverified; guarded client can be reused and endpoint mutation fails",
+      "file": "tests/seven-finding-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "M1 missing configuration prevents SDK invocation, application connection delegates to guard",
+      "file": "tests/seven-finding-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "M2 all shared helpers require complete per-ID inspection evidence for acceptance",
+      "file": "tests/seven-finding-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "H1 inventory actions never embed Asset IDs in executable handlers; print labels are DOM text",
+      "file": "tests/seven-finding-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "M4 encoder has no network/dynamic execution and QR scripts retain strict independent CSP",
+      "file": "tests/seven-finding-remediation/frontend.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "initiation reserves exact assets and keeps sender custody; only named recipient accepts once",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "recipient rejection is terminal, audited and releases reservations without changing custody",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "Admin is a recipient with explicit acceptance and can dispatch own or unheld stock",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "failed multi-asset acceptance rolls back equipment, repairs, operations and notifications",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "eligibility changes, aggregate assets and conflicting decisions cannot bypass acceptance",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "legacy QR gateway still enforces recipient decision; history is untouched by migration",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "acceptance photo evidence is authorized and atomic for an Admin recipient",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "lost acceptance response recovers the same committed operation across remount",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "quantity release still awaits acceptance, and inspected returns preserve the existing lifecycle",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "migration preflight refuses an available legacy handover bypass without changing history",
+      "file": "tests/ui-transfer-review/database.test.cjs",
+      "group": "localDatabase",
+      "result": "PASS"
+    },
+    {
+      "name": "missing environment configuration cannot create a client or trust a pre-existing client",
+      "file": "tests/ui-transfer-review/isolation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    },
+    {
+      "name": "runtime code has no embedded credentials or unapproved Supabase endpoint fallback",
+      "file": "tests/ui-transfer-review/isolation.test.cjs",
+      "group": "unitClientStatic",
+      "result": "PASS"
+    }
+  ],
+  "handoffBrowserCases": [
+    "Existing transfer/navigation/project responsive theme workflows",
+    "M1 Tool Handler Returns monitoring restored without submission actions",
+    "M1 Engineer return submission route retained",
+    "M2 missing profession displayed truthfully; UUID retained during metadata edit",
+    "L1 readable project separators in desktop/mobile and dark/light modes",
+    "M4 Damaged submit without notes -> error -> Good -> successful native submit; notes changes recalculate",
+    "M5 duplicate-name options and confirmation identify exact recipient and permitted destination",
+    "M3 incomplete and disputed historical receipts preserve per-asset results without false acceptance",
+    "H1 Admin sender cancels unavailable-recipient transfer through UI; custody retained and reservation released",
+    "HIGH 1 real DOM safely renders normal, quote, markup and event-syntax Asset IDs; Admin views Tool Handler records and View/Edit/Print work",
+    "MEDIUM 4 screen and print PNGs decode to exact Asset IDs with local QR; 30mm print, load completion and text bindings verified",
+    "MEDIUM 3 QR composer duplicate-name/role labels match primary form; project confirmation and submitted UUID are exact",
+    "MEDIUM 2 shared movement/activity/notification labels preserve missing and unknown historical receipts",
+    "MEDIUM 4 shipped strict staging CSP permits and decodes local equipment QR; SDK browser facade has no prototype",
+    "H3 shipped staging CSP blocks wrong-project fetch/images; real browser validates configuration before fake SDK creation"
+  ],
+  "focusedBrowserCases": [
+    {
+      "name": "Admin keyboard accordion has one expanded group and a visible focus indicator",
+      "result": "PASS"
+    },
+    {
+      "name": "Mobile drawer traps Tab, closes with Escape, and restores its trigger",
+      "result": "PASS"
+    },
+    {
+      "name": "Project required fields prevent an empty create and preserve the profession choices",
+      "result": "PASS"
+    },
+    {
+      "name": "engineer navigation retains inventory, transfers and Returns with its role restrictions",
+      "result": "PASS"
+    },
+    {
+      "name": "architect navigation retains inventory, transfers and Returns with its role restrictions",
+      "result": "PASS"
+    },
+    {
+      "name": "tool_handler navigation retains inventory, transfers and Returns with its role restrictions",
+      "result": "PASS"
+    },
+    {
+      "name": "Duplicate recipient UUID remains visible in the incoming record",
+      "result": "PASS"
+    },
+    {
+      "name": "Pending server confirmation keeps original custody and prevents duplicate submissions",
+      "result": "PASS"
+    },
+    {
+      "name": "Mutation rejection retains inspection values and original custodian without a success claim",
+      "result": "PASS"
+    },
+    {
+      "name": "Damage validation blocks blank notes and recovers after selecting Good",
+      "result": "PASS"
+    },
+    {
+      "name": "Failed initial snapshot offers a working retry instead of permanent loading copy",
+      "result": "PASS"
+    },
+    {
+      "name": "Confirmed acceptance followed by snapshot failure removes stale acceptance actions and recovers safely",
+      "result": "PASS"
+    },
+    {
+      "name": "Failed background synchronization preserves an unsaved inspection",
+      "result": "PASS"
+    },
+    {
+      "name": "Outgoing duplicate selection sends the exact UUID and stays Pending Acceptance",
+      "result": "PASS"
+    },
+    {
+      "name": "Completed and unauthorized pending records expose no cancellation action",
+      "result": "PASS"
+    },
+    {
+      "name": "Long transfer identifiers fit desktop, tablet and mobile in both themes",
+      "result": "PASS"
+    },
+    {
+      "name": "Navigation and transfer keyboard focus contrast reaches 3:1 in both themes",
+      "result": "PASS"
+    },
+    {
+      "name": "Local QR pixels preserve Unicode, punctuation and long Asset IDs",
+      "result": "PASS"
+    },
+    {
+      "name": "Request interception permits only the ephemeral loopback server",
+      "result": "PASS"
+    }
+  ]
+}

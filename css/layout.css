@@ -166,5 +166,5 @@
 #nav-list .nav-children{padding-left:12px;margin-bottom:8px}
 #nav-list .nav-children[hidden]{display:none}
 #nav-list .nav-children .nav-item{font-size:13px}
-#nav-list .nav-item:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+#nav-list .nav-item:focus-visible{outline:2px solid var(--gold-dim);outline-offset:-2px}
 @media(prefers-reduced-motion:reduce){#nav-list .nav-chevron{transition:none}}
